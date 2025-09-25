@@ -1,9 +1,9 @@
 {
-  "name": "bricabrac-single-file-modules",
+  "name": "bricabrac-sfmodules",
   "version": "0.14.0",
   "description": "",
   "main": "lib/main.js",
-  "repository": "github:loveencounterflow/bricabrac-single-file-modules",
+  "repository": "github:loveencounterflow/bricabrac-sfmodules",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
