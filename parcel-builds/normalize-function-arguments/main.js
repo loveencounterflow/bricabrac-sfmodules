@@ -118,6 +118,19 @@ parcelRegister("5WJ0w", function(module, exports) {
                 }
             },
             //.......................................................................................................
+            asyncfunction: {
+                isa: function(x) {
+                    return Object.prototype.toString.call(x) === '[object AsyncFunction]';
+                }
+            },
+            //.......................................................................................................
+            callable: {
+                isa: function(x) {
+                    var ref;
+                    return (ref = Object.prototype.toString.call(x)) === '[object Function]' || ref === '[object AsyncFunction]';
+                }
+            },
+            //.......................................................................................................
             template: {
                 isa: function(x) {
                     return x instanceof Template;
@@ -1097,7 +1110,7 @@ function $5d66668626687269$export$2e2bcd8739ae039(element, options) {
             }
             //.......................................................................................................
             /* TAINT do this in `gnd` */ if (!gnd.pod.isa(cfg)) throw new Type_error(`\u{3A9}nfa___3 expected a POD, got ${rpr(cfg)}`);
-            if (!gnd.function.isa(fn)) throw new Type_error(`\u{3A9}nfa___4 expected a function, got ${rpr(cfg)}`);
+            if (!gnd.callable.isa(fn)) throw new Type_error(`\u{3A9}nfa___4 expected a callable, got ${rpr(cfg)}`);
             //.......................................................................................................
             cfg = {
                 ...gnd.nfa_cfg.template,
@@ -1119,7 +1132,7 @@ function $5d66668626687269$export$2e2bcd8739ae039(element, options) {
                represent CFG so we can make a copy, filling in template values): */ var Q, i, idx, len, name;
                 if (P.length > arity) throw new Positional_arity_error(`\u{3A9}nfa___5 expected up to ${arity} arguments, got ${P.length}`);
                 //.....................................................................................................
-                if (q_ridx === -2 && gnd.function.isa(P.at(-1))) {
+                if (q_ridx === -2 && gnd.callable.isa(P.at(-1))) {
                     if (gnd.pod.isa(P.at(q_ridx))) while(P.length < arity)push_at(P, q_ridx, void 0);
                     else while(P.length < arity)push_at(P, -1, void 0);
                 }
