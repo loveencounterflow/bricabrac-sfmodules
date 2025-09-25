@@ -22,7 +22,6 @@ BRICS =
     #-------------------------------------------------------------------------------------------------------
     bigint_from_hrtime  = ([ s, ns, ])  -> ( BigInt s ) * 1_000_000_000n + ( BigInt ns )
     hrtime_as_bigint    =               -> bigint_from_hrtime process.hrtime()
-    inf                 = new Intl.NumberFormat 'en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3}
     ANSI                =
       cr:   '\x1b[1G'       # Carriage Return; move to first column (CHA n — Cursor Horizontal Absolut)
       el0:  '\x1b[0K'       # EL Erase in Line; 0: from cursor to end
@@ -52,39 +51,30 @@ BRICS =
 
       #-----------------------------------------------------------------------------------------------------
       constructor: ->
-        @brands   = {}
+        @brands           = {}
+        #  locale: 'en-US', numberingSystem: 'latn', style: 'decimal', minimumIntegerDigits: 1, minimumFractionDigits: 0,
+        # maximumFractionDigits: 3, useGrouping: 'auto', notation: 'standard', signDisplay: 'auto', roundingIncrement: 1,
+        # roundingMode: 'halfExpand', roundingPriority: 'auto', trailingZeroDisplay: 'auto' }
+        @number_formatter = new Intl.NumberFormat 'en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3, }
         # @tasks    = {}
         return undefined
 
       #-----------------------------------------------------------------------------------------------------
       timeit: nfa { template: timeit_tpl, }, ( brand, task, cfg, fn ) ->
-      # timeit: nfa ( brand, task, cfg, fn ) ->
-        # debug 'Ωbm___2', { brand, task, cfg, fn } # ; return null
-        # switch arity = arguments.length
-        #   when 1 then [ cfg, fn, ] = [ {}, cfg, ]
-        #   when 2 then null
-        #   else throw new Error "Ωbm___3 expected 1 or 2 arguments, got #{arity}"
-        #.....................................................................................................
         cfg                 = { { total: null, }..., cfg..., }
         task                = task ? ( if ( fn.name is '' ) then '(anonymous)' else fn.name )
         task_rpr            = ( task + ':' ).padEnd 40, ' '
         progress            = get_progress { total: cfg.total, task_rpr, }
         t0                  = hrtime_as_bigint()
+        #.....................................................................................................
         result              = fn { progress, }
+        #.....................................................................................................
         t1                  = hrtime_as_bigint()
         dt                  = ( Number t1 - t0 ) / 1_000_000
-        #.....................................................................................................
-        dts_brand           = @brands[ brand ] ?= {}
-        dts_task            = dts_brand[ task ] ?= []
+        dt_rpr              = @format_dt dt
+        dts_brand           = @brands[    brand ] ?= {}
+        dts_task            = dts_brand[  task  ] ?= []
         dts_task.push dt
-        # dts_task           = ( @tasks[   task ] ?= { dts: [], } ).dts
-        # dts_brand.push dt
-        #.....................................................................................................
-        #  locale: 'en-US', numberingSystem: 'latn', style: 'decimal', minimumIntegerDigits: 1, minimumFractionDigits: 0,
-        # maximumFractionDigits: 3, useGrouping: 'auto', notation: 'standard', signDisplay: 'auto', roundingIncrement: 1,
-        # roundingMode: 'halfExpand', roundingPriority: 'auto', trailingZeroDisplay: 'auto' }
-        dt_rpr        = inf.format dt
-        dt_rpr        = dt_rpr.padStart 20, ' '
         #...................................................................................................
         if cfg.handler?
           cfg.handler {
@@ -102,21 +92,34 @@ BRICS =
         return result
 
       #-----------------------------------------------------------------------------------------------------
+      format_dt: ( dt ) -> ( @number_formatter.format dt ).padStart 20, ' '
+
+      #-----------------------------------------------------------------------------------------------------
       get_averages_by_brands: ->
         R = {}
-        for brand, tracks of @brands
+        for brand, tasks of @brands
           target = R[ brand ] = {}
-          for track, dts of tracks
-            target[ track ] = ( dts.reduce ( ( a, b ) -> a + b ), 0 ) / dts.length
+          for task, dts of tasks
+            target[ task ] = ( dts.reduce ( ( a, b ) -> a + b ), 0 ) / dts.length
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      get_averages_by_tasks: ->
+        R = {}
+        for brand, tasks of @brands
+          for task, dts of tasks
+            target          = R[ task ] ?= {}
+            target[ brand ] = ( dts.reduce ( ( a, b ) -> a + b ), 0 ) / dts.length
         return R
 
     #=======================================================================================================
-    timeit = do =>
-      bm  = new Benchmarker()
-      R   = ( P... ) -> bm.timeit P...
-      nameit 'timeit', R
-      R.bm = bm
-      return R
+    timeit = -> throw new Error "Ωbm___1 temporarily unavailable"
+    # do =>
+    #   bm  = new Benchmarker()
+    #   R   = ( P... ) -> bm.timeit P...
+    #   nameit 'timeit', R
+    #   R.bm = bm
+    #   return R
 
     #.......................................................................................................
     return exports = { Benchmarker, bigint_from_hrtime, hrtime_as_bigint, timeit, }

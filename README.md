@@ -127,6 +127,9 @@
   spent to set up and finish each track); these extra times should also be shown, at least when exceeding a
   given threshold. In `timeit()` runs that have no `track()` calls, the anonymous track is all there is.
 
+* **`[—]`** incorporate functionality of `with_capture_output()` (setting `{ capture_output: true, }`),
+  return stdout, stdin contents
+
 ### Errors
 
 * **`[—]`** custom error base class
