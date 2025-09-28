@@ -4,9 +4,14 @@
 
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
+    - [Loupe, Show](#loupe-show)
     - [Random](#random)
       - [Random: Implementation Structure](#random-implementation-structure)
+        - [References](#references)
+        - [To Do](#to-do-1)
+    - [Benchmark](#benchmark)
     - [Errors](#errors)
+    - [Remap](#remap)
     - [Other](#other)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -17,6 +22,12 @@
 
 ## To Do
 
+### Loupe, Show
+
+* add `cfg` parameter
+* implement stripping of ANSI codes
+* implement 'colorful', 'symbolic' mode
+* implement callbacks for specifc types / filters
 
 ### Random
 
