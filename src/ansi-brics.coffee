@@ -217,7 +217,7 @@ ANSI_BRICS =
     own_ansi_re         = /// ( (?: \x1b \[ [^ \x40 - \x7e ]* [ \x40 - \x7e ] )+ ) ///g
     strip_ansi          = ( text, replacement = '' ) -> text.replace own_ansi_re, replacement
     #.........................................................................................................
-    return { strip_ansi, internals: { ansi_re: own_ansi_re, own_single_ansi_re, }, }
+    return { strip_ansi, internals: { chalk_ansi_re, own_ansi_re, own_single_ansi_re, }, }
 
   #===========================================================================================================
   ### NOTE Future Single-File Module ###
