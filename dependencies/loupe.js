@@ -824,7 +824,8 @@
     }
 
     if (number === 0) {
-      return options.stylize(1 / number === Infinity ? '+0' : '-0', 'number');
+      return options.stylize(1 / number === Infinity ? '0' : '0', 'number');
+      // return options.stylize(1 / number === Infinity ? '+0' : '-0', 'number');
     }
 
     return options.stylize(truncate(number, options.truncate), 'number');
