@@ -17,8 +17,10 @@ BRICS =
     expand = ( strings, key, seen = new Set() ) ->
       if seen.has key
         throw new Error "Ωkvr___1 cyclic reference detected for #{key}"
+      unless Reflect.has strings, key
+        throw new Error "Ωkvr___1 unknown key #{key}"
       seen.add key
-      value = strings[ key ] ? "WAT"
+      value = strings[ key ]
       for k, v of strings
         value = value.replaceAll k, -> expand strings, k, seen
       return value
