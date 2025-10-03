@@ -11,7 +11,7 @@ BRICS =
 
   #=========================================================================================================
   ### NOTE Future Single-File Module ###
-  require_expand_recursive_keys: ->
+  require_dictionary_tools: ->
 
     #===========================================================================================================
     expand = ( strings, key, seen = new Set() ) ->
@@ -27,14 +27,14 @@ BRICS =
 
 
     #===========================================================================================================
-    expand_recursive_keys = ( strings ) ->
+    expand_dictionary = ( strings ) ->
       ### Expand all string values by recursively replacing keys with their mapped values ###
       R         = {}
       R[ key ]  = expand strings, key for key of strings
       return R
 
     #.......................................................................................................
-    return exports = { expand_recursive_keys, internals: { expand, }, }
+    return exports = { expand_dictionary, internals: { expand, }, }
 
 #===========================================================================================================
 Object.assign module.exports, BRICS

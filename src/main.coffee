@@ -5,7 +5,7 @@
 Object.assign module.exports, require './various-brics'
 Object.assign module.exports, require './ansi-brics'
 Object.assign module.exports, require './loupe-brics'
-Object.assign module.exports, require './expand-recursive-keys.brics'
+Object.assign module.exports, require './dictionary-tools.brics'
 Object.assign module.exports, require './get-local-destinations.brics'
 Object.assign module.exports, { unstable: {
   ( require './unstable-brics'                                    )...,
