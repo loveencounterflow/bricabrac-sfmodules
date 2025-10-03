@@ -11,31 +11,20 @@ BRICS =
 
   #=========================================================================================================
   ### NOTE Future Single-File Module ###
-  require_expand_recursive_keys: ->
+  require_get_local_destinations: ->
 
     #===========================================================================================================
-    expand = ( strings, key, seen = new Set() ) ->
-      if seen.has key
-        throw new Error "Ωkvr___1 cyclic reference detected for #{key}"
-      unless Reflect.has strings, key
-        throw new Error "Ωkvr___1 unknown key #{key}"
-      seen.add key
-      value = strings[ key ]
-      for k, v of strings
-        value = value.replaceAll k, -> expand strings, k, seen
-      return value
-
+    { default: get_env_paths, } = require( 'env-paths')
 
     #===========================================================================================================
-    expand_recursive_keys = ( strings ) ->
-      ### Expand all string values by recursively replacing keys with their mapped values ###
-      R         = {}
-      R[ key ]  = expand strings, key for key of strings
-      return R
+    get_local_destinations = ( name, cfg ) -> get_env_paths name, { suffix: null, cfg..., }
 
     #.......................................................................................................
-    return exports = { expand_recursive_keys, internals: { expand, }, }
+    return exports = { get_local_destinations, internals: { get_env_paths, }, }
 
 #===========================================================================================================
 Object.assign module.exports, BRICS
+
+
+
 
