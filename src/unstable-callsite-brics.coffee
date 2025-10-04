@@ -52,9 +52,9 @@ UNSTABLE_CALLSITE_BRICS =
     internals = { misfit, }
 
     #---------------------------------------------------------------------------------------------------------
-    get_app_details = ({ delta = 1 }={}) ->
+    get_app_details = ({ delta = 1, path = null, }={}) ->
       # callsite = get_callsite { delta: delta + 1, }
-      path  = PATH.dirname CS.get_callsite_path { delta: delta + 1, }
+      path ?= PATH.dirname CS.get_callsite_path { delta: delta + 1, }
       #.......................................................................................................
       loop
         # break
