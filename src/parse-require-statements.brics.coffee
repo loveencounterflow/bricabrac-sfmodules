@@ -70,7 +70,9 @@ BRICS =
         message = "ignoring possible `require` on line #{token.line_nr}: #{rpr_string line}"
         return { type: 'warning', message, line, line_nr: token.line_nr, }
       #.....................................................................................................
-      for token from walk_essential_js_tokens source
+      for token from walk_js_tokens source
+        # continue if token.type is 'warning'
+        continue if token.categories?.has 'whitespace'
         #...................................................................................................
         switch stage
           #.................................................................................................
@@ -101,12 +103,21 @@ BRICS =
               yield warning_from_token token
               reset()
               continue
+            stage       = stages.found_right_paren
             package_type = switch true
               when package_name.startsWith 'node:'  then 'node'
               when package_name.startsWith './'     then 'local'
               when package_name.startsWith '../'    then 'local'
               else 'npm'
-            yield { type: 'require', line_nr, package_type, package_name, }
+          #.................................................................................................
+          when stages.found_right_paren
+            switch true
+              # when ( ( token.type is 'Punctuator') and ( token.value is ';' ) ) then null
+              when ( token.type in [ 'eof', 'LineTerminatorSequence', ]       ) then annotation = null
+              when ( token.type is 'SingleLineComment'                        )
+                annotation = token.value.replace /^\s*\/\/\s*/, ''
+              else continue
+            yield { type: 'require', line_nr, package_type, package_name, annotation, }
             # yield { type: 'require', path, line_nr, package_name, }
             reset()
       #.....................................................................................................
