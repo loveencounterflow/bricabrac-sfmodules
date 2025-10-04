@@ -27,12 +27,19 @@ BRICS =
       source        = FS.readFileSync path, { encoding: 'utf-8', }
       lines         = null
       #.....................................................................................................
-      history       = 0
+      stages        =
+        start:                Symbol 'start'
+        found_require:        Symbol 'found_require'
+        found_left_paren:     Symbol 'found_left_paren'
+        found_string_literal: Symbol 'found_string_literal'
+        found_right_paren:    Symbol 'found_right_paren'
+      #.....................................................................................................
+      stage         = stages.start
       package_name  = null
       line_nr       = null
       #.....................................................................................................
       reset = ->
-        history       = 0
+        stage         = stages.start
         package_name  = null
         line_nr       = null
         return null
@@ -45,31 +52,31 @@ BRICS =
       #.....................................................................................................
       for token from walk_essential_js_tokens source
         #...................................................................................................
-        switch history
+        switch stage
           #.................................................................................................
-          when 0
+          when stages.start
             unless ( token.type is 'IdentifierName' ) and ( token.value is 'require' )
               reset()
               continue
-            history = 1
+            stage = stages.found_require
             line_nr = token.line_nr
           #.................................................................................................
-          when 1
+          when stages.found_require
             unless ( token.type is 'Punctuator' ) and ( token.value is '(' )
               yield warning_from_token token
               reset()
               continue
-            history = 2
+            stage = stages.found_left_paren
           #.................................................................................................
-          when 2
+          when stages.found_left_paren
             unless ( token.categories.has 'string_literals' )
               yield warning_from_token token
               reset()
               continue
             package_name    = eval token.value
-            history     = 3
+            stage     = stages.found_string_literal
           #.................................................................................................
-          when 3
+          when stages.found_string_literal
             unless ( token.type is 'Punctuator' ) and ( token.value is ')' )
               yield warning_from_token token
               reset()
