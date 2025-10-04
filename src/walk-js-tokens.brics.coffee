@@ -597,11 +597,16 @@ BRICS =
         ####    ####    ####    ####    ####    ####    ####    ####    ####    ####    ####    ####    ####
 
     #-------------------------------------------------------------------------------------------------------
-    walk_js_tokens = ( source ) -> yield from jsTokens source
+    walk_js_tokens = ( source ) ->
+      line_nr = 1
+      for token from jsTokens source
+        line_nr++ if ( token.type is 'LineTerminatorSequence' )
+        yield { token..., line_nr, }
+      return null
 
     #-------------------------------------------------------------------------------------------------------
     walk_essential_js_tokens = ( source ) ->
-      for token from jsTokens source
+      for token from walk_js_tokens source
         continue if token.type is 'WhiteSpace'
         continue if token.type is 'MultiLineComment'
         continue if token.type is 'SingleLineComment'
@@ -609,13 +614,17 @@ BRICS =
       return null
 
     #-------------------------------------------------------------------------------------------------------
+    rpr_token = ( token ) -> token.type + rpr_string token.value
+
+    #-------------------------------------------------------------------------------------------------------
     summarize = ( tokens, joiner = '&&&' ) ->
-      return joiner + ( ( t.type + ( rpr_string t.value ) for t from tokens ).join joiner ) + joiner
+      return joiner + ( ( ( rpr_token t ) for t from tokens ).join joiner ) + joiner
 
     #.......................................................................................................
     return exports = {
       walk_js_tokens,
       walk_essential_js_tokens,
+      rpr_token,
       summarize,
       internals: {
         HashbangComment,
