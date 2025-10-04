@@ -74,7 +74,13 @@ BRICS =
               yield warning_from_token token
               reset()
               continue
-            yield { type: 'require', path, line_nr, package_name, }
+            package_type = switch true
+              when package_name.startsWith 'node:'  then 'node'
+              when package_name.startsWith './'     then 'local'
+              when package_name.startsWith '../'    then 'local'
+              else 'npm'
+            yield { type: 'require', line_nr, package_type, package_name, }
+            # yield { type: 'require', path, line_nr, package_name, }
             reset()
       #.....................................................................................................
       return null
