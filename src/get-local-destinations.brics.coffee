@@ -21,7 +21,7 @@ BRICS =
 
     #===========================================================================================================
     get_local_destinations = ({ app_name = '', app_home = '', }={}) ->
-      app_name           ?= ''
+      app_name            = '<YOUR-APP-NAME-HERE>' if ( not app_name? ) or ( app_name is '' )
       app_home           ?= ''
       app                 = get_env_paths app_name, { suffix: null, }
       user                = {}
