@@ -21,10 +21,30 @@ BRICS =
       walk_essential_js_tokens,
       rpr_token,
       summarize,              } = ( require './walk-js-tokens.brics' ).require_walk_js_tokens()
+    { nfa,
+      get_signature,          } = require 'normalize-function-arguments'
+    #.......................................................................................................
+    object_prototype            = Object.getPrototypeOf {}
+    types                       =
+      pod:                      isa: ( x ) -> x? and ( Object.getPrototypeOf x ) in [ null, object_prototype, ]
+      text:                     isa: ( x ) -> ( typeof x ) is 'string'
+      nonempty_text:            isa: ( x ) -> ( types.text.isa x ) and ( x.length > 0 )
+      optional_nonempty_text:   isa: ( x ) -> ( not x? ) or ( type.nonempty_text.isa x )
+    #.......................................................................................................
+    walk_require_statements_cfg =
+      template:   { path: null, source: null, }
+      isa:        ( x ) ->
+        return false unless types.pod.isa x
+        return false unless types.optional_nonempty_text.isa x.path
+        return false unless types.optional_nonempty_text.isa x.source
+        return false if (     x.path? ) and (     x.source? )
+        return false if ( not x.path? ) and ( not x.source? )
+        return true
 
     #=======================================================================================================
-    walk_require_statements = ( path ) ->
-      source        = FS.readFileSync path, { encoding: 'utf-8', }
+    walk_require_statements = nfa ( path, cfg ) ->
+    # walk_require_statements = nfa walk_require_statements_cfg, ( path, cfg ) ->
+      source        = if cfg.path? then ( FS.readFileSync path, { encoding: 'utf-8', } ) else cfg.source
       lines         = null
       #.....................................................................................................
       stages        =
