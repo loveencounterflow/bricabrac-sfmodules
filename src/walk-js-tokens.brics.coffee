@@ -53,12 +53,12 @@ BRICS =
     #-------------------------------------------------------------------------------------------------------
     walk_essential_js_tokens = ( source ) ->
       for token from walk_js_tokens source
-        continue if token.categories.has 'nonessentials'
+        continue if token.categories?.has 'nonessentials'
         yield token
       return null
 
     #-------------------------------------------------------------------------------------------------------
-    rpr_token = ( token ) -> token.type + rpr_string token.value
+    rpr_token = ( token ) -> token.type + ( if token.value? then ( rpr_string token.value ) else '' )
 
     #-------------------------------------------------------------------------------------------------------
     summarize = ( tokens, joiner = '&&&' ) ->
