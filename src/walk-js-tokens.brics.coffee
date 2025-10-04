@@ -32,7 +32,7 @@ BRICS =
       #.....................................................................................................
       R.string_literals           = ( new Set [ 'primitive_literals',   ] ).union R.primitive_literals
       #.....................................................................................................
-      R.LineTerminatorSequence    = ( new Set [ 'whitespace',           ] ).union R.whitespace
+      R.LineTerminatorSequence    = ( new Set [ 'newline',              ] ).union R.newline
       R.WhiteSpace                = ( new Set [ 'whitespace',           ] ).union R.whitespace
       R.HashbangComment           = ( new Set [ 'comments',             ] ).union R.comments
       R.MultiLineComment          = ( new Set [ 'comments',             ] ).union R.comments
