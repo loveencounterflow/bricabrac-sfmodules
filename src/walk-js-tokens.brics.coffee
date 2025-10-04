@@ -22,7 +22,10 @@ BRICS =
       #.....................................................................................................
       R.nonessentials             = ( new Set [                         ] )
       R.literals                  = ( new Set [                         ] )
+      R.newline                   = ( new Set [                         ] )
+      R.system                    = ( new Set [                         ] )
       #.....................................................................................................
+      R.eof                       = ( new Set [ 'system',               ] ).union R.system
       R.comments                  = ( new Set [ 'nonessentials',        ] ).union R.nonessentials
       R.whitespace                = ( new Set [ 'nonessentials',        ] ).union R.nonessentials
       R.primitive_literals        = ( new Set [ 'literals',             ] ).union R.literals
@@ -48,6 +51,7 @@ BRICS =
         line_nr++ if ( token.type is 'LineTerminatorSequence' )
         categories = token_categories[ token.type ] ? new Set()
         yield { token..., line_nr, categories, }
+      yield { type: 'eof', }
       return null
 
     #-------------------------------------------------------------------------------------------------------
