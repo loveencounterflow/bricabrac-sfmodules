@@ -40,11 +40,10 @@ BRICS =
       warning_from_token = ( token ) ->
         lines  ?= [ null, ( source.split '\n' )..., ]
         line    = lines[ token.line_nr ] ? "(ERROR: UNABLE TO RETRIEVE SOURCE)"
-        message = "Ωkvr__89 ignoring possible `require` on line #{token.line_nr}: #{rpr_string line}"
+        message = "ignoring possible `require` on line #{token.line_nr}: #{rpr_string line}"
         return { type: 'warning', message, line, line_nr: token.line_nr, }
       #.....................................................................................................
       for token from walk_essential_js_tokens source
-        # info 'Ωkvr__90', token
         #...................................................................................................
         switch history
           #.................................................................................................
@@ -75,7 +74,6 @@ BRICS =
               yield warning_from_token token
               reset()
               continue
-            # debug 'Ωkvr__94', "line #{line_nr} found require #{rpr_string package_name}"
             yield { type: 'require', path, line_nr, package_name, }
             reset()
       #.....................................................................................................
