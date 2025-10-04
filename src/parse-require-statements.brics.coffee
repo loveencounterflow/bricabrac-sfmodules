@@ -20,7 +20,8 @@ BRICS =
     { walk_js_tokens,
       walk_essential_js_tokens,
       rpr_token,
-      summarize,              } = ( require './walk-js-tokens.brics' ).require_walk_js_tokens()
+      summarize,              } = ( require './walk-js-tokens.brics'    ).require_walk_js_tokens()
+    { get_app_details,        } = ( require './unstable-callsite-brics' ).require_get_app_details()
     { nfa,
       get_signature,          } = require 'normalize-function-arguments'
     #.......................................................................................................
@@ -44,9 +45,18 @@ BRICS =
     #=======================================================================================================
     walk_require_statements = nfa ( path, cfg ) ->
     # walk_require_statements = nfa walk_require_statements_cfg, ( path, cfg ) ->
-      source        = if cfg.path? then ( FS.readFileSync path, { encoding: 'utf-8', } ) else cfg.source
-      lines         = null
+      if cfg.path?
+        path        = FS.realpathSync path
+        source      = ( FS.readFileSync path, { encoding: 'utf-8', } )
+        app_details = get_app_details { path, }
+        debug 'Ωparest___1', app_details
+      else
+        source      = cfg.source
+        app_details = null
       #.....................................................................................................
+      abspath       = null
+      relpath       = null
+      lines         = null
       stages        =
         start:                Symbol 'start'
         found_require:        Symbol 'found_require'
@@ -104,10 +114,25 @@ BRICS =
               reset()
               continue
             stage       = stages.found_right_paren
-            package_type = switch true
-              when package_name.startsWith 'node:'  then 'node'
-              when package_name.startsWith './'     then 'local'
-              when package_name.startsWith '../'    then 'local'
+            #...............................................................................................
+            switch true
+              #.............................................................................................
+              when package_name.startsWith 'node:'  then package_type = 'node'
+              #.............................................................................................
+              when package_name.startsWith './'
+                if app_details? then  package_type = 'inside'
+                else                  package_type = 'local'
+              #.............................................................................................
+              when package_name.startsWith '../'
+                if app_details?
+                  abspath = PATH.resolve ( PATH.dirname cfg.path ), package_name
+                  relpath = PATH.relative app_details.path, abspath
+                  debug 'Ωparest___2', { abspath, relpath, }
+                  if relpath.startsWith '../' then  package_type = 'outside'
+                  else                              package_type = 'inside'
+                else
+                  package_type = 'local'
+              #.............................................................................................
               else 'npm'
           #.................................................................................................
           when stages.found_right_paren
