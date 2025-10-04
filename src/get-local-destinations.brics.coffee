@@ -33,10 +33,10 @@ BRICS =
       user.temp           = FS.realpathSync OS.tmpdir()
       #.........................................................................................................
       app.name            = app_name
-      app.home            = PATH.join user.home, app_home, app_name
-      app.node_modules    = PATH.join app.home,         'node_modules'
-      app.dep_bin         = PATH.join app.node_modules, '.bin'
-      app.own_bin         = PATH.join app.home,         'bin'
+      app.home            = PATH.resolve user.home, app_home, app_name
+      app.node_modules    = PATH.resolve app.home,         'node_modules'
+      app.dep_bin         = PATH.resolve app.node_modules, '.bin'
+      app.own_bin         = PATH.resolve app.home,         'bin'
       #.........................................................................................................
       debug 'Ωkvr___1', R
       return R
