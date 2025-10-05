@@ -17,6 +17,7 @@ BRICS =
     FS                          = require 'node:fs'
     PATH                        = require 'node:path'
     { rpr_string,             } = ( require './rpr-string.brics' ).require_rpr_string()
+    { is_inside,              } = ( require './path-tools.brics' ).require_path_tools()
     { walk_js_tokens,
       walk_essential_js_tokens,
       rpr_token,
@@ -38,22 +39,27 @@ BRICS =
         return false unless types.pod.isa x
         return false unless types.optional_nonempty_text.isa x.path
         return false unless types.optional_nonempty_text.isa x.source
-        return false if (     x.path? ) and (     x.source? )
-        return false if ( not x.path? ) and ( not x.source? )
-        return true
+        return true if (     x.path? ) and (     x.source? )
+        return true if (     x.path? )
+        return true if (     x.source? )
+        return false
 
     #=======================================================================================================
-    walk_require_statements = nfa ( path, cfg ) ->
     # walk_require_statements = nfa walk_require_statements_cfg, ( path, cfg ) ->
+    walk_require_statements = nfa ( path, cfg ) ->
       if cfg.path?
-        path        = FS.realpathSync path
-        source      = ( FS.readFileSync path, { encoding: 'utf-8', } )
+        path        = FS.realpathSync cfg.path
+        anchor      = PATH.dirname path
+        source      = if cfg.source? then cfg.source else ( FS.readFileSync path, { encoding: 'utf-8', } )
         app_details = get_app_details { path, }
-        debug 'Ωparest___1', app_details
+      #.....................................................................................................
       else
+        path        = null # if ( cfg.path? ) then ( PATH.resolve cfg.path ) else null
+        anchor      = null
         source      = cfg.source
         app_details = null
       #.....................................................................................................
+      debug 'Ωparest___1', app_details
       abspath       = null
       relpath       = null
       lines         = null
@@ -117,23 +123,14 @@ BRICS =
             #...............................................................................................
             switch true
               #.............................................................................................
-              when package_name.startsWith 'node:'  then package_type = 'node'
-              #.............................................................................................
-              when package_name.startsWith './'
-                if app_details? then  package_type = 'inside'
-                else                  package_type = 'local'
-              #.............................................................................................
-              when package_name.startsWith '../'
-                if app_details?
-                  abspath = PATH.resolve ( PATH.dirname cfg.path ), package_name
-                  relpath = PATH.relative app_details.path, abspath
-                  debug 'Ωparest___2', { abspath, relpath, }
-                  if relpath.startsWith '../' then  package_type = 'outside'
-                  else                              package_type = 'inside'
-                else
-                  package_type = 'local'
-              #.............................................................................................
-              else 'npm'
+              when package_name.startsWith 'node:'                then  package_type  = 'node'
+              when not /// ^ \.{1,2} \/ ///.test package_name     then  package_type  = 'npm'
+              when app_details?
+                package_location = PATH.resolve anchor, package_name
+                if ( is_inside app_details.path, package_location )   then  package_type  = 'inside'
+                else                                                    package_type  = 'outside'
+              else
+                package_type                                                          = 'unresolved'
           #.................................................................................................
           when stages.found_right_paren
             switch true
