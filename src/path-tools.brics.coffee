@@ -27,7 +27,6 @@ here.is_inside = ( anchor, probe ) ->
   abs_anchor  = PATH.resolve  anchor
   abs_probe   = PATH.resolve  abs_anchor, probe
   rel_path    = PATH.relative abs_anchor, abs_probe
-  # debug 'Ωdeimst___2', { anchor, abs_anchor, abs_probe, rel_path, }
   #.........................................................................................................
   switch true
     when rel_path is ''             then return true
