@@ -59,7 +59,6 @@ BRICS =
         source      = cfg.source
         app_details = null
       #.....................................................................................................
-      debug 'Ωparest___1', app_details
       abspath       = null
       relpath       = null
       lines         = null
@@ -70,14 +69,17 @@ BRICS =
         found_string_literal: Symbol 'found_string_literal'
         found_right_paren:    Symbol 'found_right_paren'
       #.....................................................................................................
-      stage         = stages.start
-      package_name  = null
-      line_nr       = null
+      state         =
+        stage:            stages.start
+        pkg_selector:     null
+        pkg_type:         null
+        line_nr:          null
       #.....................................................................................................
       reset = ->
-        stage         = stages.start
-        package_name  = null
-        line_nr       = null
+        state.stage         = stages.start
+        state.pkg_selector  = null
+        state.pkg_type      = null
+        state.line_nr       = null
         return null
       #.....................................................................................................
       warning_from_token = ( token ) ->
@@ -90,47 +92,47 @@ BRICS =
         # continue if token.type is 'warning'
         continue if token.categories?.has 'whitespace'
         #...................................................................................................
-        switch stage
+        switch state.stage
           #.................................................................................................
           when stages.start
             unless ( token.type is 'IdentifierName' ) and ( token.value is 'require' )
               reset()
               continue
-            stage = stages.found_require
-            line_nr = token.line_nr
+            state.stage         = stages.found_require
+            state.line_nr       = token.line_nr
           #.................................................................................................
           when stages.found_require
             unless ( token.type is 'Punctuator' ) and ( token.value is '(' )
               yield warning_from_token token
               reset()
               continue
-            stage = stages.found_left_paren
+            state.stage         = stages.found_left_paren
           #.................................................................................................
           when stages.found_left_paren
             unless ( token.categories.has 'string_literals' )
               yield warning_from_token token
               reset()
               continue
-            package_name    = eval token.value
-            stage     = stages.found_string_literal
+            state.pkg_selector  = eval token.value
+            state.stage         = stages.found_string_literal
           #.................................................................................................
           when stages.found_string_literal
             unless ( token.type is 'Punctuator' ) and ( token.value is ')' )
               yield warning_from_token token
               reset()
               continue
-            stage       = stages.found_right_paren
+            state.stage         = stages.found_right_paren
             #...............................................................................................
             switch true
               #.............................................................................................
-              when package_name.startsWith 'node:'                then  package_type  = 'node'
-              when not /// ^ \.{1,2} \/ ///.test package_name     then  package_type  = 'npm'
+              when state.pkg_selector.startsWith 'node:'                then  state.pkg_type  = 'node'
+              when not /// ^ \.{1,2} \/ ///.test state.pkg_selector     then  state.pkg_type  = 'npm'
               when app_details?
-                package_location = PATH.resolve anchor, package_name
-                if ( is_inside app_details.path, package_location )   then  package_type  = 'inside'
-                else                                                    package_type  = 'outside'
+                pkg_location = PATH.resolve anchor, state.pkg_selector
+                if ( is_inside app_details.path, pkg_location )         then  state.pkg_type  = 'inside'
+                else                                                          state.pkg_type  = 'outside'
               else
-                package_type                                                          = 'unresolved'
+                state.pkg_type                                                                = 'unresolved'
           #.................................................................................................
           when stages.found_right_paren
             switch true
@@ -139,8 +141,12 @@ BRICS =
               when ( token.type is 'SingleLineComment'                        )
                 annotation = token.value.replace /^\s*\/\/\s*/, ''
               else continue
-            yield { type: 'require', line_nr, package_type, package_name, annotation, }
-            # yield { type: 'require', path, line_nr, package_name, }
+            yield {
+              type:             'require',
+              line_nr:          state.line_nr,
+              pkg_type:         state.pkg_type,
+              pkg_selector:     state.pkg_selector,
+              annotation, }
             reset()
       #.....................................................................................................
       return null
