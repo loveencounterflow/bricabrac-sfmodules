@@ -69,18 +69,15 @@ BRICS =
         found_string_literal: Symbol 'found_string_literal'
         found_right_paren:    Symbol 'found_right_paren'
       #.....................................................................................................
-      state         =
-        stage:            stages.start
-        pkg_selector:     null
-        pkg_type:         null
-        line_nr:          null
-      #.....................................................................................................
       reset = ->
-        state.stage         = stages.start
-        state.pkg_selector  = null
-        state.pkg_type      = null
-        state.line_nr       = null
+        state.stage           = stages.start
+        state.pkg_selector    = null
+        state.pkg_disposition = null
+        state.line_nr         = null
         return null
+      #.....................................................................................................
+      state         = {}
+      reset()
       #.....................................................................................................
       warning_from_token = ( token ) ->
         lines  ?= [ null, ( source.split '\n' )..., ]
@@ -125,14 +122,14 @@ BRICS =
             #...............................................................................................
             switch true
               #.............................................................................................
-              when state.pkg_selector.startsWith 'node:'                then  state.pkg_type  = 'node'
-              when not /// ^ \.{1,2} \/ ///.test state.pkg_selector     then  state.pkg_type  = 'npm'
+              when state.pkg_selector.startsWith 'node:'            then  state.pkg_disposition = 'node'
+              when not /// ^ \.{1,2} \/ ///.test state.pkg_selector then  state.pkg_disposition = 'npm'
               when app_details?
                 pkg_location = PATH.resolve anchor, state.pkg_selector
-                if ( is_inside app_details.path, pkg_location )         then  state.pkg_type  = 'inside'
-                else                                                          state.pkg_type  = 'outside'
+                if ( is_inside app_details.path, pkg_location )     then  state.pkg_disposition = 'inside'
+                else                                                      state.pkg_disposition = 'outside'
               else
-                state.pkg_type                                                                = 'unresolved'
+                state.pkg_disposition                                                           = 'unresolved'
           #.................................................................................................
           when stages.found_right_paren
             switch true
@@ -144,7 +141,7 @@ BRICS =
             yield {
               type:             'require',
               line_nr:          state.line_nr,
-              pkg_type:         state.pkg_type,
+              pkg_disposition:  state.pkg_disposition,
               pkg_selector:     state.pkg_selector,
               annotation, }
             reset()
