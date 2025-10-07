@@ -71,8 +71,8 @@ BRICS =
       #.....................................................................................................
       reset = ->
         state.stage           = stages.start
-        state.pkg_selector    = null
-        state.pkg_disposition = null
+        state.selector        = null
+        state.disposition     = null
         state.line_nr         = null
         return null
       #.....................................................................................................
@@ -95,41 +95,41 @@ BRICS =
             unless ( token.type is 'IdentifierName' ) and ( token.value is 'require' )
               reset()
               continue
-            state.stage         = stages.found_require
-            state.line_nr       = token.line_nr
+            state.stage     = stages.found_require
+            state.line_nr   = token.line_nr
           #.................................................................................................
           when stages.found_require
             unless ( token.type is 'Punctuator' ) and ( token.value is '(' )
               yield warning_from_token token
               reset()
               continue
-            state.stage         = stages.found_left_paren
+            state.stage     = stages.found_left_paren
           #.................................................................................................
           when stages.found_left_paren
             unless ( token.categories.has 'string_literals' )
               yield warning_from_token token
               reset()
               continue
-            state.pkg_selector  = eval token.value
-            state.stage         = stages.found_string_literal
+            state.selector  = eval token.value
+            state.stage     = stages.found_string_literal
           #.................................................................................................
           when stages.found_string_literal
             unless ( token.type is 'Punctuator' ) and ( token.value is ')' )
               yield warning_from_token token
               reset()
               continue
-            state.stage         = stages.found_right_paren
+            state.stage     = stages.found_right_paren
             #...............................................................................................
             switch true
               #.............................................................................................
-              when state.pkg_selector.startsWith 'node:'            then  state.pkg_disposition = 'node'
-              when not /// ^ \.{1,2} \/ ///.test state.pkg_selector then  state.pkg_disposition = 'npm'
+              when state.selector.startsWith 'node:'            then  state.disposition = 'node'
+              when not /// ^ \.{1,2} \/ ///.test state.selector then  state.disposition = 'npm'
               when app_details?
-                pkg_location = PATH.resolve anchor, state.pkg_selector
-                if ( is_inside app_details.path, pkg_location )     then  state.pkg_disposition = 'inside'
-                else                                                      state.pkg_disposition = 'outside'
+                pkg_location = PATH.resolve anchor, state.selector
+                if ( is_inside app_details.path, pkg_location ) then  state.disposition = 'inside'
+                else                                                  state.disposition = 'outside'
               else
-                state.pkg_disposition                                                           = 'unresolved'
+                state.disposition                                                       = 'unresolved'
           #.................................................................................................
           when stages.found_right_paren
             switch true
@@ -141,8 +141,8 @@ BRICS =
             yield {
               type:             'require',
               line_nr:          state.line_nr,
-              pkg_disposition:  state.pkg_disposition,
-              pkg_selector:     state.pkg_selector,
+              disposition:      state.disposition,
+              selector:         state.selector,
               annotation, }
             reset()
       #.....................................................................................................
