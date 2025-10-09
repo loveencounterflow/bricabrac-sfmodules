@@ -42,7 +42,7 @@ require_jetstream = ->
     #-------------------------------------------------------------------------------------------------------
     get_first: ( P... ) ->
       if ( R = @run P... ).length is 0
-        throw new Error "Ωjstrm___3 no result"
+        throw new Error "Ωjstrm___1 no result"
       return R[ 0 ]
 
     #-------------------------------------------------------------------------------------------------------
@@ -55,16 +55,16 @@ require_jetstream = ->
 
     #-------------------------------------------------------------------------------------------------------
     push: ( gfn ) ->
+      # if gfn instanceof Jetstream
+      #   gfn = nameit 'jetstream', ( d ) -> yield from original_gfn d
+      # else
       switch type = type_of gfn
         when 'function'
           original_gfn  = gfn
-          if gfn instanceof Jetstream
-            gfn = nameit 'jetstream', ( d ) -> yield from original_gfn d
-          else
-            gfn = nameit "(watcher)_#{original_gfn.name}", ( d ) -> original_gfn d; yield d
+          gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) -> original_gfn d; yield d
         when 'generatorfunction'
           null
-        else "throw new Error expect a synchronous function or a synchronous generator function, got a #{type}"
+        else throw new Error "Ωjstrm___2 expected a synchronous function or a synchronous generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
       first       = null
@@ -81,15 +81,23 @@ require_jetstream = ->
       nxt         = null
       has_nxt     = null
       #.....................................................................................................
-      R = nameit gfn.name, do ( me = @ ) -> ( d ) ->
+      R = nameit "(managed)_#{gfn.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt             = me.transforms[ my_idx + 1 ]
           has_nxt         = nxt?
         #...................................................................................................
-        yield from gfn first if has_first
+        if has_first
+          # yield from gfn first
+          if has_nxt  then  ( yield from nxt j  ) for j from gfn first
+          else              ( yield j           ) for j from gfn first
+        #...................................................................................................
         if has_nxt  then  ( yield from nxt j  ) for j from gfn d
         else              ( yield j           ) for j from gfn d
-        yield from gfn last if has_last
+        #...................................................................................................
+        if has_last
+          if has_nxt  then  ( yield from nxt j  ) for j from gfn last
+          else              ( yield j           ) for j from gfn last
+          # yield from gfn last
         #...................................................................................................
         return null
       #.....................................................................................................
