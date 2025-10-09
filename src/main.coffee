@@ -11,7 +11,7 @@ Object.assign module.exports, require './walk-js-tokens.brics'
 Object.assign module.exports, require './rpr-string.brics'
 Object.assign module.exports, require './parse-require-statements.brics'
 Object.assign module.exports, require './path-tools.brics'
-Object.assign module.exports, require './jet-stream.brics'
+Object.assign module.exports, require './jetstream.brics'
 Object.assign module.exports, { unstable: {
   ( require './unstable-brics'                                    )...,
   ( require './unstable-benchmark-brics'                          )...,
