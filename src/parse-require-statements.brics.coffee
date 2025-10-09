@@ -31,7 +31,7 @@ BRICS =
       pod:                      isa: ( x ) -> x? and ( Object.getPrototypeOf x ) in [ null, object_prototype, ]
       text:                     isa: ( x ) -> ( typeof x ) is 'string'
       nonempty_text:            isa: ( x ) -> ( types.text.isa x ) and ( x.length > 0 )
-      optional_nonempty_text:   isa: ( x ) -> ( not x? ) or ( type.nonempty_text.isa x )
+      optional_nonempty_text:   isa: ( x ) -> ( not x? ) or ( types.nonempty_text.isa x )
     #.......................................................................................................
     walk_require_statements_cfg =
       template:   { path: null, source: null, }
