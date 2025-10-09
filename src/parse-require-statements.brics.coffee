@@ -24,7 +24,7 @@ BRICS =
       summarize,              } = ( require './walk-js-tokens.brics'    ).require_walk_js_tokens()
     { get_app_details,        } = ( require './unstable-callsite-brics' ).require_get_app_details()
     { nfa,
-      get_signature,          } = require 'normalize-function-arguments'
+      get_signature,          } = require '../../normalize-function-arguments'
     #.......................................................................................................
     object_prototype            = Object.getPrototypeOf {}
     types                       =
@@ -45,8 +45,7 @@ BRICS =
         return false
 
     #=======================================================================================================
-    # walk_require_statements = nfa walk_require_statements_cfg, ( path, cfg ) ->
-    walk_require_statements = nfa ( path, cfg ) ->
+    walk_require_statements = nfa walk_require_statements_cfg, walk_require_statements = ( path, cfg ) ->
       if cfg.path?
         path        = FS.realpathSync cfg.path
         anchor      = PATH.dirname path
