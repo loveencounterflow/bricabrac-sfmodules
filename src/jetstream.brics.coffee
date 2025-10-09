@@ -10,17 +10,22 @@
 #===========================================================================================================
 require_jetstream = ->
   { nameit,               } = ( require './various-brics' ).require_nameit()
-  { type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
+  { type_of: _type_of,    } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
   { hide,
     set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
   CFG                       = Symbol 'CFG'
-  internals                 = Object.freeze { CFG, }
 
   #=========================================================================================================
-  $ = ( cfg, fn ) ->
-    ### TAINT do not change original function ###
-    fn[CFG] = cfg
-    return fn
+  type_of = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
+
+  #=========================================================================================================
+  $ = ( cfg, gfn ) ->
+    switch type = type_of gfn
+      when 'jetstream'         then R = nameit '(cfg)_(jetstream)',           ( d ) -> yield from gfn.walk.call @, d
+      when 'function'          then R = nameit "(cfg)_(watcher)_#{gfn.name}", ( d ) -> gfn.call @, d; yield d
+      when 'generatorfunction' then R = nameit "(cfg)_#{gfn.name}",           ( d ) -> yield from gfn.call @, d
+    R[CFG] = cfg
+    return R
 
   #=========================================================================================================
   class Jetstream
@@ -55,16 +60,16 @@ require_jetstream = ->
 
     #-------------------------------------------------------------------------------------------------------
     push: ( gfn ) ->
-      # if gfn instanceof Jetstream
-      #   gfn = nameit 'jetstream', ( d ) -> yield from original_gfn d
-      # else
       switch type = type_of gfn
+        when 'jetstream'
+          original_gfn  = gfn
+          gfn           = nameit '(jetstream)', ( d ) -> yield from original_gfn.walk d
         when 'function'
           original_gfn  = gfn
           gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) -> original_gfn d; yield d
         when 'generatorfunction'
           null
-        else throw new Error "Ωjstrm___2 expected a synchronous function or a synchronous generator function, got a #{type}"
+        else throw new Error "Ωjstrm___2 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
       first       = null
@@ -97,6 +102,7 @@ require_jetstream = ->
       return R
 
   #=========================================================================================================
+  internals = Object.freeze { CFG, type_of, }
   return exports = { Jetstream, $, internals, }
 
 
