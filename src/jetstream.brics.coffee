@@ -79,25 +79,17 @@ require_jetstream = ->
         last        = cfg.last  if has_last
       #.....................................................................................................
       nxt         = null
-      has_nxt     = null
+      yielder     = null
       #.....................................................................................................
       R = nameit "(managed)_#{gfn.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
-          nxt             = me.transforms[ my_idx + 1 ]
-          has_nxt         = nxt?
+          nxt = me.transforms[ my_idx + 1 ]
+          if nxt? then  yielder = ( d ) -> ( yield from nxt j  ) for j from gfn d
+          else          yielder = ( d ) -> ( yield j           ) for j from gfn d
         #...................................................................................................
-        if has_first
-          # yield from gfn first
-          if has_nxt  then  ( yield from nxt j  ) for j from gfn first
-          else              ( yield j           ) for j from gfn first
-        #...................................................................................................
-        if has_nxt  then  ( yield from nxt j  ) for j from gfn d
-        else              ( yield j           ) for j from gfn d
-        #...................................................................................................
-        if has_last
-          if has_nxt  then  ( yield from nxt j  ) for j from gfn last
-          else              ( yield j           ) for j from gfn last
-          # yield from gfn last
+        yield from yielder first if has_first
+        yield from yielder d
+        yield from yielder last  if has_last
         #...................................................................................................
         return null
       #.....................................................................................................
