@@ -13,6 +13,6 @@
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
     "env-paths": "^3.0.0",
-    "normalize-function-arguments": "^0.1.0"
+    "normalize-function-arguments": "^0.2.0"
   }
 }
