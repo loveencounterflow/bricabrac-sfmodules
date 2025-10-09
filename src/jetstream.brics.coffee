@@ -14,6 +14,7 @@ require_jetstream = ->
   { hide,
     set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
   CFG                       = Symbol 'CFG'
+  internals                 = Object.freeze { CFG, }
 
   #=========================================================================================================
   $ = ( cfg, fn ) ->
@@ -31,15 +32,26 @@ require_jetstream = ->
     #-------------------------------------------------------------------------------------------------------
     constructor: ->
       ### TAINT use Object.freeze, push sets new array ###
-      me          = @
-      me.transforms = transforms = []
-      callable    = ( d ) ->
-        return yield d if transforms.length is 0
-        yield from transforms[ 0 ] d
-      Object.setPrototypeOf callable, @
-      set_getter callable, 'size',     => transforms.length
-      set_getter callable, 'is_empty', => transforms.length is 0
-      return callable
+      @transforms = []
+      return undefined
+
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'length',   -> @transforms.length
+    set_getter @::, 'is_empty', -> @transforms.length is 0
+
+    #-------------------------------------------------------------------------------------------------------
+    get_first: ( P... ) ->
+      if ( R = @run P... ).length is 0
+        throw new Error "Ωjstrm___3 no result"
+      return R[ 0 ]
+
+    #-------------------------------------------------------------------------------------------------------
+    run: ( P... ) -> [ ( @walk P... )..., ]
+
+    #-------------------------------------------------------------------------------------------------------
+    walk:       ( d ) ->
+      return yield d if @is_empty
+      yield from @transforms[ 0 ] d
 
     #-------------------------------------------------------------------------------------------------------
     push: ( gfn ) ->
@@ -54,7 +66,6 @@ require_jetstream = ->
           null
         else "throw new Error expect a synchronous function or a synchronous generator function, got a #{type}"
       #.....................................................................................................
-      # debug 'Ωdeimst___1', @transforms
       my_idx      = @transforms.length
       first       = null
       last        = null
@@ -75,7 +86,6 @@ require_jetstream = ->
           nxt             = me.transforms[ my_idx + 1 ]
           has_nxt         = nxt?
         #...................................................................................................
-        # debug 'Ωdeimst___2', gfn, nxt
         yield from gfn first if has_first
         if has_nxt  then  ( yield from nxt j  ) for j from gfn d
         else              ( yield j           ) for j from gfn d
@@ -87,7 +97,7 @@ require_jetstream = ->
       return R
 
   #=========================================================================================================
-  return exports = { Jetstream, $, }
+  return exports = { Jetstream, $, internals, }
 
 
 
