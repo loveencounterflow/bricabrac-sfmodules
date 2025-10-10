@@ -32,6 +32,13 @@
     which fails when a sub-pipeline has been built with a different private symbol
   * **`[—]`** maybe treat all symbols specially? Could match an `s1 = Symbol 'A'`, `s2 = Symbol 'A'` by
     demanding configuration of `$ { A, }, ( d ) -> ...` matching the string value of symbols
+  * **`[—]`** 'Signals' are meta-data as opposed to 'common'/'business data'. As such signals should, in
+    general, only be sent into those transforms that are built to digest them; ex. when you have a transform
+    `( d ) -> d ** 2`, that transform will fail when anything but a number is sent into it. That's a Good
+    Thing if the business data itself contained something else but numbers (now you know your pipeline was
+    incorrectly constructed), bit a Bad Thing if this happens because the transform was called with a signal
+    it didn't ask for.
+  * **`[—]`** hold open the possiblity to send arbitrary strcutured data as signals, not only `Symbol`s
 
 ### Loupe, Show
 
