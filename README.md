@@ -59,16 +59,68 @@
     * Generic configuration could use `$ { select, }, ( d ) -> ...` where `select` is a boolean or a boolen
       function.
     * The default is `select: ( d ) -> not @is_signal d` (or `select: 'data'`), i.e. 'deselect all signals'.
-      `select: -> true` ( or indeed `select: true`) means 'send all business and meta data'. `select: false`
+      `select: -> true` (or indeed `select: true`) means 'send all business and meta data'. `select: false`
       indicates 'transform not used'. `select: 'signals'` means 'send all signals but no data'.
     * `### TAINT` unify usage of 'meta', 'signal'
     * Un`select`ed data that is not sent into the transform is to be sent on to the next transform.
     * The custom `select()` function will be called in a context that provides convenience methods.
-    * As a shortcut, properties like `start` and `end` will match.
+    * As a shortcut, a descriptive string may be used to configure selection:
+      * format similar to CSS selectors
+      * `'data'`: select all business data, no signals (the default)
+      * `'signal'`: select all signals, no data
+      * `'signal, data'`: select all data and all signals (same as `select: ( -> true )`)
+      * `'data, signal.end'`: will match only
+
+    * Another approach:
+      * `Jetstream::push()` defined as `( selectors..., transform ) -> ...`
+      * `selectors` can be one or more single and arrays of selectors
+      * will be flattened, meaning `Jetstream::push s1, [ s2, [ s3, ], ], s4, t` means the same as
+        `Jetstream::push s1, s2, s3, s4, t`
+      * at first we don't support concatenation of selectors, only series of disjunct selectors
+      * concatenated selectors will likely have to default to logical conjunction ('and')
+      * as such concatening selectors with `,` (comma) will likely be used to indicate disjunction ('or'),
+        as in CSS
+      * transform gets to see item when (at least) one selector matches
+        * `'data'` matches business data items, implicitly present
+        * `'no-data'` prevents business data items from being sent
+        * `'signal'` matches signals
+        * `'no-signal'` prevents signals from being sent, implicitly present
+        * `'signal#start'` matches signals with ID (name) `'start'`
+        * `'signal#end'` matches signals with ID (name) `'start'`
+        * <del>`'signal#start#end'` matches signals with IDs `'start'` or `'end'`</del>
+        * `'signal#start', 'signal#end'` matches signals with IDs `'start'` or `'end'`
+        * `'#start', '#end'` same, implicitly referring to signals
+        * ID selectors implicitly refer to `signal`, therefore `#start` equals `signal#start`
+        * CSS combinators:
+          `+`—Next-sibling combinator
+          `>`—Child combinator
+          `~`—Subsequent sibling combinator
+          " "—Descendant combinator
+          `|`—Namespace separator
+          `,`—Selector list
+          `&`—???
+          `*`—???
+        * free:
+          * `!`
+          * `?`
+          * `/`
+          * `%`
+          * `$`
+          * `^`
+          * `=`
+
+
+    ```coffee
+    "abc"           -> <data type=text value='abc'/>
+    876             -> <data type=float value='876'/>
+    Symbol 'start'  -> <signal id=start/>
+    ```
+
+    ```coffee
+    stream.push 'data', '#start', '#end', ( d ) ->
+    ```
 
     ```
-    stream.push $ { ..., }, ( d, ctx ) ->
-    stream.push $ { ..., }, ( d, m ) ->
     s = String Symbol 'az'
     'Symbol(az)'
     d = ( s )[ 6 ... s.length ]
