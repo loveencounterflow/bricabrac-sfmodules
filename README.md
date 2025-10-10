@@ -52,11 +52,19 @@
     symbol). In essence we're using the same data parameter `d` to transport both business data and meta
     data.
   * **`[—]`** *The Future*:
-    * <del>`d` should only be used for business data. Meta data will use a second parameter of the transform.</del>
-    * meta data has distinct types: private symbols, public symbols, instances of class `Signal`
-    * meta data only sent to transforms that are explicitly configured to handle them
-    * generic configuration could use `$ { select, }, ( d ) -> ...` where `select` is a boolean function;
-      `select: -> true` ( or indeed `select: true` ) means 'send all business and meta data'.
+    * Meta data has distinct types: private symbols, public symbols, instances of class `Signal`.
+    * Each piece of meta data has a name; for symbols `s`, that's `( String s )[ 7 ... ( String s ).length -
+      1 ]`.
+    * Meta data only sent to transforms that are explicitly configured to handle them.
+    * Generic configuration could use `$ { select, }, ( d ) -> ...` where `select` is a boolean or a boolen
+      function.
+    * The default is `select: ( d ) -> not @is_signal d` (or `select: 'data'`), i.e. 'deselect all signals'.
+      `select: -> true` ( or indeed `select: true`) means 'send all business and meta data'. `select: false`
+      indicates 'transform not used'. `select: 'signals'` means 'send all signals but no data'.
+    * `### TAINT` unify usage of 'meta', 'signal'
+    * Un`select`ed data that is not sent into the transform is to be sent on to the next transform.
+    * The custom `select()` function will be called in a context that provides convenience methods.
+    * As a shortcut, properties like `start` and `end` will match.
 
     ```
     stream.push $ { ..., }, ( d, ctx ) ->
