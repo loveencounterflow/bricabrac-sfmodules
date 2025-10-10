@@ -36,9 +36,35 @@
     general, only be sent into those transforms that are built to digest them; ex. when you have a transform
     `( d ) -> d ** 2`, that transform will fail when anything but a number is sent into it. That's a Good
     Thing if the business data itself contained something else but numbers (now you know your pipeline was
-    incorrectly constructed), bit a Bad Thing if this happens because the transform was called with a signal
-    it didn't ask for.
-  * **`[—]`** hold open the possiblity to send arbitrary strcutured data as signals, not only `Symbol`s
+    incorrectly constructed), but a Bad Thing if this happens because now the transform was called with a
+    signal it didn't ask for and isn't prepared to deal with.
+  * **`[—]`** hold open the possiblity to send arbitrary structured data as signals (meta data), not only
+    `Symbol`s
+  * **`[—]`** *The Past*: The way we've been dealing with signals is we had a few known ones like `start`,
+    `before_end`, `end`, and so on; the user would declare them with the `$` (transform configurator)
+    method, using values of their own choosing. Most of the time signal values are declared in the
+    application as appropriately named private symbols such as right before usage `start = Symbol 'start'`,
+    then the transform gets declared and added as `$ { start, }, t = ( d ) -> ...`, finally, in the
+    transform, a check `d is start` is used to sort out meta data from business data. This all hinges on the
+    name (`start`) being known to the pipeline object (`Jetstream` instance) knowing the *names* (`start`,
+    `before_end` and so on) and their *semantics* (so names are a controlled vocabulary), and the transform
+    knowing their *identity* (because you can't check for a specific private symbol if you don't hold that
+    symbol). In essence we're using the same data parameter `d` to transport both business data and meta
+    data.
+  * **`[—]`** *The Future*:
+    * `d` should only be used for business data. Meta data will use a second parameter of the transform.
+    *
+
+    ```
+    stream.push $ { ..., }, ( d, ctx ) ->
+    stream.push $ { ..., }, ( d, m ) ->
+    s = String Symbol 'az'
+    'Symbol(az)'
+    d = ( s )[ 6 ... s.length ]
+    '(az)'
+    d = ( s )[ 7 ... s.length - 1 ]
+
+    ```
 
 ### Loupe, Show
 
