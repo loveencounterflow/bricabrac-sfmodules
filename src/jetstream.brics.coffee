@@ -54,7 +54,7 @@ require_jetstream = ->
     run: ( P... ) -> [ ( @walk P... )..., ]
 
     #-------------------------------------------------------------------------------------------------------
-    walk:       ( d ) ->
+    walk: ( d ) ->
       return yield d if @is_empty
       yield from @transforms[ 0 ] d
 
