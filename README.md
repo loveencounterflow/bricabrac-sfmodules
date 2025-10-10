@@ -4,6 +4,7 @@
 
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
+    - [JetStream](#jetstream)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
       - [Random: Implementation Structure](#random-implementation-structure)
@@ -21,6 +22,16 @@
 
 
 ## To Do
+
+### JetStream
+
+* **`[—]`** When instantiating a pipeline (`new Jetstream()`), should be possible to register signals?
+  Registered signals would then only be sent into transforms that are configured to listen to them (ex. `$ {
+  first, }, ( d ) -> ...`). Signals can be sent by tranforms or the `Jetstream` API.
+  * **`[—]`** problem with that: composing pipelines. Transforms rely on testing for `d is whatever_signal`
+    which fails when a sub-pipeline has been built with a different private symbol
+  * **`[—]`** maybe treat all symbols specially? Could match an `s1 = Symbol 'A'`, `s2 = Symbol 'A'` by
+    demanding configuration of `$ { A, }, ( d ) -> ...` matching the string value of symbols
 
 ### Loupe, Show
 
