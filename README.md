@@ -52,8 +52,11 @@
     symbol). In essence we're using the same data parameter `d` to transport both business data and meta
     data.
   * **`[—]`** *The Future*:
-    * `d` should only be used for business data. Meta data will use a second parameter of the transform.
-    *
+    * <del>`d` should only be used for business data. Meta data will use a second parameter of the transform.</del>
+    * meta data has distinct types: private symbols, public symbols, instances of class `Signal`
+    * meta data only sent to transforms that are explicitly configured to handle them
+    * generic configuration could use `$ { select, }, ( d ) -> ...` where `select` is a boolean function;
+      `select: -> true` ( or indeed `select: true` ) means 'send all business and meta data'.
 
     ```
     stream.push $ { ..., }, ( d, ctx ) ->
