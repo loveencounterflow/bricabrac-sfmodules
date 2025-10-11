@@ -5,6 +5,7 @@
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
     - [JetStream](#jetstream)
+      - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
       - [Random: Implementation Structure](#random-implementation-structure)
@@ -139,6 +140,10 @@ d = ( s )[ 6 ... s.length ]
 d = ( s )[ 7 ... s.length - 1 ]
 
 ```
+
+#### See Also
+
+* in case more complicated selectors must be parsed: https://github.com/fb55/css-what
 
 ### Loupe, Show
 
