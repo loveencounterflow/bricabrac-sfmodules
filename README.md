@@ -25,24 +25,24 @@
 
 ### JetStream
 
-* **`[—]`** When instantiating a pipeline (`new Jetstream()`), should be possible to register signals?
-  Registered signals would then only be sent into transforms that are configured to listen to them (ex. `$ {
+* **`[—]`** When instantiating a pipeline (`new Jetstream()`), should be possible to register cues?
+  Registered cues would then only be sent into transforms that are configured to listen to them (ex. `$ {
   first, }, ( d ) -> ...`). Signals can be sent by tranforms or the `Jetstream` API.
-  * **`[—]`** problem with that: composing pipelines. Transforms rely on testing for `d is whatever_signal`
+  * **`[—]`** problem with that: composing pipelines. Transforms rely on testing for `d is whatever_cue`
     which fails when a sub-pipeline has been built with a different private symbol
   * **`[—]`** maybe treat all symbols specially? Could match an `s1 = Symbol 'A'`, `s2 = Symbol 'A'` by
     demanding configuration of `$ { A, }, ( d ) -> ...` matching the string value of symbols
-  * **`[—]`** 'Signals' are meta-data as opposed to 'common'/'business data'. As such signals should, in
+  * **`[—]`** 'Signals' are meta-data as opposed to 'common'/'business data'. As such cues should, in
     general, only be sent into those transforms that are built to digest them; ex. when you have a transform
     `( d ) -> d ** 2`, that transform will fail when anything but a number is sent into it. That's a Good
     Thing if the business data itself contained something else but numbers (now you know your pipeline was
     incorrectly constructed), but a Bad Thing if this happens because now the transform was called with a
-    signal it didn't ask for and isn't prepared to deal with.
-  * **`[—]`** hold open the possiblity to send arbitrary structured data as signals (meta data), not only
+    cue it didn't ask for and isn't prepared to deal with.
+  * **`[—]`** hold open the possiblity to send arbitrary structured data as cues (meta data), not only
     `Symbol`s
-  * **`[—]`** *The Past*: The way we've been dealing with signals is we had a few known ones like `start`,
+  * **`[—]`** *The Past*: The way we've been dealing with cues is we had a few known ones like `start`,
     `before_end`, `end`, and so on; the user would declare them with the `$` (transform configurator)
-    method, using values of their own choosing. Most of the time signal values are declared in the
+    method, using values of their own choosing. Most of the time cue values are declared in the
     application as appropriately named private symbols such as right before usage `start = Symbol 'start'`,
     then the transform gets declared and added as `$ { start, }, t = ( d ) -> ...`, finally, in the
     transform, a check `d is start` is used to sort out meta data from business data. This all hinges on the
@@ -58,18 +58,18 @@
     * Meta data only sent to transforms that are explicitly configured to handle them.
     * Generic configuration could use `$ { select, }, ( d ) -> ...` where `select` is a boolean or a boolen
       function.
-    * The default is `select: ( d ) -> not @is_signal d` (or `select: 'data'`), i.e. 'deselect all signals'.
+    * The default is `select: ( d ) -> not @is_cue d` (or `select: 'data'`), i.e. 'deselect all cues'.
       `select: -> true` (or indeed `select: true`) means 'send all business and meta data'. `select: false`
-      indicates 'transform not used'. `select: 'signals'` means 'send all signals but no data'.
-    * `### TAINT` unify usage of 'meta', 'signal'
+      indicates 'transform not used'. `select: 'cues'` means 'send all cues but no data'.
+    * `### TAINT` unify usage of 'meta', 'cue'
     * Un`select`ed data that is not sent into the transform is to be sent on to the next transform.
     * The custom `select()` function will be called in a context that provides convenience methods.
     * As a shortcut, a descriptive string may be used to configure selection:
       * format similar to CSS selectors
-      * `'data'`: select all business data, no signals (the default)
-      * `'signal'`: select all signals, no data
-      * `'signal, data'`: select all data and all signals (same as `select: ( -> true )`)
-      * `'data, signal.end'`: will match only
+      * `'data'`: select all business data, no cues (the default)
+      * `'cue'`: select all cues, no data
+      * `'cue, data'`: select all data and all cues (same as `select: ( -> true )`)
+      * `'data, cue.end'`: will match only
 
     * Another approach:
       * `Jetstream::push()` defined as `( selectors..., transform ) -> ...`
@@ -81,16 +81,32 @@
       * as such concatening selectors with `,` (comma) will likely be used to indicate disjunction ('or'),
         as in CSS
       * transform gets to see item when (at least) one selector matches
-        * `'data'` matches business data items, implicitly present
-        * `'no-data'` prevents business data items from being sent
-        * `'signal'` matches signals
-        * `'no-signal'` prevents signals from being sent, implicitly present
-        * `'signal#start'` matches signals with ID (name) `'start'`
-        * `'signal#end'` matches signals with ID (name) `'start'`
-        * <del>`'signal#start#end'` matches signals with IDs `'start'` or `'end'`</del>
-        * `'signal#start', 'signal#end'` matches signals with IDs `'start'` or `'end'`
-        * `'#start', '#end'` same, implicitly referring to signals
-        * ID selectors implicitly refer to `signal`, therefore `#start` equals `signal#start`
+        * a missing selector expands to the `data` selector. By default, transforms get to see only data items, no cues, which
+          is the right thing to do in most cases.
+        * an empty selector selects nothing, so the transform gets skipped. As is true for transforms that
+          do not accept everything, unselected items are sent to the successor of the current transform.
+        * `data` matches business data items (implicitly present)
+        * `cue`, `cue` matches cues (opt-in); equivalent to `:not(data)`
+        * `cue#start` matches cues with ID (name) `start`
+        * `cue#end` matches cues with ID (name) `end`
+        * `cue#start,cue#end` ( or `[ 'cue#start', 'cue#end', ]` ) matches cues with IDs `start` or `end`
+        * `#start', '#end` same, implicitly referring to cues
+        * ID selectors implicitly refer to `cue`, therefore `#start` equals `cue#start`
+
+        * `:not(data)` prevents business data items from being sent (opt-out); since all items are
+          classified as either `data` or `cue`, it implicitly selects all cues
+        * `:not(cue)` prevents cues from being sent (implicitly present), implicitly selects all `data`
+          items
+      * Jetstream data items are conceptualized as HTML elements
+
+        ```
+        "abc"               -> <data type=text value='abc'/>
+        876                 -> <data type=float value='876'/>
+        Symbol     'start'  -> <cue type=symbol id=start/>
+        Symbol.for 'start'  -> <cue type=symbol id=start/>
+        ```
+
+<!--
         * CSS combinators:
           `+`—Next-sibling combinator
           `>`—Child combinator
@@ -108,26 +124,21 @@
           * `$`
           * `^`
           * `=`
+ -->
 
 
-    ```coffee
-    "abc"           -> <data type=text value='abc'/>
-    876             -> <data type=float value='876'/>
-    Symbol 'start'  -> <signal id=start/>
-    ```
+```coffee
+stream.push 'data', '#start', '#end', ( d ) ->
+```
 
-    ```coffee
-    stream.push 'data', '#start', '#end', ( d ) ->
-    ```
+```
+s = String Symbol 'az'
+'Symbol(az)'
+d = ( s )[ 6 ... s.length ]
+'(az)'
+d = ( s )[ 7 ... s.length - 1 ]
 
-    ```
-    s = String Symbol 'az'
-    'Symbol(az)'
-    d = ( s )[ 6 ... s.length ]
-    '(az)'
-    d = ( s )[ 7 ... s.length - 1 ]
-
-    ```
+```
 
 ### Loupe, Show
 
