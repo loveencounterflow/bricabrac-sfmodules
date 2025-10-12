@@ -42,11 +42,19 @@
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
   or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe
   items. If `t` is preceded by one or several arguments, those arguments will be interpreted as
-  configurations of `t`. So far selectors are the only implemented configuration option.
-* **`Jetstream::walk: ( ds... ) ->`**—
-* **`Jetstream::run: () ->`**—
-* **`Jetstream::send: () ->`**—
-* **`Jetstream::cue: () ->`**—
+  configurations of `t`. So far [selectors](#jetstream-selectors) are the only implemented configuration
+  option.
+* **`Jetstream::walk: ( ds... ) ->`**—'shelve' zero or more items in the pipeline and return an iterator
+  over the processed results. Calling `Jetstream::walk d1, d2, ...` is equivalent to calling
+  `Jetstream::send d1, d2, ...` followed by `Jetstream::walk()`. When the iterator stops, the pipeline has
+  been exhausted (no more shelved items); further processing will only occur when at least one item has been
+  sent and `Jetstream::walk()` has been called.
+* **`Jetstream::run: ( ds... ) ->`**—same as calling `Jetstream::walk()` with the same arguments, but will
+  return a list containing all results.
+* **`Jetstream::send: ( ds... ) ->`**—'shelve' zero or more items in the pipeline; processing will start
+  when `Jetstream::walk()` is called.
+* **`Jetstream::cue: ( ids... ) ->`**—send one or more cues into the pipeline. Convenience method equivalent
+  to `Jetstream::send [ ( Symbol id for id for id from ids )..., ]`
 
 <!--
 * cue < Q (see Shakespeare)
