@@ -26,6 +26,17 @@
 
 ### JetStream
 
+* JetStream is a utlity to construct data processing pipelines from series of data transform.
+* Each transform is a generator function that accepts one data item and yields any number of transformed
+  data items.
+* Because of this setup, each transform can choose to ignore a data item, or to swallow it, or to produce
+  many new data items in response.
+* This makes JetStream much more flexible and useful than approaches that depend on non-generator functions.
+  You can still build useful stuff with those but they're inherently incapable to, say, turn a (stream of)
+  string(s) into a stream of characters.
+* Currently JetStream currently only uses synchronous transforms.
+
+
 * **`[—]`** When instantiating a pipeline (`new Jetstream()`), should be possible to register cues?
   Registered cues would then only be sent into transforms that are configured to listen to them (ex. `$ {
   first, }, ( d ) -> ...`). Signals can be sent by tranforms or the `Jetstream` API.
@@ -106,27 +117,6 @@
         Symbol     'start'  -> <cue type=symbol id=start/>
         Symbol.for 'start'  -> <cue type=symbol id=start/>
         ```
-
-<!--
-        * CSS combinators:
-          `+`—Next-sibling combinator
-          `>`—Child combinator
-          `~`—Subsequent sibling combinator
-          " "—Descendant combinator
-          `|`—Namespace separator
-          `,`—Selector list
-          `&`—???
-          `*`—???
-        * free:
-          * `!`
-          * `?`
-          * `/`
-          * `%`
-          * `$`
-          * `^`
-          * `=`
- -->
-
 
 ```coffee
 stream.push 'data', '#start', '#end', ( d ) ->
