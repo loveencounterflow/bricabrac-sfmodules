@@ -5,7 +5,7 @@
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
     - [JetStream](#jetstream)
-      - [Selectors](#selectors)
+      - [JetStream Selectors](#jetstream-selectors)
       - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
@@ -142,7 +142,7 @@
 stream.push 'data', '#start', '#end', ( d ) ->
 ```
 
-#### Selectors
+#### JetStream Selectors
 
 #### See Also
 
