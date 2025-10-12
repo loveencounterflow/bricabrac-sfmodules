@@ -19,6 +19,84 @@ require_jetstream = ->
   type_of = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
 
   #=========================================================================================================
+  class Selector
+    constructor: ( selectors... ) ->
+      { selectors_rpr,
+        selectors,  } = _normalize_selectors selectors...
+      @selectors_rpr  = selectors_rpr
+      @data           = true
+      @cues           = false
+      for selector from selectors
+        switch true
+          when selector is 'data#*' then @data = true
+          when selector is 'cue#*' then @cues = true
+          when ( match = selector.match /^data#(?<id>.+)$/ )?
+            ### TAINT mention original selector next to normalized form ###
+            throw new Error "Ωjstrm_188 IDs on data items not supported, got #{selector}"
+          when ( match = selector.match /^cue#(?<id>.+)$/ )?
+            @cues = new Set() if @cues in [ true, false, ]
+            @cues.add match.groups.id
+          else null
+      @accept_all     = ( @data is true ) and ( @cues is true )
+      return undefined
+
+    #-------------------------------------------------------------------------------------------------------
+    _get_excerpt: -> { data: @data, cues: @cues, accept_all: @accept_all, }
+
+    #-------------------------------------------------------------------------------------------------------
+    select: ( item ) ->
+      return true if @accept_all
+      if is_cue = ( typeof item ) is 'symbol'
+        return true   if @cues is true
+        return false  if @cues is false
+        return @cues.has id_from_symbol item
+      return true   if @data is true
+      return false  if @data is false
+      throw new Error "Ωjstrm_189 IDs on data items not supported in selector #{rpr @toString}"
+      # return @data.has id_from_value item
+
+    #-------------------------------------------------------------------------------------------------------
+    ### TAINT should provide method to generate normalized representation ###
+    toString: -> @selectors_rpr
+
+  #---------------------------------------------------------------------------------------------------------
+  id_from_symbol = ( symbol ) ->
+    R = String symbol
+    return ( R )[ 7 ... R.length - 1 ]
+
+  #---------------------------------------------------------------------------------------------------------
+  selectors_as_list = ( selectors... ) ->
+    return [] if selectors.length is 0
+    selectors = selectors.flat Infinity
+    return [] if selectors.length is 0
+    return [ '', ] if selectors.length is 1 and selectors[ 0 ] is ''
+    selectors = selectors.join ','
+    selectors = selectors.replace /\s+/g, '' ### TAINT not generally possible ###
+    selectors = selectors.split ',' ### TAINT not generally possible ###
+    return selectors
+
+  #---------------------------------------------------------------------------------------------------------
+  normalize_selectors = ( selectors... ) -> ( _normalize_selectors selectors... ).selectors
+
+  #---------------------------------------------------------------------------------------------------------
+  _normalize_selectors = ( selectors... ) ->
+    selectors     = selectors_as_list selectors...
+    selectors_rpr = selectors.join ', '
+    R             = new Set()
+    for selector in selectors
+      switch true
+        when selector is ''             then null
+        when selector is '#'            then R.add "cue#*"
+        when /^#.+/.test selector       then R.add "cue#{selector}"
+        when /.+#$/.test selector       then R.add "#{selector}*"
+        when not /#/.test selector      then R.add "#{selector}#*"
+        else R.add selector
+    R.add 'data#*' if R.size is 0
+    R.delete '' if R.size isnt 1
+    return { selectors: R, selectors_rpr, }
+
+
+  #=========================================================================================================
   $ = ( cfg, gfn ) ->
     switch type = type_of gfn
       when 'jetstream'         then R = nameit '(cfg)_(jetstream)',           ( d ) -> yield from gfn.walk.call @, d
@@ -102,10 +180,17 @@ require_jetstream = ->
       return R
 
   #=========================================================================================================
-  internals = Object.freeze { CFG, type_of, }
+  internals = Object.freeze {
+    CFG,
+    type_of,
+    Selector,
+    _normalize_selectors,
+    normalize_selectors,
+    selectors_as_list,
+    id_from_symbol, }
   return exports = { Jetstream, $, internals, }
 
 
 
 #===========================================================================================================
-Object.assign module.exports, { require_jetstream, }
+Object.assign module.exports, do => { require_jetstream, }
