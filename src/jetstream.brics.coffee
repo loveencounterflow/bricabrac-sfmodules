@@ -24,7 +24,7 @@ require_jetstream = ->
       { selectors_rpr,
         selectors,  } = _normalize_selectors selectors...
       @selectors_rpr  = selectors_rpr
-      @data           = true
+      @data           = if selectors.size is 0 then true else false
       @cues           = false
       for selector from selectors
         switch true
