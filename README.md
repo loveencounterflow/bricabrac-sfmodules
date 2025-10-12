@@ -132,15 +132,6 @@
 stream.push 'data', '#start', '#end', ( d ) ->
 ```
 
-```
-s = String Symbol 'az'
-'Symbol(az)'
-d = ( s )[ 6 ... s.length ]
-'(az)'
-d = ( s )[ 7 ... s.length - 1 ]
-
-```
-
 #### See Also
 
 * in case more complicated selectors must be parsed: https://github.com/fb55/css-what
