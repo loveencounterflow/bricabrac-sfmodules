@@ -5,6 +5,7 @@
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
     - [JetStream](#jetstream)
+      - [Selectors](#selectors)
       - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
@@ -35,6 +36,25 @@
   You can still build useful stuff with those but they're inherently incapable to, say, turn a (stream of)
   string(s) into a stream of characters.
 * Currently JetStream currently only uses synchronous transforms.
+* Actually more of a bucket chain than a garden hose for what it's worth.
+
+
+* **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
+  or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe
+  items. If `t` is preceded by one or several arguments, those arguments will be interpreted as
+  configurations of `t`. So far selectors are the only implemented configuration option.
+* **`Jetstream::walk: ( ds... ) ->`**—
+* **`Jetstream::run: () ->`**—
+* **`Jetstream::send: () ->`**—
+* **`Jetstream::cue: () ->`**—
+
+<!--
+* cue < Q (see Shakespeare)
+* pip
+* blip (as in, a blip in the data)
+* vee (for V as in value)
+* dee (for D as in data)
+ -->
 
 
 * **`[—]`** When instantiating a pipeline (`new Jetstream()`), should be possible to register cues?
@@ -121,6 +141,8 @@
 ```coffee
 stream.push 'data', '#start', '#end', ( d ) ->
 ```
+
+#### Selectors
 
 #### See Also
 
