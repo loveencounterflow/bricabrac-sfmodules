@@ -32,7 +32,7 @@ require_jetstream = ->
           when selector is 'cue#*' then @cues = true
           when ( match = selector.match /^data#(?<id>.+)$/ )?
             ### TAINT mention original selector next to normalized form ###
-            throw new Error "Ωjstrm_188 IDs on data items not supported, got #{selector}"
+            throw new Error "Ωjstrm___1 IDs on data items not supported, got #{selector}"
           when ( match = selector.match /^cue#(?<id>.+)$/ )?
             @cues = new Set() if @cues in [ true, false, ]
             @cues.add match.groups.id
@@ -52,7 +52,7 @@ require_jetstream = ->
         return @cues.has id_from_symbol item
       return true   if @data is true
       return false  if @data is false
-      throw new Error "Ωjstrm_189 IDs on data items not supported in selector #{rpr @toString}"
+      throw new Error "Ωjstrm___2 IDs on data items not supported in selector #{rpr @toString}"
       # return @data.has id_from_value item
 
     #-------------------------------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ require_jetstream = ->
     #=======================================================================================================
     get_first: ( P... ) ->
       if ( R = @run P... ).length is 0
-        throw new Error "Ωjstrm___1 no result"
+        throw new Error "Ωjstrm___3 no result"
       return R[ 0 ]
 
     #-------------------------------------------------------------------------------------------------------
@@ -157,17 +157,26 @@ require_jetstream = ->
       return null
 
     #-------------------------------------------------------------------------------------------------------
-    push: ( gfn ) ->
+    push: ( selectors..., gfn ) ->
+      selector = new Selector selectors...
+      #.....................................................................................................
       switch type = type_of gfn
         when 'jetstream'
           original_gfn  = gfn
-          gfn           = nameit '(jetstream)', ( d ) -> yield from original_gfn.walk d
+          gfn           = nameit '(jetstream)', ( d ) ->
+            return yield d unless selector.select d
+            yield from original_gfn.walk d
         when 'function'
           original_gfn  = gfn
-          gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) -> original_gfn d; yield d
+          gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) ->
+            return yield d unless selector.select d
+            original_gfn d; yield d
         when 'generatorfunction'
-          null
-        else throw new Error "Ωjstrm___2 expected a jetstream or a synchronous function or generator function, got a #{type}"
+          original_gfn  = gfn
+          gfn           = nameit "(generator)_#{original_gfn.name}", ( d ) ->
+            return yield d unless selector.select d
+            yield from original_gfn d
+        else throw new Error "Ωjstrm___5 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
       #.....................................................................................................
