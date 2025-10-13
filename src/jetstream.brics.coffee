@@ -170,16 +170,9 @@ require_jetstream = ->
         else throw new Error "Ωjstrm___2 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
-      first       = null
-      last        = null
-      has_first   = false
-      has_last    = false
       #.....................................................................................................
       if ( cfg = gfn[ CFG ] )?
-        has_first   = Reflect.has cfg, 'first'
-        has_last    = Reflect.has cfg, 'last'
-        first       = cfg.first if has_first
-        last        = cfg.last  if has_last
+        null
       #.....................................................................................................
       nxt         = null
       yielder     = null
@@ -190,9 +183,7 @@ require_jetstream = ->
           if nxt? then  yielder = ( d ) -> ( yield from nxt j  ) for j from gfn d
           else          yielder = ( d ) -> ( yield j           ) for j from gfn d
         #...................................................................................................
-        yield from yielder first if has_first
         yield from yielder d
-        yield from yielder last  if has_last
         #...................................................................................................
         return null
       #.....................................................................................................
