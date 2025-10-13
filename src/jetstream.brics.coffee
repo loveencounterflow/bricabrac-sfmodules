@@ -96,21 +96,21 @@ require_jetstream = ->
     return { selectors: R, selectors_rpr, }
 
 
-  #=========================================================================================================
-  $ = ( cfg, gfn ) ->
-    switch type = type_of gfn
-      when 'jetstream'         then R = nameit '(cfg)_(jetstream)',           ( d ) -> yield from gfn.walk.call @, d
-      when 'function'          then R = nameit "(cfg)_(watcher)_#{gfn.name}", ( d ) -> gfn.call @, d; yield d
-      when 'generatorfunction' then R = nameit "(cfg)_#{gfn.name}",           ( d ) -> yield from gfn.call @, d
-    R[CFG] = cfg
-    return R
+  # #=========================================================================================================
+  # $ = ( cfg, gfn ) ->
+  #   switch type = type_of gfn
+  #     when 'jetstream'         then R = nameit '(cfg)_(jetstream)',           ( d ) -> yield from gfn.walk.call @, d
+  #     when 'function'          then R = nameit "(cfg)_(watcher)_#{gfn.name}", ( d ) -> gfn.call @, d; yield d
+  #     when 'generatorfunction' then R = nameit "(cfg)_#{gfn.name}",           ( d ) -> yield from gfn.call @, d
+  #   R[CFG] = cfg
+  #   return R
 
   #=========================================================================================================
   class Jetstream
 
-    #-------------------------------------------------------------------------------------------------------
-    @$: $
-    $:  $
+    # #-------------------------------------------------------------------------------------------------------
+    # @$: $
+    # $:  $
 
     #-------------------------------------------------------------------------------------------------------
     constructor: ->
@@ -199,7 +199,8 @@ require_jetstream = ->
     normalize_selectors,
     selectors_as_list,
     id_from_symbol, }
-  return exports = { Jetstream, $, internals, }
+  return exports = { Jetstream, internals, }
+  # return exports = { Jetstream, $, internals, }
 
 
 

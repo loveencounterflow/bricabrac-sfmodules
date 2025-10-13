@@ -37,6 +37,8 @@
   string(s) into a stream of characters.
 * Currently JetStream currently only uses synchronous transforms.
 * Actually more of a bucket chain than a garden hose for what it's worth.
+* Can 'configure' transforms to receive only some, not all data items; can re-use the same transform
+  in multiple configurations in a single pipeline.
 
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
@@ -109,7 +111,6 @@
       * `'data'`: select all business data, no cues (the default)
       * `'cue'`: select all cues, no data
       * `'cue, data'`: select all data and all cues (same as `select: ( -> true )`)
-      * `'data, cue.last'`: will match only
 
     * Another approach:
       * `Jetstream::push()` defined as `( selectors..., transform ) -> ...`
