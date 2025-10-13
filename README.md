@@ -80,14 +80,14 @@
     cue it didn't ask for and isn't prepared to deal with.
   * **`[—]`** hold open the possiblity to send arbitrary structured data as cues (meta data), not only
     `Symbol`s
-  * **`[—]`** *The Past*: The way we've been dealing with cues is we had a few known ones like `start`,
-    `before_end`, `end`, and so on; the user would declare them with the `$` (transform configurator)
+  * **`[—]`** *The Past*: The way we've been dealing with cues is we had a few known ones like `first`,
+    `before_last`, `last`, and so on; the user would declare them with the `$` (transform configurator)
     method, using values of their own choosing. Most of the time cue values are declared in the
-    application as appropriately named private symbols such as right before usage `start = Symbol 'start'`,
-    then the transform gets declared and added as `$ { start, }, t = ( d ) -> ...`, finally, in the
-    transform, a check `d is start` is used to sort out meta data from business data. This all hinges on the
-    name (`start`) being known to the pipeline object (`Jetstream` instance) knowing the *names* (`start`,
-    `before_end` and so on) and their *semantics* (so names are a controlled vocabulary), and the transform
+    application as appropriately named private symbols such as right before usage `first = Symbol 'first'`,
+    then the transform gets declared and added as `$ { first, }, t = ( d ) -> ...`, finally, in the
+    transform, a check `d is first` is used to sort out meta data from business data. This all hinges on the
+    name (`first`) being known to the pipeline object (`Jetstream` instance) knowing the *names* (`first`,
+    `before_last` and so on) and their *semantics* (so names are a controlled vocabulary), and the transform
     knowing their *identity* (because you can't check for a specific private symbol if you don't hold that
     symbol). In essence we're using the same data parameter `d` to transport both business data and meta
     data.
@@ -109,7 +109,7 @@
       * `'data'`: select all business data, no cues (the default)
       * `'cue'`: select all cues, no data
       * `'cue, data'`: select all data and all cues (same as `select: ( -> true )`)
-      * `'data, cue.end'`: will match only
+      * `'data, cue.last'`: will match only
 
     * Another approach:
       * `Jetstream::push()` defined as `( selectors..., transform ) -> ...`
@@ -127,11 +127,11 @@
           do not accept everything, unselected items are sent to the successor of the current transform.
         * `data` matches business data items (implicitly present)
         * `cue`, `cue` matches cues (opt-in); equivalent to `:not(data)`
-        * `cue#start` matches cues with ID (name) `start`
-        * `cue#end` matches cues with ID (name) `end`
-        * `cue#start,cue#end` ( or `[ 'cue#start', 'cue#end', ]` ) matches cues with IDs `start` or `end`
-        * `#start', '#end` same, implicitly referring to cues
-        * ID selectors implicitly refer to `cue`, therefore `#start` equals `cue#start`
+        * `cue#first` matches cues with ID (name) `first`
+        * `cue#last` matches cues with ID (name) `last`
+        * `cue#first,cue#last` ( or `[ 'cue#first', 'cue#last', ]` ) matches cues with IDs `first` or `last`
+        * `#first', '#last` same, implicitly referring to cues
+        * ID selectors implicitly refer to `cue`, therefore `#first` equals `cue#first`
 
         * `:not(data)` prevents business data items from being sent (opt-out); since all items are
           classified as either `data` or `cue`, it implicitly selects all cues
@@ -142,12 +142,12 @@
         ```
         "abc"               -> <data type=text value='abc'/>
         876                 -> <data type=float value='876'/>
-        Symbol     'start'  -> <cue type=symbol id=start/>
-        Symbol.for 'start'  -> <cue type=symbol id=start/>
+        Symbol     'first'  -> <cue type=symbol id=first/>
+        Symbol.for 'first'  -> <cue type=symbol id=first/>
         ```
 
 ```coffee
-stream.push 'data', '#start', '#end', ( d ) ->
+stream.push 'data', '#first', '#last', ( d ) ->
 ```
 
 #### JetStream Selectors
