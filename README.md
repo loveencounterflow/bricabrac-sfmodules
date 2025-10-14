@@ -137,9 +137,9 @@
         * `cue#first` matches cues with ID (name) `first`
         * `cue#last` matches cues with ID (name) `last`
         * `cue#first,cue#last` ( or `[ 'cue#first', 'cue#last', ]` ) matches cues with IDs `first` or `last`
-        * `#first', '#last` same, implicitly referring to cues
-        * ID selectors implicitly refer to `cue`, therefore `#first` equals `cue#first`
-
+        * `#first', '#last` same, ID selectors implicitly refer to `cue`, therefore `#first` equals
+          `cue#first`
+        * `*`, `data,cue`, `data#*,cue#*` are alternatives to mean 'all data items and all cues'
         * `:not(data)` prevents business data items from being sent (opt-out); since all items are
           classified as either `data` or `cue`, it implicitly selects all cues
         * `:not(cue)` prevents cues from being sent (implicitly present), implicitly selects all `data`
