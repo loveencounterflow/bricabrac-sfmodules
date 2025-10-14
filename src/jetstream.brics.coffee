@@ -119,16 +119,16 @@ require_jetstream = ->
     #-------------------------------------------------------------------------------------------------------
     constructor: ( cfg ) ->
       ### TAINT use Object.freeze, push sets new array ###
-      @cfg        = @configure cfg
+      @configure cfg
       @transforms = []
       @shelf      = []
       return undefined
 
     #-------------------------------------------------------------------------------------------------------
     configure: ( cfg ) ->
-      R           = { jetstream_cfg_template..., cfg..., }
-      @outlet     = new Selector R.outlet
-      return R
+      @cfg    = { jetstream_cfg_template..., cfg..., }
+      @outlet = new Selector @cfg.outlet
+      return null
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'length',   -> @transforms.length
