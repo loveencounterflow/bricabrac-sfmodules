@@ -5,6 +5,9 @@
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
     - [JetStream](#jetstream)
+      - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
+      - [JetStream: Adding Data](#jetstream-adding-data)
+      - [JetStream: Running and Retrieving Results](#jetstream-running-and-retrieving-results)
       - [JetStream Selectors](#jetstream-selectors)
       - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
@@ -46,23 +49,50 @@
   * at instantiation time: `jet = new Jetstream { outlet: 'data,#stop', }`
   * dynamically: `jet.configure { outlet: 'data,#stop', }`
 
+#### JetStream: Instantiation, Configuration, Building
+
+* **`Jetstream::constructor: ( cfg ) ->`**—
+
+* **`Jetstream::configure: ( cfg ) ->`**—dynamically set properties to determine pipeline characteristics.
+  `cfg` should be an object with the following optional keys:
+  * **`outlet`**—a [JetStream selector](#jetstream-selectors) that determines the filtering to be applied
+    after the last transform for a given item has finished and before that value is made available in the
+    output. Default is `'data'`, meaning all data items but no cues will be considered for output.
+  * **`pick`**—after result items have been filtered as determined by the `outlet` setting, apply a sieve to
+    the stream or list of results. Default is `{ pick: 'all', }`, meaning 'return all results' (as an
+    iterator for `walk()`, as a list for `run()`). `'first'` will pick the first, `'last'` the last element
+    (of the stream or list); observe that in these cases, `walk()` will still be an iterator (over zero or
+    one values), but `run()` will return only the first or last values instead of a possibly empty list. If
+    there are no results, calling `run()` will cause an error unless a `fallback` has been explicitly set.
+  * **`fallback`**—determine a return value for `run()` to be used in case no other values were produced by
+    the pipeline.
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
   or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe
   items. If `t` is preceded by one or several arguments, those arguments will be interpreted as
   configurations of `t`. So far [selectors](#jetstream-selectors) are the only implemented configuration
   option.
+
+#### JetStream: Adding Data
+
+* **`Jetstream::send: ( ds... ) ->`**—'shelve' zero or more items in the pipeline; processing will start
+  when `Jetstream::walk()` is called.
+
+* **`Jetstream::cue: ( ids... ) ->`**—send one or more cues into the pipeline. Convenience method equivalent
+  to `Jetstream::send [ ( Symbol id for id for id from ids )..., ]`
+
+#### JetStream: Running and Retrieving Results
+
 * **`Jetstream::walk: ( ds... ) ->`**—'shelve' zero or more items in the pipeline and return an iterator
   over the processed results. Calling `Jetstream::walk d1, d2, ...` is equivalent to calling
   `Jetstream::send d1, d2, ...` followed by `Jetstream::walk()`. When the iterator stops, the pipeline has
   been exhausted (no more shelved items); further processing will only occur when at least one item has been
   sent and `Jetstream::walk()` has been called.
+
 * **`Jetstream::run: ( ds... ) ->`**—same as calling `Jetstream::walk()` with the same arguments, but will
-  return a list containing all results.
-* **`Jetstream::send: ( ds... ) ->`**—'shelve' zero or more items in the pipeline; processing will start
-  when `Jetstream::walk()` is called.
-* **`Jetstream::cue: ( ids... ) ->`**—send one or more cues into the pipeline. Convenience method equivalent
-  to `Jetstream::send [ ( Symbol id for id for id from ids )..., ]`
+  return a list containing all results or a single result, depending on [configuration]
+
+
 
 <!--
 * cue < Q (see Shakespeare)
