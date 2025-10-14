@@ -151,12 +151,12 @@ require_jetstream = ->
     #-------------------------------------------------------------------------------------------------------
     run: ( P... ) ->
       R = [ ( @walk P... )..., ]
-      if @cfg.pick in [ 'first', 'last', ]
-        if R.length is 0
-          throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
-          return @cfg.fallback
-        return if @cfg.pisk is 'first' then R.at 0 else R.at -1
-      return R
+      return R unless @cfg.pick in [ 'first', 'last', ]
+      if R.length is 0
+        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return R.at  0 if @cfg.pick is 'first'
+      return R.at -1
 
     #-------------------------------------------------------------------------------------------------------
     walk: ( ds... ) ->
