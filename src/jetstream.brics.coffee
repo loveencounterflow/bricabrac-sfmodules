@@ -88,6 +88,7 @@ require_jetstream = ->
     for selector in selectors
       switch true
         when selector is ''             then null
+        when selector is '*'            then R.add "data#*"; R.add "cue#*"
         when selector is '#'            then R.add "cue#*"
         when /^#.+/.test selector       then R.add "cue#{selector}"
         when /.+#$/.test selector       then R.add "#{selector}*"
