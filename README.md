@@ -66,6 +66,9 @@
     there are no results, calling `run()` will cause an error unless a `fallback` has been explicitly set.
   * **`fallback`**—determine a return value for `run()` to be used in case no other values were produced by
     the pipeline.
+  * **Observe** that no matter whether or not you use `pick: 'all'`, `pick: 'first'`, or `pick: 'last'`—when
+    you call `Jetstream::run()`, all transforms will be called the same number of times with the same
+    values.
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
   or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe
