@@ -68,7 +68,8 @@
     the pipeline.
   * **Observe** that no matter whether or not you use `pick: 'all'`, `pick: 'first'`, or `pick: 'last'`—when
     you call `Jetstream::run()`, all transforms will be called the same number of times with the same
-    values.
+    values. The same is true when you use `Jetstream::walk()` and make sure the generator runs to
+    completion.
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
   or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe
@@ -96,6 +97,15 @@
   return either a list containing all results or—depending on
   [configuration](#jetstream-instantiation-configuration-building)—a single result.
 
+* **`Jetstream::get_first: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
+  arguments, and either picking the first value in the list, or, if it's empty, use the configured
+  `fallback` value, or else throw an error. Observe that for a pipeline that is configured to always `pick`
+  the first or last value, using `Jetstream::get_first()` will behave just like `Jetstream::run()`.
+
+* **`Jetstream::get_last: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
+  arguments, and either picking the last value in the list, or, if it's empty, use the configured `fallback`
+  value, or else throw an error. Observe that for a pipeline that is configured to always `pick` the first
+  or last value, using `Jetstream::get_last()` will behave just like `Jetstream::run()`.
 
 #### JetStream: Selectors
 
