@@ -193,12 +193,8 @@ require_jetstream = ->
       R = nameit "(managed)_#{gfn.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
-          if nxt? then  yielder = ( d ) -> ( yield from nxt j  ) for j from gfn d
-          else
-            yielder = ( d ) ->
-              for j from gfn d
-                yield j if me.outlet.select j
-              return null
+          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from gfn d; null
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from gfn d; null
         #...................................................................................................
         yield from yielder d
         #...................................................................................................
