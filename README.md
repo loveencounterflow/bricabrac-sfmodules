@@ -37,8 +37,14 @@
   string(s) into a stream of characters.
 * Currently JetStream currently only uses synchronous transforms.
 * Actually more of a bucket chain than a garden hose for what it's worth.
-* Can 'configure' transforms to receive only some, not all data items; can re-use the same transform
-  in multiple configurations in a single pipeline.
+* Can 'configure' transforms to receive only some, not all data items; can re-use the same transform in
+  multiple configurations in a single pipeline.
+* Default is for a transform to receive all data items but no cues.
+* Whatever the last transform in the pipeline `yield`s becomes part of the pipeline's output, except that it
+  will be implicitly filtered by a conceptual 'outlet' transform. The default for the outlet is the same as
+  that for any transform (i.e. all data items, no cues); this can be changed bei configuring the pipeline:
+  * at instantiation time: `jet = new Jetstream { outlet: 'data,#stop', }`
+  * dynamically: `jet.configure { outlet: 'data,#stop', }`
 
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
