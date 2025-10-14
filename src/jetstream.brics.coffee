@@ -18,7 +18,8 @@ require_jetstream = ->
   #=========================================================================================================
   ### TAINT use proper typing ###
   type_of                 = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
-  jetstream_cfg_template  = { outlet: 'data#*', }
+  misfit                  = Symbol 'misfit'
+  jetstream_cfg_template  = { outlet: 'data#*', pick: 'all', fallback: misfit, }
 
   #=========================================================================================================
   class Selector
@@ -148,7 +149,14 @@ require_jetstream = ->
       return R[ 0 ]
 
     #-------------------------------------------------------------------------------------------------------
-    run: ( P... ) -> [ ( @walk P... )..., ]
+    run: ( P... ) ->
+      R = [ ( @walk P... )..., ]
+      if @cfg.pick in [ 'first', 'last', ]
+        if R.length is 0
+          throw new Error "Ωjstrm___2 no results" if @cfg.fallback is misfit
+          return @cfg.fallback
+        return if @cfg.pisk is 'first' then R.at 0 else R.at -1
+      return R
 
     #-------------------------------------------------------------------------------------------------------
     walk: ( ds... ) ->
@@ -157,13 +165,29 @@ require_jetstream = ->
 
     #-------------------------------------------------------------------------------------------------------
     _walk: ->
+      previous  = misfit
+      count     = 0
+      #.....................................................................................................
       if @is_empty
         while @shelf.length > 0
           yield @shelf.shift()
         return null
       #.....................................................................................................
       while @shelf.length > 0
-        yield from @transforms[ 0 ] @shelf.shift()
+        generator = @transforms[ 0 ] @shelf.shift()
+        loop
+          { value,
+            done, } = generator.next()
+          break if done
+          count++
+          if ( count is 1 ) and ( @cfg.pick is 'first' )
+            yield value
+            break
+          else if @cfg.pick is 'all'
+            yield value
+          previous = value
+      #.....................................................................................................
+      yield previous if ( @cfg.pick is 'last' ) and ( count > 0 )
       return null
 
     #-------------------------------------------------------------------------------------------------------
@@ -213,6 +237,8 @@ require_jetstream = ->
   internals = Object.freeze {
     CFG,
     type_of,
+    misfit,
+    jetstream_cfg_template,
     Selector,
     _normalize_selectors,
     normalize_selectors,
