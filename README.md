@@ -8,7 +8,7 @@
       - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
       - [JetStream: Adding Data](#jetstream-adding-data)
       - [JetStream: Running and Retrieving Results](#jetstream-running-and-retrieving-results)
-      - [JetStream Selectors](#jetstream-selectors)
+      - [JetStream: Selectors](#jetstream-selectors)
       - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
@@ -90,9 +90,13 @@
   sent and `Jetstream::walk()` has been called.
 
 * **`Jetstream::run: ( ds... ) ->`**—same as calling `Jetstream::walk()` with the same arguments, but will
-  return a list containing all results or a single result, depending on [configuration]
+  return either a list containing all results or—depending on
+  [configuration](#jetstream-instantiation-configuration-building)—a single result.
 
 
+#### JetStream: Selectors
+
+**to be rewritten**
 
 <!--
 * cue < Q (see Shakespeare)
@@ -186,8 +190,6 @@
 ```coffee
 stream.push 'data', '#first', '#last', ( d ) ->
 ```
-
-#### JetStream Selectors
 
 #### See Also
 
