@@ -186,7 +186,7 @@ require_jetstream = ->
           gfn           = nameit "(generator)_#{original_gfn.name}", ( d ) ->
             return yield d unless selector.select d
             yield from original_gfn d
-        else throw new Error "Ωjstrm___5 expected a jetstream or a synchronous function or generator function, got a #{type}"
+        else throw new Error "Ωjstrm___6 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
       #.....................................................................................................
