@@ -161,12 +161,26 @@ require_jetstream = ->
     #-------------------------------------------------------------------------------------------------------
     walk: ( ds... ) ->
       @send ds...
-      return @_walk()
+      return @_walk_1()
 
     #-------------------------------------------------------------------------------------------------------
-    _walk: ->
+    _walk_1: ->
       previous  = misfit
       count     = 0
+      #.....................................................................................................
+      for value from @_walk_2()
+        count++
+        if ( count is 1 ) and ( @cfg.pick is 'first' )
+          yield value
+        else if @cfg.pick is 'all'
+          yield value
+        previous = value
+      #.....................................................................................................
+      yield previous if ( @cfg.pick is 'last' ) and ( count > 0 )
+      return null
+
+    #-------------------------------------------------------------------------------------------------------
+    _walk_2: ->
       #.....................................................................................................
       if @is_empty
         while @shelf.length > 0
@@ -174,21 +188,11 @@ require_jetstream = ->
         return null
       #.....................................................................................................
       while @shelf.length > 0
-        generator = @transforms[ 0 ] @shelf.shift()
-        loop
-          { value,
-            done, } = generator.next()
-          break if done
-          count++
-          if ( count is 1 ) and ( @cfg.pick is 'first' )
-            yield value
-            break
-          else if @cfg.pick is 'all'
-            yield value
-          previous = value
+        yield from @transforms[ 0 ] @shelf.shift()
       #.....................................................................................................
-      yield previous if ( @cfg.pick is 'last' ) and ( count > 0 )
       return null
+
+
 
     #-------------------------------------------------------------------------------------------------------
     push: ( selectors..., gfn ) ->
