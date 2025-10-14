@@ -144,9 +144,19 @@ require_jetstream = ->
 
     #=======================================================================================================
     get_first: ( P... ) ->
-      if ( R = @run P... ).length is 0
-        throw new Error "Ωjstrm___3 no result"
-      return R[ 0 ]
+      R = [ ( @walk P... )..., ]
+      if R.length is 0
+        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return R.at 0
+
+    #-------------------------------------------------------------------------------------------------------
+    get_last: ( P... ) ->
+      R = [ ( @walk P... )..., ]
+      if R.length is 0
+        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return R.at -1
 
     #-------------------------------------------------------------------------------------------------------
     run: ( P... ) ->
@@ -191,8 +201,6 @@ require_jetstream = ->
         yield from @transforms[ 0 ] @shelf.shift()
       #.....................................................................................................
       return null
-
-
 
     #-------------------------------------------------------------------------------------------------------
     push: ( selectors..., gfn ) ->
