@@ -16,7 +16,9 @@ require_jetstream = ->
   CFG                       = Symbol 'CFG'
 
   #=========================================================================================================
-  type_of = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
+  ### TAINT use proper typing ###
+  type_of                 = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
+  jetstream_cfg_template  = { outlet: 'data#*', }
 
   #=========================================================================================================
   class Selector
@@ -113,8 +115,10 @@ require_jetstream = ->
     # $:  $
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: ->
+    constructor: ( cfg ) ->
       ### TAINT use Object.freeze, push sets new array ###
+      @cfg        = { jetstream_cfg_template..., cfg..., }
+      @outlet     = new Selector @cfg.outlet
       @transforms = []
       @shelf      = []
       return undefined
@@ -190,7 +194,11 @@ require_jetstream = ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
           if nxt? then  yielder = ( d ) -> ( yield from nxt j  ) for j from gfn d
-          else          yielder = ( d ) -> ( yield j           ) for j from gfn d
+          else
+            yielder = ( d ) ->
+              for j from gfn d
+                yield j if me.outlet.select j
+              return null
         #...................................................................................................
         yield from yielder d
         #...................................................................................................
