@@ -240,8 +240,7 @@ require_jetstream = ->
           if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from tfm d ;null
           else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from tfm d ;null
         #...................................................................................................
-        yield from yielder d
-        ;null
+        yield from yielder d ;null
       #.....................................................................................................
       @transforms.push R
       return R
