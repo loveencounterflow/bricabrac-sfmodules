@@ -83,8 +83,8 @@
 * **`Jetstream::send: ( ds... ) ->`**—'shelve' zero or more items in the pipeline; processing will start
   when `Jetstream::walk()` is called.
 
-* **`Jetstream::cue: ( ids... ) ->`**—send one or more cues into the pipeline. Convenience method equivalent
-  to `Jetstream::send [ ( Symbol id for id for id from ids )..., ]`
+* **`Jetstream::cue: ( ids ) ->`**—create a public Symbol from `id` and `Jetstream::send()` it. Convenience
+  method equivalent to `Jetstream::send Symbol.from id`
 
 #### JetStream: Running and Retrieving Results
 
