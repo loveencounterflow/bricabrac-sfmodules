@@ -146,7 +146,7 @@ require_jetstream = ->
     get_first: ( P... ) ->
       R = [ ( @walk P... )..., ]
       if R.length is 0
-        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
+        throw new Error "Ωjstrm___3 no results" if @cfg.fallback is misfit
         return @cfg.fallback
       return R.at 0
 
@@ -163,7 +163,7 @@ require_jetstream = ->
       R = [ ( @walk P... )..., ]
       return R unless @cfg.pick in [ 'first', 'last', ]
       if R.length is 0
-        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
+        throw new Error "Ωjstrm___5 no results" if @cfg.fallback is misfit
         return @cfg.fallback
       return R.at  0 if @cfg.pick is 'first'
       return R.at -1
@@ -222,7 +222,7 @@ require_jetstream = ->
           gfn           = nameit "(generator)_#{original_gfn.name}", ( d ) ->
             return yield d unless selector.select d
             yield from original_gfn d
-        else throw new Error "Ωjstrm___5 expected a jetstream or a synchronous function or generator function, got a #{type}"
+        else throw new Error "Ωjstrm___6 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
       #.....................................................................................................
