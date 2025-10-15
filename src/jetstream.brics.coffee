@@ -215,7 +215,7 @@ require_jetstream = ->
             return yield d unless selector.select d
             yield from original_tfm d ;null
         #...................................................................................................
-        else throw new Error "Ωjstrm___6 expected a jetstream or a synchronous function or generator function, got a #{type}"
+        else throw new Error "Ωjstrm___5 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       return { tfm, original_tfm, type, }
 
