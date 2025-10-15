@@ -2,7 +2,8 @@
 'use strict'
 
 #===========================================================================================================
-{ debug, } = console
+{ debug, }  = console
+___         = null
 
 
 ############################################################################################################
@@ -126,19 +127,17 @@ require_jetstream = ->
     configure: ( cfg ) ->
       @cfg    = { jetstream_cfg_template..., cfg..., }
       @outlet = new Selector @cfg.outlet
-      return null
+      ;___
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'length',   -> @transforms.length
     set_getter @::, 'is_empty', -> @transforms.length is 0
 
     #=======================================================================================================
-    send: ( ds... ) ->
-      @shelf.splice @shelf.length, 0, ds...
-      return null
+    send: ( ds... ) -> @shelf.splice @shelf.length, 0, ds... ;___
 
     #-------------------------------------------------------------------------------------------------------
-    cue: ( names ) -> @send ( Symbol name for name in names )...
+    cue: ( names ) -> @send ( Symbol name for name in names )... ;___
 
     #=======================================================================================================
     get_first: ( P... ) ->
@@ -185,7 +184,7 @@ require_jetstream = ->
         previous = value
       #.....................................................................................................
       yield previous if ( @cfg.pick is 'last' ) and ( count > 0 )
-      return null
+      ;___
 
     #-------------------------------------------------------------------------------------------------------
     _walk_2: ->
@@ -193,33 +192,40 @@ require_jetstream = ->
       if @is_empty
         while @shelf.length > 0
           yield @shelf.shift()
-        return null
+        ;___
       #.....................................................................................................
       while @shelf.length > 0
         yield from @transforms[ 0 ] @shelf.shift()
       #.....................................................................................................
-      return null
+      ;___
 
     #-------------------------------------------------------------------------------------------------------
     push: ( selectors..., gfn ) ->
       selector = new Selector selectors...
       #.....................................................................................................
       switch type = type_of gfn
+        #...................................................................................................
         when 'jetstream'
           original_gfn  = gfn
           gfn           = nameit '(jetstream)', ( d ) ->
             return yield d unless selector.select d
             yield from original_gfn.walk d
+            ;___
+        #...................................................................................................
         when 'function'
           original_gfn  = gfn
           gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) ->
             return yield d unless selector.select d
             original_gfn d; yield d
+            ;___
+        #...................................................................................................
         when 'generatorfunction'
           original_gfn  = gfn
           gfn           = nameit "(generator)_#{original_gfn.name}", ( d ) ->
             return yield d unless selector.select d
             yield from original_gfn d
+            ;___
+        #...................................................................................................
         else throw new Error "Ωjstrm___6 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       my_idx      = @transforms.length
@@ -233,12 +239,11 @@ require_jetstream = ->
       R = nameit "(managed)_#{gfn.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
-          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from gfn d; null
-          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from gfn d; null
+          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from gfn d ;___
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from gfn d ;___
         #...................................................................................................
         yield from yielder d
-        #...................................................................................................
-        return null
+        ;___
       #.....................................................................................................
       @transforms.push R
       return R
