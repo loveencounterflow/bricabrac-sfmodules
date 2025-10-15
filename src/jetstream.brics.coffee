@@ -13,7 +13,6 @@ require_jetstream = ->
   { type_of: _type_of,    } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
   { hide,
     set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
-  CFG                       = Symbol 'CFG'
 
   #=========================================================================================================
   ### TAINT use proper typing ###
@@ -199,47 +198,47 @@ require_jetstream = ->
       ;null
 
     #-------------------------------------------------------------------------------------------------------
-    push: ( selectors..., gfn ) ->
-      selector = new Selector selectors...
+    configure_transform: ( selectors..., tfm ) -> ( @_configure_transform selectors..., tfm ).tfm
+
+    #-------------------------------------------------------------------------------------------------------
+    _configure_transform: ( selectors..., tfm ) ->
+      selector      = new Selector selectors...
+      original_tfm  = tfm
       #.....................................................................................................
-      switch type = type_of gfn
+      switch type = type_of tfm
         #...................................................................................................
         when 'jetstream'
-          original_gfn  = gfn
-          gfn           = nameit '(jetstream)', ( d ) ->
+          tfm = nameit '(jetstream)', ( d ) ->
             return yield d unless selector.select d
-            yield from original_gfn.walk d
-            ;null
+            yield from original_tfm.walk d ;null
         #...................................................................................................
         when 'function'
-          original_gfn  = gfn
-          gfn           = nameit "(watcher)_#{original_gfn.name}", ( d ) ->
+          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
             return yield d unless selector.select d
-            original_gfn d; yield d
-            ;null
+            original_tfm d; yield d ;null
         #...................................................................................................
         when 'generatorfunction'
-          original_gfn  = gfn
-          gfn           = nameit "(generator)_#{original_gfn.name}", ( d ) ->
+          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
             return yield d unless selector.select d
-            yield from original_gfn d
-            ;null
+            yield from original_tfm d ;null
         #...................................................................................................
         else throw new Error "Ωjstrm___6 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
+      return { tfm, original_tfm, type, }
+
+    #-------------------------------------------------------------------------------------------------------
+    push: ( selectors..., tfm ) ->
+      tfm         = @configure_transform selectors..., tfm
       my_idx      = @transforms.length
-      #.....................................................................................................
-      if ( cfg = gfn[ CFG ] )?
-        null
       #.....................................................................................................
       nxt         = null
       yielder     = null
       #.....................................................................................................
-      R = nameit "(managed)_#{gfn.name}", do ( me = @ ) -> ( d ) ->
+      R = nameit "(managed)_#{tfm.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
-          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from gfn d ;null
-          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from gfn d ;null
+          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from tfm d ;null
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from tfm d ;null
         #...................................................................................................
         yield from yielder d
         ;null
@@ -249,7 +248,6 @@ require_jetstream = ->
 
   #=========================================================================================================
   internals = Object.freeze {
-    CFG,
     type_of,
     misfit,
     jetstream_cfg_template,
