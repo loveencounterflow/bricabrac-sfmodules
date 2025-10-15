@@ -98,20 +98,20 @@
   return either a list containing all results or—depending on
   [configuration](#jetstream-instantiation-configuration-building)—a single result.
 
-* **`Jetstream::get_first: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
+* **`Jetstream::pick_first: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
   arguments, and either picking the first value in the list, or, if it's empty, use the configured
   `fallback` value, or else throw an error. Observe that for a pipeline that is configured to always `pick`
-  the first or last value, using `Jetstream::get_first()` will behave just like `Jetstream::run()`.
+  the first or last value, using `Jetstream::pick_first()` will behave just like `Jetstream::run()`.
 
-* **`Jetstream::get_last: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
+* **`Jetstream::pick_last: ( ds... ) ->`**—same as calling `[ ( Jetstream::walk()... )..., ]` with the same
   arguments, and either picking the last value in the list, or, if it's empty, use the configured `fallback`
   value, or else throw an error. Observe that for a pipeline that is configured to always `pick` the first
-  or last value, using `Jetstream::get_last()` will behave just like `Jetstream::run()`.
+  or last value, using `Jetstream::pick_last()` will behave just like `Jetstream::run()`.
 
 #### JetStream: Note on Picking Values
 
 The result of a JetStream run is always a (possibly empty) list of values, unless either the stream has been
-configured to pick the last or the first value, or `Jetstream::get_first()` or `Jetstream::get_last()` have
+configured to pick the last or the first value, or `Jetstream::pick_first()` or `Jetstream::pick_last()` have
 been called. The semantics of picking or getting singular values have been intentionally designed so that
 the least possible change is made with regard to calling of transforms and handling of intermediate values.
 This also means that if your pipeline computes a million values of which you only need the first value which
