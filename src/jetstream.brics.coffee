@@ -138,30 +138,20 @@ require_jetstream = ->
     cue: ( names ) -> @send ( Symbol name for name in names )... ;null
 
     #=======================================================================================================
-    get_first: ( P... ) ->
+    _pick: ( picker, P... ) ->
       R = [ ( @walk P... )..., ]
+      return R if picker is 'all'
       if R.length is 0
         throw new Error "Ωjstrm___3 no results" if @cfg.fallback is misfit
         return @cfg.fallback
-      return R.at 0
+      return R.at  0 if picker is 'first'
+      return R.at -1 if picker is 'last'
+      throw new Error "Ωjstrm___4 unknown picker #{picker}"
 
     #-------------------------------------------------------------------------------------------------------
-    get_last: ( P... ) ->
-      R = [ ( @walk P... )..., ]
-      if R.length is 0
-        throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
-        return @cfg.fallback
-      return R.at -1
-
-    #-------------------------------------------------------------------------------------------------------
-    run: ( P... ) ->
-      R = [ ( @walk P... )..., ]
-      return R unless @cfg.pick in [ 'first', 'last', ]
-      if R.length is 0
-        throw new Error "Ωjstrm___5 no results" if @cfg.fallback is misfit
-        return @cfg.fallback
-      return R.at  0 if @cfg.pick is 'first'
-      return R.at -1
+    get_first:  ( P... ) -> @_pick 'first',   P...
+    get_last:   ( P... ) -> @_pick 'last',    P...
+    run:        ( P... ) -> @_pick @cfg.pick, P...
 
     #-------------------------------------------------------------------------------------------------------
     walk: ( ds... ) ->
