@@ -63,9 +63,7 @@ require_jetstream = ->
     toString: -> @selectors_rpr
 
   #---------------------------------------------------------------------------------------------------------
-  id_from_symbol = ( symbol ) ->
-    R = String symbol
-    return ( R )[ 7 ... R.length - 1 ]
+  id_from_symbol = ( symbol ) -> R = String symbol; ( R )[ 7 ... R.length - 1 ]
 
   #---------------------------------------------------------------------------------------------------------
   selectors_as_list = ( selectors... ) ->
