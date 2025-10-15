@@ -8,6 +8,7 @@
       - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
       - [JetStream: Adding Data](#jetstream-adding-data)
       - [JetStream: Running and Retrieving Results](#jetstream-running-and-retrieving-results)
+      - [JetStream: Note on Picking Values](#jetstream-note-on-picking-values)
       - [JetStream: Selectors](#jetstream-selectors)
       - [See Also](#see-also)
     - [Loupe, Show](#loupe-show)
@@ -106,6 +107,18 @@
   arguments, and either picking the last value in the list, or, if it's empty, use the configured `fallback`
   value, or else throw an error. Observe that for a pipeline that is configured to always `pick` the first
   or last value, using `Jetstream::get_last()` will behave just like `Jetstream::run()`.
+
+#### JetStream: Note on Picking Values
+
+The result of a JetStream run is always a (possibly empty) list of values, unless either the stream has been
+configured to pick the last or the first value, or `Jetstream::get_first()` or `Jetstream::get_last()` have
+been called. The semantics of picking or getting singular values have been intentionally designed so that
+the least possible change is made with regard to calling of transforms and handling of intermediate values.
+This also means that if your pipeline computes a million values of which you only need the first value which
+doesn't depend on any other value in the result list, then `{ pick: 'first', }` is probably not the right
+tool to do that because in order to get that single value, each transform will still be called a million
+times. One should rather look for a cutoff point in the input early on and terminate processing as soon as
+possible rather than burdening the pipeline with throwaway values.
 
 #### JetStream: Selectors
 
