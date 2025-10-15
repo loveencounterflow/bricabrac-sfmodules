@@ -51,7 +51,7 @@ require_jetstream = ->
       if is_cue = ( typeof item ) is 'symbol'
         return true   if @cues is true
         return false  if @cues is false
-        return @cues.has id_from_symbol item
+        return @cues.has id_from_cue item
       return true   if @data is true
       return false  if @data is false
       throw new Error "Ωjstrm___2 IDs on data items not supported in selector #{rpr @toString}"
@@ -62,7 +62,7 @@ require_jetstream = ->
     toString: -> @selectors_rpr
 
   #---------------------------------------------------------------------------------------------------------
-  id_from_symbol = ( symbol ) -> R = String symbol; ( R )[ 7 ... R.length - 1 ]
+  id_from_cue = ( symbol ) -> symbol.description
 
   #---------------------------------------------------------------------------------------------------------
   selectors_as_list = ( selectors... ) ->
@@ -237,7 +237,7 @@ require_jetstream = ->
     _normalize_selectors,
     normalize_selectors,
     selectors_as_list,
-    id_from_symbol, }
+    id_from_cue, }
   return exports = { Jetstream, internals, }
   # return exports = { Jetstream, $, internals, }
 
