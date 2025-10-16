@@ -16,7 +16,12 @@ require_jetstream = ->
 
   #=========================================================================================================
   ### TAINT use proper typing ###
-  type_of                 = ( x ) -> if ( x instanceof Jetstream ) then 'jetstream' else _type_of x
+  type_of = ( x ) ->
+    return  'sync_jetstream' if ( x instanceof       Jetstream )
+    return 'async_jetstream' if ( x instanceof Async_jetstream )
+    return _type_of x
+
+  #---------------------------------------------------------------------------------------------------------
   misfit                  = Symbol 'misfit'
   jetstream_cfg_template  = { outlet: 'data#*', pick: 'all', fallback: misfit, }
 
