@@ -102,47 +102,51 @@ require_jetstream = ->
     return { selectors: R, selectors_rpr, }
 
   #---------------------------------------------------------------------------------------------------------
-  _configure_transform = ( me, selectors..., tfm ) ->
-    iam = type_of me
-    #.......................................................................................................
+  _configure_transform = ( selectors..., tfm ) ->
     selector      = new Selector selectors...
     original_tfm  = tfm
     #.......................................................................................................
     switch type = type_of tfm
       #.....................................................................................................
       when 'sync_jetstream'
-        tfm = nameit '(sync_jetstream)', ( d ) ->
+        is_sync = true
+        tfm     = nameit '(sync_jetstream)', ( d ) ->
           return yield d unless selector.select d
           yield from original_tfm.walk d ;null
       #.....................................................................................................
       when 'async_jetstream'
-        tfm = nameit '(async_jetstream)', ( d ) ->
+        is_sync = false
+        tfm     = nameit '(async_jetstream)', ( d ) ->
           return yield d unless selector.select d
           yield from await original_tfm.walk d ;null
       #.....................................................................................................
       when 'function'
-        tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+        is_sync = true
+        tfm     = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
           return yield d unless selector.select d
           original_tfm d; yield d ;null
       #.....................................................................................................
       when 'asyncfunction'
-        tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+        is_sync = false
+        tfm     = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
           return yield d unless selector.select d
           await original_tfm d; yield d ;null
       #.....................................................................................................
       when 'generatorfunction'
-        tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+        is_sync = true
+        tfm     = nameit "(generator)_#{original_tfm.name}", ( d ) ->
           return yield d unless selector.select d
           yield from original_tfm d ;null
       #.....................................................................................................
       when 'asyncgeneratorfunction'
-        tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+        is_sync = false
+        tfm     = nameit "(generator)_#{original_tfm.name}", ( d ) ->
           return yield d unless selector.select d
           yield from await original_tfm d ;null
       #.....................................................................................................
       else throw new Error "Ωjstrm__10 expected a jetstream or a synchronous function or generator function, got a #{type}"
     #.......................................................................................................
-    return { tfm, original_tfm, type, }
+    return { tfm, original_tfm, type, is_sync, }
 
 
   #=========================================================================================================
@@ -255,7 +259,11 @@ require_jetstream = ->
 
   #=========================================================================================================
   Jetstream::push = ( selectors..., tfm ) ->
-      tfm         = @configure_transform selectors..., tfm
+      { tfm,
+        is_sync,
+        type,   } = _configure_transform selectors..., tfm
+      unless is_sync
+        throw new Error "Ωjstrm___2 cannot use async transform in sync jetstream, got a #{type}"
       my_idx      = @transforms.length
       #.....................................................................................................
       nxt         = null
@@ -274,7 +282,7 @@ require_jetstream = ->
 
   #---------------------------------------------------------------------------------------------------------
   Async_jetstream::push = ( selectors..., tfm ) ->
-      tfm         = @configure_transform selectors..., tfm
+      { tfm,    } = _configure_transform selectors..., tfm
       my_idx      = @transforms.length
       #.....................................................................................................
       nxt         = null
