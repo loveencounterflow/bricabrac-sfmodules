@@ -264,8 +264,8 @@ require_jetstream = ->
       R = nameit "(managed)_#{tfm.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
-          if nxt? then  yielder = ( d ) -> ( yield from       nxt j         ) for j from       tfm d ;null
-          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from       tfm d ;null
+          if nxt? then  yielder = ( d ) -> ( yield from       nxt j         ) for       j from tfm d ;null
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for       j from tfm d ;null
         #...................................................................................................
         yield from yielder d ;null
       #.....................................................................................................
