@@ -101,6 +101,49 @@ require_jetstream = ->
     R.delete '' if R.size isnt 1
     return { selectors: R, selectors_rpr, }
 
+  #---------------------------------------------------------------------------------------------------------
+  _configure_transform = ( me, selectors..., tfm ) ->
+    iam = type_of me
+    #.......................................................................................................
+    selector      = new Selector selectors...
+    original_tfm  = tfm
+    #.......................................................................................................
+    switch type = type_of tfm
+      #.....................................................................................................
+      when 'sync_jetstream'
+        tfm = nameit '(sync_jetstream)', ( d ) ->
+          return yield d unless selector.select d
+          yield from original_tfm.walk d ;null
+      #.....................................................................................................
+      when 'async_jetstream'
+        tfm = nameit '(async_jetstream)', ( d ) ->
+          return yield d unless selector.select d
+          yield from await original_tfm.walk d ;null
+      #.....................................................................................................
+      when 'function'
+        tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+          return yield d unless selector.select d
+          original_tfm d; yield d ;null
+      #.....................................................................................................
+      when 'asyncfunction'
+        tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+          return yield d unless selector.select d
+          await original_tfm d; yield d ;null
+      #.....................................................................................................
+      when 'generatorfunction'
+        tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+          return yield d unless selector.select d
+          yield from original_tfm d ;null
+      #.....................................................................................................
+      when 'asyncgeneratorfunction'
+        tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+          return yield d unless selector.select d
+          yield from await original_tfm d ;null
+      #.....................................................................................................
+      else throw new Error "Ωjstrm__10 expected a jetstream or a synchronous function or generator function, got a #{type}"
+    #.......................................................................................................
+    return { tfm, original_tfm, type, }
+
 
   #=========================================================================================================
   class Jetstream_abc
@@ -139,7 +182,7 @@ require_jetstream = ->
       return @_walk_and_pick()
 
     #-------------------------------------------------------------------------------------------------------
-    configure_transform: ( selectors..., tfm ) -> ( @_configure_transform selectors..., tfm ).tfm
+    configure_transform: ( selectors..., tfm ) -> ( _configure_transform @, selectors..., tfm ).tfm
 
 
   #=========================================================================================================
@@ -212,68 +255,6 @@ require_jetstream = ->
       if @is_empty  then  yield                             @shelf.shift() while @shelf.length > 0
       else                yield from await @transforms[ 0 ] @shelf.shift() while @shelf.length > 0
       ;null
-
-  #=========================================================================================================
-  Jetstream::_configure_transform = ( selectors..., tfm ) ->
-      selector      = new Selector selectors...
-      original_tfm  = tfm
-      #.....................................................................................................
-      switch type = type_of tfm
-        #...................................................................................................
-        when 'jetstream'
-          tfm = nameit '(jetstream)', ( d ) ->
-            return yield d unless selector.select d
-            yield from original_tfm.walk d ;null
-        #...................................................................................................
-        when 'function'
-          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            original_tfm d; yield d ;null
-        #...................................................................................................
-        when 'generatorfunction'
-          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            yield from original_tfm d ;null
-        #...................................................................................................
-        else throw new Error "Ωjstrm__10 expected a jetstream or a synchronous function or generator function, got a #{type}"
-      #.....................................................................................................
-      return { tfm, original_tfm, type, }
-
-  #---------------------------------------------------------------------------------------------------------
-  Async_jetstream::_configure_transform = ( selectors..., tfm ) ->
-      selector      = new Selector selectors...
-      original_tfm  = tfm
-      #.....................................................................................................
-      switch type = type_of tfm
-        #...................................................................................................
-        when 'jetstream'
-          tfm = nameit '(jetstream)', ( d ) ->
-            return yield d unless selector.select d
-            yield from await original_tfm.walk d ;null
-        #...................................................................................................
-        when 'function'
-          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            original_tfm d; yield d ;null
-        #...................................................................................................
-        when 'asyncfunction'
-          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            await original_tfm d; yield d ;null
-        #...................................................................................................
-        when 'generatorfunction'
-          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            yield from original_tfm d ;null
-        #...................................................................................................
-        when 'asyncgeneratorfunction'
-          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
-            return yield d unless selector.select d
-            yield from await original_tfm d ;null
-        #...................................................................................................
-        else throw new Error "Ωjstrm__11 expected a jetstream or a synchronous function or generator function, got a #{type}"
-      #.....................................................................................................
-      return { tfm, original_tfm, type, }
 
   #=========================================================================================================
   Jetstream::push = ( selectors..., tfm ) ->
