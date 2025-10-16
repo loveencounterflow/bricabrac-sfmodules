@@ -174,7 +174,7 @@ require_jetstream = ->
       previous  = misfit
       count     = 0
       #.....................................................................................................
-      for value from        @_walk_all_to_exhaustion()
+      for value from @_walk_all_to_exhaustion()
         count++
         if ( count is 1 ) and ( @cfg.pick is 'first' )
           yield value
