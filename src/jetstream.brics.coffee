@@ -123,17 +123,6 @@ require_jetstream = ->
     cue:  ( id    ) -> @send Symbol.for id                    ;null
 
     #=======================================================================================================
-    _pick: ( picker, P... ) ->
-      R = [ ( @walk P... )..., ]
-      return R if picker is 'all'
-      if R.length is 0
-        throw new Error "Ωjstrm___3 no results" if @cfg.fallback is misfit
-        return @cfg.fallback
-      return R.at  0 if picker is 'first'
-      return R.at -1 if picker is 'last'
-      throw new Error "Ωjstrm___4 unknown picker #{picker}"
-
-    #-------------------------------------------------------------------------------------------------------
     pick_first: ( P... ) -> @_pick 'first',   P...
     pick_last:  ( P... ) -> @_pick 'last',    P...
     pick_all:   ( P... ) -> @_pick 'all',     P...
@@ -153,11 +142,50 @@ require_jetstream = ->
   class Async_jetstream extends Jetstream_abc
 
   #=========================================================================================================
+  Jetstream::_pick = ( picker, P... ) ->
+      R = [ ( @walk P... )..., ]
+      return R if picker is 'all'
+      if R.length is 0
+        throw new Error "Ωjstrm___3 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return R.at  0 if picker is 'first'
+      return R.at -1 if picker is 'last'
+      throw new Error "Ωjstrm___4 unknown picker #{picker}"
+
+  #---------------------------------------------------------------------------------------------------------
+  Async_jetstream::_pick = ( picker, P... ) ->
+      ### NOTE best async equivalent to `[ ( @walk P... )..., ]` I could find ###
+      R = ( d for await d from @walk P... )
+      return R if picker is 'all'
+      if R.length is 0
+        throw new Error "Ωjstrm___8 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return R.at  0 if picker is 'first'
+      return R.at -1 if picker is 'last'
+      throw new Error "Ωjstrm___9 unknown picker #{picker}"
+
+  #=========================================================================================================
   Jetstream::_walk_and_pick = ->
       previous  = misfit
       count     = 0
       #.....................................................................................................
-      for value from @_walk_all_to_exhaustion()
+      for value from        @_walk_all_to_exhaustion()
+        count++
+        if ( count is 1 ) and ( @cfg.pick is 'first' )
+          yield value
+        else if @cfg.pick is 'all'
+          yield value
+        previous = value
+      #.....................................................................................................
+      yield previous if ( @cfg.pick is 'last' ) and ( count > 0 )
+      ;null
+
+  #---------------------------------------------------------------------------------------------------------
+  Async_jetstream::_walk_and_pick = ->
+      previous  = misfit
+      count     = 0
+      #.....................................................................................................
+      for await value from @_walk_all_to_exhaustion()
         count++
         if ( count is 1 ) and ( @cfg.pick is 'first' )
           yield value
@@ -170,8 +198,14 @@ require_jetstream = ->
 
   #=========================================================================================================
   Jetstream::_walk_all_to_exhaustion = ->
-      if @is_empty  then  yield                       @shelf.shift() while @shelf.length > 0
-      else                yield from @transforms[ 0 ] @shelf.shift() while @shelf.length > 0
+      if @is_empty  then  yield                             @shelf.shift() while @shelf.length > 0
+      else                yield from       @transforms[ 0 ] @shelf.shift() while @shelf.length > 0
+      ;null
+
+  #---------------------------------------------------------------------------------------------------------
+  Async_jetstream::_walk_all_to_exhaustion = ->
+      if @is_empty  then  yield                             @shelf.shift() while @shelf.length > 0
+      else                yield from await @transforms[ 0 ] @shelf.shift() while @shelf.length > 0
       ;null
 
   #=========================================================================================================
@@ -196,7 +230,43 @@ require_jetstream = ->
             return yield d unless selector.select d
             yield from original_tfm d ;null
         #...................................................................................................
-        else throw new Error "Ωjstrm___5 expected a jetstream or a synchronous function or generator function, got a #{type}"
+        else throw new Error "Ωjstrm__10 expected a jetstream or a synchronous function or generator function, got a #{type}"
+      #.....................................................................................................
+      return { tfm, original_tfm, type, }
+
+  #---------------------------------------------------------------------------------------------------------
+  Async_jetstream::_configure_transform = ( selectors..., tfm ) ->
+      selector      = new Selector selectors...
+      original_tfm  = tfm
+      #.....................................................................................................
+      switch type = type_of tfm
+        #...................................................................................................
+        when 'jetstream'
+          tfm = nameit '(jetstream)', ( d ) ->
+            return yield d unless selector.select d
+            yield from await original_tfm.walk d ;null
+        #...................................................................................................
+        when 'function'
+          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+            return yield d unless selector.select d
+            original_tfm d; yield d ;null
+        #...................................................................................................
+        when 'asyncfunction'
+          tfm = nameit "(watcher)_#{original_tfm.name}", ( d ) ->
+            return yield d unless selector.select d
+            await original_tfm d; yield d ;null
+        #...................................................................................................
+        when 'generatorfunction'
+          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+            return yield d unless selector.select d
+            yield from original_tfm d ;null
+        #...................................................................................................
+        when 'asyncgeneratorfunction'
+          tfm = nameit "(generator)_#{original_tfm.name}", ( d ) ->
+            return yield d unless selector.select d
+            yield from await original_tfm d ;null
+        #...................................................................................................
+        else throw new Error "Ωjstrm__11 expected a jetstream or a synchronous function or generator function, got a #{type}"
       #.....................................................................................................
       return { tfm, original_tfm, type, }
 
@@ -211,10 +281,29 @@ require_jetstream = ->
       R = nameit "(managed)_#{tfm.name}", do ( me = @ ) -> ( d ) ->
         unless nxt?
           nxt = me.transforms[ my_idx + 1 ]
-          if nxt? then  yielder = ( d ) -> ( yield from nxt j               ) for j from tfm d ;null
-          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from tfm d ;null
+          if nxt? then  yielder = ( d ) -> ( yield from       nxt j         ) for j from       tfm d ;null
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for j from       tfm d ;null
         #...................................................................................................
         yield from yielder d ;null
+      #.....................................................................................................
+      @transforms.push R
+      return R
+
+  #---------------------------------------------------------------------------------------------------------
+  Async_jetstream::push = ( selectors..., tfm ) ->
+      tfm         = @configure_transform selectors..., tfm
+      my_idx      = @transforms.length
+      #.....................................................................................................
+      nxt         = null
+      yielder     = null
+      #.....................................................................................................
+      R = nameit "(managed)_#{tfm.name}", do ( me = @ ) -> ( d ) ->
+        unless nxt?
+          nxt = me.transforms[ my_idx + 1 ]
+          if nxt? then  yielder = ( d ) -> ( yield from await nxt j         ) for await j from tfm d ;null
+          else          yielder = ( d ) -> ( yield j if me.outlet.select j  ) for await j from tfm d ;null
+        #...................................................................................................
+        yield from await yielder d ;null
       #.....................................................................................................
       @transforms.push R
       return R
@@ -229,7 +318,7 @@ require_jetstream = ->
     normalize_selectors,
     selectors_as_list,
     id_from_cue, }
-  return exports = { Jetstream, internals, }
+  return exports = { Jetstream, Async_jetstream, internals, }
 
 
 
