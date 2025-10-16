@@ -181,9 +181,6 @@ require_jetstream = ->
       @send ds...
       return @_walk_and_pick()
 
-    #-------------------------------------------------------------------------------------------------------
-    configure_transform: ( selectors..., tfm ) -> ( _configure_transform @, selectors..., tfm ).tfm
-
 
   #=========================================================================================================
   class Jetstream       extends Jetstream_abc
