@@ -144,7 +144,7 @@ require_jetstream = ->
           return yield d unless selector.select d
           yield from await original_tfm d ;null
       #.....................................................................................................
-      else throw new Error "Ωjstrm__10 expected a jetstream or a synchronous function or generator function, got a #{type}"
+      else throw new Error "Ωjstrm___3 expected a jetstream or a synchronous function or generator function, got a #{type}"
     #.......................................................................................................
     return { tfm, original_tfm, type, is_sync, }
 
@@ -195,11 +195,11 @@ require_jetstream = ->
     R = [ ( @walk P... )..., ]
     return R if picker is 'all'
     if R.length is 0
-      throw new Error "Ωjstrm___3 no results" if @cfg.fallback is misfit
+      throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
       return @cfg.fallback
     return R.at  0 if picker is 'first'
     return R.at -1 if picker is 'last'
-    throw new Error "Ωjstrm___4 unknown picker #{picker}"
+    throw new Error "Ωjstrm___5 unknown picker #{picker}"
 
   #---------------------------------------------------------------------------------------------------------
   Async_jetstream::_pick = ( picker, P... ) ->
@@ -207,11 +207,11 @@ require_jetstream = ->
     R = ( d for await d from @walk P... )
     return R if picker is 'all'
     if R.length is 0
-      throw new Error "Ωjstrm___8 no results" if @cfg.fallback is misfit
+      throw new Error "Ωjstrm___6 no results" if @cfg.fallback is misfit
       return @cfg.fallback
     return R.at  0 if picker is 'first'
     return R.at -1 if picker is 'last'
-    throw new Error "Ωjstrm___9 unknown picker #{picker}"
+    throw new Error "Ωjstrm___7 unknown picker #{picker}"
 
   #=========================================================================================================
   Jetstream::_walk_and_pick = ->
@@ -263,7 +263,7 @@ require_jetstream = ->
       is_sync,
       type,   } = _configure_transform selectors..., tfm
     unless is_sync
-      throw new Error "Ωjstrm___2 cannot use async transform in sync jetstream, got a #{type}"
+      throw new Error "Ωjstrm___8 cannot use async transform in sync jetstream, got a #{type}"
     my_idx      = @transforms.length
     #.......................................................................................................
     nxt         = null
