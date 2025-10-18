@@ -192,7 +192,9 @@ require_jetstream = ->
 
   #=========================================================================================================
   Jetstream::_pick = ( picker, P... ) ->
-    R = [ ( @walk P... )..., ]
+    ### NOTE this used to be the idiomatic formulation `R = [ ( @walk P... )..., ]`; for the sake of making
+    sync and async versions maximally similar, rewritten as the sync version of `await Array.fromAsync @walk P...` ###
+    R = Array.from @walk P...
     return R if picker is 'all'
     if R.length is 0
       throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
@@ -204,7 +206,9 @@ require_jetstream = ->
   #---------------------------------------------------------------------------------------------------------
   Async_jetstream::_pick = ( picker, P... ) ->
     ### NOTE best async equivalent to `[ ( @walk P... )..., ]` I could find ###
-    R = ( d for await d from @walk P... )
+    ### NOTE my first solution was `R = ( d for await d from @walk P... )`, but that transpiles into quite a few lines of JS ###
+    ### thx to https://allthingssmitty.com/2025/07/14/modern-async-iteration-in-javascript-with-array-fromasync/ ###
+    R = await Array.fromAsync @walk P...
     return R if picker is 'all'
     if R.length is 0
       throw new Error "Ωjstrm___6 no results" if @cfg.fallback is misfit
