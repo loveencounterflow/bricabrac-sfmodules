@@ -181,6 +181,16 @@ require_jetstream = ->
     run:        ( P... ) -> @_pick @cfg.pick, P...
 
     #-------------------------------------------------------------------------------------------------------
+    _pick_from_list: ( picker, values ) ->
+      return values if picker is 'all'
+      if values.length is 0
+        throw new Error "Ωjstrm___6 no results" if @cfg.fallback is misfit
+        return @cfg.fallback
+      return values.at  0 if picker is 'first'
+      return values.at -1 if picker is 'last'
+      throw new Error "Ωjstrm___7 unknown picker #{picker}"
+
+    #-------------------------------------------------------------------------------------------------------
     walk: ( ds... ) ->
       @send ds...
       return @_walk_and_pick()
@@ -191,31 +201,12 @@ require_jetstream = ->
   class Async_jetstream extends Jetstream_abc
 
   #=========================================================================================================
-  Jetstream::_pick = ( picker, P... ) ->
-    ### NOTE this used to be the idiomatic formulation `R = [ ( @walk P... )..., ]`; for the sake of making
-    sync and async versions maximally similar, rewritten as the sync version of `await Array.fromAsync @walk P...` ###
-    R = Array.from @walk P...
-    return R if picker is 'all'
-    if R.length is 0
-      throw new Error "Ωjstrm___4 no results" if @cfg.fallback is misfit
-      return @cfg.fallback
-    return R.at  0 if picker is 'first'
-    return R.at -1 if picker is 'last'
-    throw new Error "Ωjstrm___5 unknown picker #{picker}"
-
-  #---------------------------------------------------------------------------------------------------------
-  Async_jetstream::_pick = ( picker, P... ) ->
-    ### NOTE best async equivalent to `[ ( @walk P... )..., ]` I could find ###
-    ### NOTE my first solution was `R = ( d for await d from @walk P... )`, but that transpiles into quite a few lines of JS ###
-    ### thx to https://allthingssmitty.com/2025/07/14/modern-async-iteration-in-javascript-with-array-fromasync/ ###
-    R = await Array.fromAsync @walk P...
-    return R if picker is 'all'
-    if R.length is 0
-      throw new Error "Ωjstrm___6 no results" if @cfg.fallback is misfit
-      return @cfg.fallback
-    return R.at  0 if picker is 'first'
-    return R.at -1 if picker is 'last'
-    throw new Error "Ωjstrm___7 unknown picker #{picker}"
+  ### NOTE this used to be the idiomatic formulation `R = [ ( @walk P... )..., ]`; for the sake of making
+  sync and async versions maximally similar, the sync version has been adapted to the async formulation. My
+  first async solution was `R = ( d for await d from genfn P... )`, which doesn't transpilenicely. ###
+  ### thx to https://allthingssmitty.com/2025/07/14/modern-async-iteration-in-javascript-with-array-fromasync/ ###
+  Jetstream::_pick       = ( picker, P... ) -> @_pick_from_list picker,       Array.from      @walk P...
+  Async_jetstream::_pick = ( picker, P... ) -> @_pick_from_list picker, await Array.fromAsync @walk P...
 
   #=========================================================================================================
   Jetstream::_walk_and_pick = ->
