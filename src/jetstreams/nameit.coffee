@@ -1,0 +1,1 @@
+../_ng-singles/nameit.coffee
