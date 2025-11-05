@@ -301,6 +301,9 @@ stream.push 'data', '#first', '#last', ( d ) ->
 * **`[—]`** need better `rpr()`
   * **`[—]`** one `rpr()` for use in texts such as error messages, one `rpr()` ('`show()`'?) for use in
     presentational contexts
+* **`[—]`** review shuffling algorithm, see [*The Danger of
+  Naïveté*](https://blog.codinghorror.com/the-danger-of-naivete/) for a discussion of how to shuffle
+  correctly
 
 ### Benchmark
 
