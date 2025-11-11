@@ -71,6 +71,11 @@
     you call `Jetstream::run()`, all transforms will be called the same number of times with the same
     values. The same is true when you use `Jetstream::walk()` and make sure the generator runs to
     completion.
+  * **`empty_call`**—the value to send, if any, when `Jetstream::walk()` or `Jetstream::run()` are called
+    without any data values and an empty 'shelf' (i.e. no unprocessed data from calls to
+    `Jetstream::send()`). This allows to start pipelines with a value-producing transform that `yield`s
+    values from some source whenever it gets called; whether it drops or passes on the value of
+    `Jetstream::cfg.empty_call` is up to the implementation.
 
 * **`Jetstream::push: ( P..., t ) ->`**—add a transform `t` to the pipeline. `t` can be a generator function
   or a non-generator function; in the latter case the transform is called a 'watcher' as it can only observe

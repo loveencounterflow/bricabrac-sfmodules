@@ -17,7 +17,7 @@ type_of = ( x ) ->
 
 #-----------------------------------------------------------------------------------------------------------
 misfit                  = Symbol 'misfit'
-jetstream_cfg_template  = { outlet: 'data#*', pick: 'all', fallback: misfit, }
+jetstream_cfg_template  = { outlet: 'data#*', pick: 'all', fallback: misfit, empty_call: misfit, }
 
 #===========================================================================================================
 class Selector
@@ -161,8 +161,10 @@ class Jetstream_abc
     ;null
 
   #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'length',   -> @transforms.length
-  set_getter @::, 'is_empty', -> @transforms.length is 0
+  set_getter @::, 'length',           -> @transforms.length
+  set_getter @::, 'is_empty',         -> @transforms.length is 0
+  set_getter @::, 'shelf_is_empty',   -> @shelf.length      is 0
+  set_getter @::, 'has_empty_value',  -> @cfg.empty_call    isnt misfit
 
   #=========================================================================================================
   send: ( ds... ) -> @shelf.splice @shelf.length, 0, ds...  ;null
@@ -186,7 +188,8 @@ class Jetstream_abc
 
   #---------------------------------------------------------------------------------------------------------
   walk: ( ds... ) ->
-    @send ds...
+    if ( ds.length is 0 ) and @shelf_is_empty and @has_empty_value  then  @send @cfg.empty_call
+    else                                                                  @send ds...
     return @_walk_and_pick()
 
 
