@@ -195,15 +195,37 @@ UNSTABLE_DBRIC_BRICS =
 
       #---------------------------------------------------------------------------------------------------
       set_getter @::, 'is_ready',     -> @_get_is_ready()
+      set_getter @::, 'prefix',       -> @_get_prefix()
+      set_getter @::, 'full_prefix',  -> @_get_full_prefix
+
+      #-----------------------------------------------------------------------------------------------------
+      _get_is_ready: ->
+        { error_count,
+          statement_count,
+          db_objects: expected_db_objects, } = @_get_objects_in_build_statements()
+        debug 'Ωdbric__10', "expected_db_objects", expected_db_objects
+        #...................................................................................................
+        if error_count isnt 0
+          messages = []
+          for name, { type, message, } of expected_db_objects
+            continue unless type is 'error'
+            messages.push message
+          throw new Error "Ωdbric__11 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
+        #...................................................................................................
+        present_db_objects = @_get_db_objects()
+        debug 'Ωdbric__12', "present_db_objects", present_db_objects
+        for name, { type: expected_type, } of expected_db_objects
+          return false unless present_db_objects[ name ]?.type is expected_type
+        return true
 
       #---------------------------------------------------------------------------------------------------
-      set_getter @::, 'prefix',       ->
+      _get_prefix: ->
         return @constructor.name.replace /^.*_([^_]+)$/, '$1' unless @cfg.prefix?
         return '' if @cfg.prefix is '(NOPREFIX)'
         return @cfg.prefix
 
       #---------------------------------------------------------------------------------------------------
-      set_getter @::, 'full_prefix',  ->
+      _get_full_prefix: ->
         return '' if ( not @cfg.prefix? )
         return '' if @cfg.prefix is '(NOPREFIX)'
         return '' if @cfg.prefix is ''
@@ -230,24 +252,6 @@ UNSTABLE_DBRIC_BRICS =
             message             = "non-conformant statement: #{rpr_string statement}"
             db_objects[ name ]  = { name, type, message, }
         return { error_count, statement_count, db_objects, }
-
-      #-----------------------------------------------------------------------------------------------------
-      _get_is_ready: ->
-        { error_count,
-          statement_count,
-          db_objects: expected_db_objects, } = @_get_objects_in_build_statements()
-        #...................................................................................................
-        if error_count isnt 0
-          messages = []
-          for name, { type, message, } of expected_db_objects
-            continue unless type is 'error'
-            messages.push message
-          throw new Error "Ωdbric___6 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
-        #...................................................................................................
-        present_db_objects = @_get_db_objects()
-        for name, { type: expected_type, } of expected_db_objects
-          return false unless present_db_objects[ name ]?.type is expected_type
-        return true
 
       #-----------------------------------------------------------------------------------------------------
       _prepare_statements: ->
