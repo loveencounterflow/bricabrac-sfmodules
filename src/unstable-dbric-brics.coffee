@@ -14,7 +14,8 @@ UNSTABLE_DBRIC_BRICS =
     { hide,
       set_getter,           } = ( require './main' ).require_managed_property_tools()
     { type_of,              } = ( require './main' ).unstable.require_type_of()
-    { show_no_colors: rpr,  } = ( require './main' ).unstable.require_show()
+    # { show_no_colors: rpr,  } = ( require './main' ).unstable.require_show()
+    { rpr_string,           } = ( require './main' ).require_rpr_string()
     SQLITE                    = require 'node:sqlite'
     { debug,                } = console
 
@@ -206,7 +207,7 @@ UNSTABLE_DBRIC_BRICS =
             error_count++
             name                = "error_#{statement_count}"
             type                = 'error'
-            message             = "non-conformant statement: #{rpr statement}"
+            message             = "non-conformant statement: #{rpr_string statement}"
             db_objects[ name ]  = { name, type, message, }
         return { error_count, statement_count, db_objects, }
 
@@ -221,7 +222,7 @@ UNSTABLE_DBRIC_BRICS =
           for name, { type, message, } of expected_db_objects
             continue unless type is 'error'
             messages.push message
-          throw new Error "Ω___5 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
+          throw new Error "Ωdbric___6 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
         #...................................................................................................
         present_db_objects = @_get_db_objects()
         for name, { type: expected_type, } of expected_db_objects
@@ -238,7 +239,7 @@ UNSTABLE_DBRIC_BRICS =
         #     when name.startsWith 'insert_'
         #       null
         #     else
-        #       throw new Error "Ωnql___6 unable to parse statement name #{rpr name}"
+        #       throw new Error "Ωnql___8 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
         hide @, 'statements', {}
         build_statement_name  = @_name_of_build_statements
