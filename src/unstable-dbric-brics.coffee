@@ -135,6 +135,8 @@ UNSTABLE_DBRIC_BRICS =
         instead, we prepare statements on-demand and cache them here: ###
         hide @, 'statements', {}
         #...................................................................................................
+        @initialize()
+        #...................................................................................................
         fn_cfg_template = { deterministic: true, varargs: false, }
         for name, fn_cfg of clasz.functions
           if ( typeof fn_cfg ) is 'function'
@@ -145,6 +147,13 @@ UNSTABLE_DBRIC_BRICS =
           call    = call.bind @
           @db.function name, fn_cfg, call
         return undefined
+
+      #-----------------------------------------------------------------------------------------------------
+      initialize: ->
+        ### This method will be called *before* any build statements are executed and before any statements
+        in `@constructor.staements` are prepared and is a good place to create user-defined functions
+        (UDFs). You probably want to override it with a method that starts with `super()`. ###
+        return null
 
       #-----------------------------------------------------------------------------------------------------
       _validate_is_property: ( name ) ->
