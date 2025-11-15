@@ -38,11 +38,11 @@ UNSTABLE_DBRIC_BRICS =
       unquote_name: ( name ) ->
         ### TAINT use proper validation ###
         unless ( type = type_of name ) is 'text'
-          throw new Error "Ω___1 expected a text, got a #{type}"
+          throw new Error "Ωdbric___1 expected a text, got a #{type}"
         switch true
           when /^[^"](.*)[^"]$/.test  name then return name
           when /^"(.+)"$/.test        name then return name[ 1 ... name.length - 1 ].replace /""/g, '"'
-        throw new Error "Ω___2 expected a name, got #{rpr name}"
+        throw new Error "Ωdbric___2 expected a name, got #{rpr_string name}"
 
       #---------------------------------------------------------------------------------------------------------
       I: ( name ) => '"' + ( name.replace /"/g, '""' ) + '"'
@@ -159,7 +159,7 @@ UNSTABLE_DBRIC_BRICS =
         #...................................................................................................
         ### TAINT use proper validation ###
         unless type_of_build in [ 'undefined', 'null', 'list', ]
-          throw new Error "Ω___3 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
+          throw new Error "Ωdbric___3 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
         #...................................................................................................
         return -1 if ( not clasz.build? )
         return  0 if ( clasz.build.length is 0 )
@@ -169,7 +169,7 @@ UNSTABLE_DBRIC_BRICS =
         #...................................................................................................
         for build_statement in clasz.build
           count++
-          # debug 'Ω___4', "build statement:", build_statement
+          # debug 'Ωdbric___4', "build statement:", build_statement
           ( @prepare build_statement ).run()
         return count
 
