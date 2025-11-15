@@ -195,7 +195,7 @@ UNSTABLE_DBRIC_BRICS =
       #---------------------------------------------------------------------------------------------------
       set_getter @::, 'is_ready',     -> @_get_is_ready()
       set_getter @::, 'prefix',       -> @_get_prefix()
-      set_getter @::, 'full_prefix',  -> @_get_full_prefix
+      set_getter @::, 'full_prefix',  -> @_get_full_prefix()
 
       #-----------------------------------------------------------------------------------------------------
       _get_is_ready: ->
