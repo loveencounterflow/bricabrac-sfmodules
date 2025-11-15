@@ -18,6 +18,16 @@ UNSTABLE_DBRIC_BRICS =
     { rpr_string,           } = ( require './main' ).require_rpr_string()
     SQLITE                    = require 'node:sqlite'
     { debug,                } = console
+    misfit                    = Symbol 'misfit'
+
+    #-------------------------------------------------------------------------------------------------------
+    ### TAINT put into separate module ###
+    get_property_descriptor = ( x, name, fallback = misfit ) ->
+      while x?
+        return R if ( R = Object.getOwnPropertyDescriptor x, name )?
+        x = Object.getPrototypeOf x
+      return fallback unless fallback is misfit
+      throw new Error "unable to find descriptor for property #{String(name)} not found on object or its prototypes"
 
     #-------------------------------------------------------------------------------------------------------
     create_statement_re = ///
@@ -112,6 +122,10 @@ UNSTABLE_DBRIC_BRICS =
 
       #-----------------------------------------------------------------------------------------------------
       constructor: ( db_path ) ->
+        @_validate_is_property 'is_ready'
+        @_validate_is_property 'prefix'
+        @_validate_is_property 'full_prefix'
+        #...................................................................................................
         @db                 = new SQLITE.DatabaseSync db_path
         clasz               = @constructor
         @cfg                = Object.freeze { clasz.cfg..., db_path, }
@@ -129,6 +143,12 @@ UNSTABLE_DBRIC_BRICS =
           call    = call.bind @
           @db.function name, fn_cfg, call
         return undefined
+
+      #-----------------------------------------------------------------------------------------------------
+      _validate_is_property: ( name ) ->
+        descriptor = get_property_descriptor @, name
+        return null if ( type_of descriptor.get ) is 'function'
+        throw new Error "Ωdbric___4 not allowed to override property #{rpr_string name}; use '_get_#{name} instead"
 
       #-----------------------------------------------------------------------------------------------------
       _get_db_objects: ->
