@@ -264,8 +264,7 @@ UNSTABLE_DBRIC_BRICS =
         try
           R = @db.prepare sql
         catch cause
-          ### TAINT `rpr()` urgently needed ###
-          throw new Error "Ω___7 when trying to prepare the following statement, an error was thrown: #{rpr sql}", { cause, }
+          throw new Error "Ωdbric___9 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
 
     #=======================================================================================================
