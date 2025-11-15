@@ -129,8 +129,8 @@ UNSTABLE_DBRIC_BRICS =
         @db                 = new SQLITE.DatabaseSync db_path
         clasz               = @constructor
         @cfg                = Object.freeze { clasz.cfg..., db_path, }
-        ### NOTE we can't just prepare all the stetments as they depend on DB objects existing or not existing,
-        as the case may be. Hence we prepare statements on-demand and cache them here as needed: ###
+        ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
+        instead, we prepare statements on-demand and cache them here: ###
         hide @, 'statements', {}
         #...................................................................................................
         fn_cfg_template = { deterministic: true, varargs: false, }
