@@ -250,12 +250,6 @@ UNSTABLE_DBRIC_BRICS =
           @statements[ name ] = @prepare statement
         return null
 
-      #---------------------------------------------------------------------------------------------------
-      is_ready: ->
-        # dbos = @_get_db_objects()
-        # return false unless dbos.store_facets?.type is 'table'
-        return true
-
       #-----------------------------------------------------------------------------------------------------
       execute: ( sql ) -> @db.exec    sql
 
