@@ -167,7 +167,10 @@ UNSTABLE_DBRIC_BRICS =
         for _, { name, type, } of @_get_db_objects()
           continue unless name.startsWith full_prefix
           count++
-          ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
+          try
+            ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
+          catch error
+            console.debug "Ωdbric___1 ignored error: #{error.message}"
         ( @prepare SQL"pragma foreign_keys = on;" ).run()
         return count
 
