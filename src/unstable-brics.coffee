@@ -252,7 +252,6 @@ BRICS =
             error     = null
             cause     = null
             stack     = error_or_stack
-            # headline  = stack.
           else throw new Error "Ω___4 expected an error or a text, got a #{type}"
         #...................................................................................................
         if ( lines = stack.split '\n' ).length is 1
