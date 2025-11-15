@@ -111,6 +111,7 @@ UNSTABLE_DBRIC_BRICS =
       @functions:   {}
       @statements:  {}
       @build:       null
+      @db_class:    SQLITE.DatabaseSync
 
       #-----------------------------------------------------------------------------------------------------
       @open: ( db_path ) ->
@@ -126,8 +127,9 @@ UNSTABLE_DBRIC_BRICS =
         @_validate_is_property 'prefix'
         @_validate_is_property 'full_prefix'
         #...................................................................................................
-        @db                 = new SQLITE.DatabaseSync db_path
         clasz               = @constructor
+        @db                 = new clasz.db_class db_path
+        # @db                 = new SQLITE.DatabaseSync db_path
         @cfg                = Object.freeze { clasz.cfg..., db_path, }
         ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
         instead, we prepare statements on-demand and cache them here: ###
