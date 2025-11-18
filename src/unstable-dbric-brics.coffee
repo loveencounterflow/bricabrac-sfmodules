@@ -151,7 +151,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       initialize: ->
         ### This method will be called *before* any build statements are executed and before any statements
-        in `@constructor.staements` are prepared and is a good place to create user-defined functions
+        in `@constructor.statements` are prepared and is a good place to create user-defined functions
         (UDFs). You probably want to override it with a method that starts with `super()`. ###
         return null
 
@@ -179,7 +179,7 @@ UNSTABLE_DBRIC_BRICS =
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
           catch error
-            console.debug "Ωdbric___1 ignored error: #{error.message}"
+            console.debug "Ωdbric___4 ignored error: #{error.message}"
         ( @prepare SQL"pragma foreign_keys = on;" ).run()
         return count
 
@@ -193,7 +193,7 @@ UNSTABLE_DBRIC_BRICS =
         #...................................................................................................
         ### TAINT use proper validation ###
         unless type_of_build in [ 'undefined', 'null', 'list', ]
-          throw new Error "Ωdbric___4 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
+          throw new Error "Ωdbric___5 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
         #...................................................................................................
         return -1 if ( not clasz.build? )
         return  0 if ( clasz.build.length is 0 )
@@ -222,7 +222,7 @@ UNSTABLE_DBRIC_BRICS =
           for name, { type, message, } of expected_db_objects
             continue unless type is 'error'
             messages.push message
-          throw new Error "Ωdbric___5 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
+          throw new Error "Ωdbric___6 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
         #...................................................................................................
         present_db_objects = @_get_db_objects()
         for name, { type: expected_type, } of expected_db_objects
@@ -274,7 +274,7 @@ UNSTABLE_DBRIC_BRICS =
         #     when name.startsWith 'insert_'
         #       null
         #     else
-        #       throw new Error "Ωnql___6 unable to parse statement name #{rpr_string name}"
+        #       throw new Error "Ωnql___7 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
         hide @, 'statements', {}
         build_statement_name  = @_name_of_build_statements
@@ -286,14 +286,14 @@ UNSTABLE_DBRIC_BRICS =
         return null
 
       #-----------------------------------------------------------------------------------------------------
-      execute: ( sql ) -> @db.exec    sql
+      execute: ( sql ) -> @db.exec sql
 
       #-----------------------------------------------------------------------------------------------------
       prepare: ( sql ) ->
         try
           R = @db.prepare sql
         catch cause
-          throw new Error "Ωdbric___7 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+          throw new Error "Ωdbric___8 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
 
     #=======================================================================================================
