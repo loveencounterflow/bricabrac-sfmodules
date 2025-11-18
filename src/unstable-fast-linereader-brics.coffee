@@ -49,13 +49,12 @@ BRICS =
         stop  = null
         #.......................................................................................................
         while ( stop = buffer.indexOf nl, start ) isnt -1
+          lnr++
           if ( start == 0 ) and ( remainders.length > 0 )
-            lnr++
-            remainders.push buffer.slice 0, stop
+            remainders.push buffer.slice start, stop
             yield { lnr, line: ( ( Buffer.concat remainders ).toString 'utf-8' ), eol, }
             remainders.length = 0
           else
-            lnr++
             yield { lnr, line: ( ( buffer.slice start, stop ).toString 'utf-8' ), eol, }
           start = stop + 1
         #.......................................................................................................
