@@ -40,26 +40,30 @@ BRICS =
     #-----------------------------------------------------------------------------------------------------------
     walk_lines_with_positions = ( path, cfg ) ->
       # from mmomtchev/readcsv/readcsv-buffered-opt.js
-      remainder   = ''
+      remainders  = []
       eol         = '\n'
       lnr         = 0
       #.........................................................................................................
       for { buffer, byte_idx, buffer_nr, } from walk_buffers_with_positions path, cfg
-        # debug 'Ωflr___1', { length: buffer.length, byte_idx, }
         start = 0
         stop  = null
         #.......................................................................................................
         while ( stop = buffer.indexOf nl, start ) isnt -1
-          if ( start == 0 ) and ( remainder.length > 0 )
+          if ( start == 0 ) and ( remainders.length > 0 )
             lnr++
-            yield { lnr, line: ( remainder + buffer.slice 0, stop ), eol, buffer_nr, }
-            remainder = ''
+            remainders.push buffer.slice 0, stop
+            yield { lnr, line: ( ( Buffer.concat remainders ).toString 'utf-8' ), eol, }
+            remainders.length = 0
           else
             lnr++
-            yield { lnr, line: ( ( buffer.slice start, stop ).toString 'utf-8' ), eol, buffer_nr, }
+            yield { lnr, line: ( ( buffer.slice start, stop ).toString 'utf-8' ), eol, }
           start = stop + 1
         #.......................................................................................................
-        remainder = buffer.slice start
+        remainders.push buffer.slice start
+      #.........................................................................................................
+      if remainders.length > 0
+        lnr++
+        yield { lnr, line: ( ( Buffer.concat remainders ).toString 'utf-8' ), eol: '', }
       #.........................................................................................................
       return null
 
