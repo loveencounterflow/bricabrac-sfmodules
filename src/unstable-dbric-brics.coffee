@@ -38,7 +38,33 @@ UNSTABLE_DBRIC_BRICS =
       ///is
 
     #-------------------------------------------------------------------------------------------------------
-    internals = { type_of, create_statement_re, }
+    templates =
+      create_function_cfg:
+        deterministic:  true
+        varargs:        false
+        directOnly:     false
+      #.....................................................................................................
+      create_aggregate_function_cfg:
+        deterministic:  true
+        varargs:        false
+        directOnly:     false
+        start:          null
+      #.....................................................................................................
+      create_window_function_cfg:
+        deterministic:  true
+        varargs:        false
+        directOnly:     false
+        start:          null
+      #.....................................................................................................
+      create_table_function_cfg:
+        deterministic:  true
+        varargs:        false
+        directOnly:     false
+      #.....................................................................................................
+      create_virtual_table_cfg: {}
+
+    #-------------------------------------------------------------------------------------------------------
+    internals = { type_of, create_statement_re, templates, }
 
 
     #===========================================================================================================
@@ -134,7 +160,9 @@ UNSTABLE_DBRIC_BRICS =
         ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
         instead, we prepare statements on-demand and cache them here: ###
         hide @, 'statements', {}
+        hide @, '_w', null
         #...................................................................................................
+        @run_standard_pragmas()
         @initialize()
         #...................................................................................................
         fn_cfg_template = { deterministic: true, varargs: false, }
@@ -147,6 +175,16 @@ UNSTABLE_DBRIC_BRICS =
           call    = call.bind @
           @db.function name, fn_cfg, call
         return undefined
+
+      #-----------------------------------------------------------------------------------------------------
+      run_standard_pragmas: ->
+        ### not using `@db.pragma` as it is only provided by `better-sqlite3`'s DB class ###
+        ( @db.prepare SQL"pragma journal_mode = wal"    ).run()
+        ( @db.prepare SQL"pragma foreign_keys = on"     ).run()
+        ( @db.prepare SQL"pragma busy_timeout = 60000"  ).run() ### time in ms ###
+        # @db.pragma SQL"journal_mode = wal"
+        # @db.pragma SQL"foreign_keys = on"
+        return null
 
       #-----------------------------------------------------------------------------------------------------
       initialize: ->
@@ -210,6 +248,7 @@ UNSTABLE_DBRIC_BRICS =
       set_getter @::, 'is_ready',     -> @_get_is_ready()
       set_getter @::, 'prefix',       -> @_get_prefix()
       set_getter @::, 'full_prefix',  -> @_get_full_prefix()
+      set_getter @::, 'w',            -> @_get_w()
 
       #-----------------------------------------------------------------------------------------------------
       _get_is_ready: ->
@@ -241,6 +280,12 @@ UNSTABLE_DBRIC_BRICS =
         return '' if @cfg.prefix is '(NOPREFIX)'
         return '' if @cfg.prefix is ''
         return "#{@cfg.prefix}_"
+
+      #---------------------------------------------------------------------------------------------------
+      _get_w: ->
+        return @_w if @_w?
+        @_w = @constructor.open @cfg.db_path
+        return @_w
 
       #---------------------------------------------------------------------------------------------------
       _get_objects_in_build_statements: ->
@@ -295,6 +340,67 @@ UNSTABLE_DBRIC_BRICS =
         catch cause
           throw new Error "Ωdbric___8 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
+
+      #=====================================================================================================
+      # FUNCTIONS
+      #-----------------------------------------------------------------------------------------------------
+      create_function: ( cfg ) ->
+        if ( type_of @db.function ) isnt 'function'
+          throw new Error "Ωdbric___9 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
+        { name,
+          call,
+          directOnly,
+          deterministic,
+          varargs,        } = { templates.create_function_cfg..., cfg..., }
+        return @db.function name, { deterministic, varargs, directOnly, }, call
+
+      #-----------------------------------------------------------------------------------------------------
+      create_aggregate_function: ( cfg ) ->
+        if ( type_of @db.aggregate ) isnt 'function'
+          throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
+        { name,
+          start,
+          step,
+          result,
+          directOnly,
+          deterministic,
+          varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
+        return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
+
+      #-----------------------------------------------------------------------------------------------------
+      create_window_function: ( cfg ) ->
+        if ( type_of @db.aggregate ) isnt 'function'
+          throw new Error "Ωdbric__11 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
+        { name,
+          start,
+          step,
+          inverse,
+          result,
+          directOnly,
+          deterministic,
+          varargs,        } = { templates.create_window_function_cfg..., cfg..., }
+        return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
+
+      #-----------------------------------------------------------------------------------------------------
+      create_table_function: ( cfg ) ->
+        if ( type_of @db.table ) isnt 'function'
+          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
+        { name,
+          parameters,
+          columns,
+          rows,
+          directOnly,
+          deterministic,
+          varargs,        } = { templates.create_table_function_cfg..., cfg..., }
+        return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
+
+      #-----------------------------------------------------------------------------------------------------
+      create_virtual_table: ( cfg ) ->
+        if ( type_of @db.table ) isnt 'function'
+          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
+        { name, create,   } = { templates.create_virtual_table_cfg..., cfg..., }
+        return @db.table name, create
+
 
     #=======================================================================================================
     class Dbric_std extends Dbric
