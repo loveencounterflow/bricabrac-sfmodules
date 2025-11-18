@@ -4,6 +4,8 @@
 
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
+    - [Fast Line Reader](#fast-line-reader)
+    - [DBric Database Adapter](#dbric-database-adapter)
     - [JetStream](#jetstream)
       - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
       - [JetStream: Adding Data](#jetstream-adding-data)
@@ -28,6 +30,26 @@
 
 
 ## To Do
+
+### Fast Line Reader
+
+* fix bugs where start-of-lines are missing with small `chunk_size`s
+* allow alternative sources for buffers
+* ensure compatibility with `GUY.fs.walk_lines_with_positions()` especially
+  * recognition of different line endings
+  * treatment of `\r` in the vicinity of `\n`
+  * treatment of trailing empty lines
+  * `( '\n' ).split /\r\n|\r|\n/` gives `[ '', '', ]`, so this method should do the same
+
+### DBric Database Adapter
+
+* can use `node:sqlite` ('nSQL') or `better-sqlite3` ('bSQL') as implementation class for the `Dbric::db`
+  property, but since there are subtle (and not so subtle) differences in behavior and capabilities, it will
+  probably be best to choose one of the two and stick to it.
+  * generally recommended to use bSQL (`better-sqlite3`) as it has stricter error handling (e.g. bSQL will
+    complain when a statement without required parameters is executed, nSQL has been found to silently
+    assume `null` for missing parameters).
+  * subtle differences in the interpretation of options for UDF aggregate functions
 
 ### JetStream
 
