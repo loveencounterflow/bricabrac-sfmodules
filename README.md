@@ -33,13 +33,13 @@
 
 ### Fast Line Reader
 
-* fix bugs where start-of-lines are missing with small `chunk_size`s
-* allow alternative sources for buffers
-* ensure compatibility with `GUY.fs.walk_lines_with_positions()` especially
-  * recognition of different line endings
-  * treatment of `\r` in the vicinity of `\n`
-  * treatment of trailing empty lines
-  * `( '\n' ).split /\r\n|\r|\n/` gives `[ '', '', ]`, so this method should do the same
+* **`[+]`** fix bugs where start-of-lines are missing with small `chunk_size`s
+* **`[—]`** allow alternative sources for buffers
+* **`[—]`** ensure compatibility with `GUY.fs.walk_lines_with_positions()` especially
+  * **`[—]`** recognition of different line endings
+  * **`[—]`** treatment of `\r` in the vicinity of `\n`
+  * **`[+]`** treatment of trailing empty lines
+  * **`[—]`** `( '\n' ).split /\r\n|\r|\n/` gives `[ '', '', ]`, so this method should do the same
 
 ### DBric Database Adapter
 
