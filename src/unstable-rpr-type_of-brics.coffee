@@ -423,6 +423,7 @@ BRICS =
         when 'symbol'                       then return 'symbol'
       #.........................................................................................................
       return 'list'         if Array.isArray  x
+      return 'error'        if ( Error.isError x ) or ( x instanceof Error )
       ### TAINT consider to return x.constructor.name ###
       switch millertype = ( ( Object::toString.call x ).replace /^\[object ([^\]]+)\]$/, '$1' ).toLowerCase()
         when 'regexp'                       then return 'regex'
