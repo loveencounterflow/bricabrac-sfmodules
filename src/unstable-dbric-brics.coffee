@@ -179,9 +179,10 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       run_standard_pragmas: ->
         ### not using `@db.pragma` as it is only provided by `better-sqlite3`'s DB class ###
-        ( @db.prepare SQL"pragma journal_mode = wal"    ).run()
-        ( @db.prepare SQL"pragma foreign_keys = on"     ).run()
-        ( @db.prepare SQL"pragma busy_timeout = 60000"  ).run() ### time in ms ###
+        ( @db.prepare SQL"pragma journal_mode = wal;"   ).run()
+        ( @db.prepare SQL"pragma foreign_keys = on;"    ).run()
+        ( @db.prepare SQL"pragma busy_timeout = 60000;" ).run() ### time in ms ###
+        ( @db.prepare SQL"pragma strict       = on;"    ).run() ### time in ms ###
         # @db.pragma SQL"journal_mode = wal"
         # @db.pragma SQL"foreign_keys = on"
         return null
