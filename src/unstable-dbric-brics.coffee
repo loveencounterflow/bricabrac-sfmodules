@@ -17,7 +17,8 @@ UNSTABLE_DBRIC_BRICS =
     # { show_no_colors: rpr,  } = ( require './main' ).unstable.require_show()
     { rpr_string,           } = ( require './main' ).require_rpr_string()
     SQLITE                    = require 'node:sqlite'
-    { debug,                } = console
+    { debug,
+      warn                  } = console
     misfit                    = Symbol 'misfit'
 
     #-------------------------------------------------------------------------------------------------------
@@ -217,7 +218,7 @@ UNSTABLE_DBRIC_BRICS =
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
           catch error
-            console.debug "Ωdbric___7 ignored error: #{error.message}"
+            warn "Ωdbric___4 ignored error: #{error.message}"
         ( @prepare SQL"pragma foreign_keys = on;" ).run()
         return count
 
