@@ -29,7 +29,8 @@ BRICS =
       el2:  '\x1b[2K'       # EL Erase in Line; 2: entire line
 
     #-------------------------------------------------------------------------------------------------------
-    get_progress = ({ total, task_rpr, }={}) ->
+    get_progress = ({ total, task_rpr, stats, }={}) ->
+      ### TAINT integrate into `Benchmarker` ###
       unless total?
         return progress = -> throw new Error "Ωbm___1 must call with option `total` in order to use progress bar"
       #.....................................................................................................
@@ -37,9 +38,10 @@ BRICS =
       divisor   = Math.round total / 100
       #.....................................................................................................
       return progress = ({ delta = 1, }={}) ->
-        processed      += delta; return null unless ( processed %% divisor ) is 0
-        percentage      = Math.round processed / total * 100
-        percentage_rpr  = percentage.toString().padStart 3
+        processed        += delta; return null unless ( processed %% divisor ) is 0
+        stats?.processed  = processed
+        percentage        = Math.round processed / total * 100
+        percentage_rpr    = percentage.toString().padStart 3
         process.stdout.write "#{task_rpr} #{get_percentage_bar percentage} #{ANSI.cr}"
         return null
 
@@ -64,7 +66,8 @@ BRICS =
         cfg                 = { { total: null, }..., cfg..., }
         task                = task ? ( if ( fn.name is '' ) then '(anonymous)' else fn.name )
         task_rpr            = ( task + ':' ).padEnd 40, ' '
-        progress            = get_progress { total: cfg.total, task_rpr, }
+        stats               = { processed: 0, }
+        progress            = get_progress { total: cfg.total, task_rpr, stats, }
         t0                  = hrtime_as_bigint()
         #.....................................................................................................
         result              = fn { progress, }
@@ -87,7 +90,11 @@ BRICS =
             # tasks:    @tasks,
             }
         else
-          console.log "#{ANSI.el2}#{task_rpr} #{dt_rpr}"
+          console.log "#{ANSI.el2}#{task_rpr} dt:   #{dt_rpr} ms"
+          console.log "#{ANSI.el2}#{task_rpr} n:    #{ @format_dt stats.processed}"
+          console.log "#{ANSI.el2}#{task_rpr} ???:  #{ @format_dt ( 1000 * dt              / stats.processed ) } ms/1k"
+          console.log "#{ANSI.el2}#{task_rpr} f:    #{ @format_dt ( 1000 * stats.processed / dt              ) } Hz"
+          # console.log { stats, } # "#{ANSI.el2}#{task_rpr} #{dt_rpr} ms"
         #...................................................................................................
         return result
 
