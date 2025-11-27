@@ -144,7 +144,7 @@ UNSTABLE_DBRIC_BRICS =
       constructor: ( db_path, cfg ) ->
         @_validate_is_property 'is_ready'
         @_validate_is_property 'prefix'
-        @_validate_is_property 'full_prefix'
+        @_validate_is_property 'prefix_re'
         #...................................................................................................
         clasz               = @constructor
         hide @, 'db',         new clasz.db_class db_path
@@ -210,10 +210,10 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       teardown: ->
         count       = 0
-        full_prefix = @full_prefix
+        prefix_re   = @prefix_re
         ( @prepare SQL"pragma foreign_keys = off;" ).run()
         for _, { name, type, } of @_get_db_objects()
-          continue unless name.startsWith full_prefix
+          continue unless  prefix_re.test name
           count++
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
@@ -248,7 +248,7 @@ UNSTABLE_DBRIC_BRICS =
       #---------------------------------------------------------------------------------------------------
       set_getter @::, 'is_ready',     -> @_get_is_ready()
       set_getter @::, 'prefix',       -> @_get_prefix()
-      set_getter @::, 'full_prefix',  -> @_get_full_prefix()
+      set_getter @::, 'prefix_re',    -> @_get_prefix_re()
       set_getter @::, 'w',            -> @_get_w()
 
       #-----------------------------------------------------------------------------------------------------
@@ -271,16 +271,13 @@ UNSTABLE_DBRIC_BRICS =
 
       #---------------------------------------------------------------------------------------------------
       _get_prefix: ->
-        return @constructor.name.replace /^.*_([^_]+)$/, '$1' unless @cfg.prefix?
-        return '' if @cfg.prefix is '(NOPREFIX)'
+        return '' if ( not @cfg.prefix? ) or ( @cfg.prefix is '(NOPREFIX)' )
         return @cfg.prefix
 
       #---------------------------------------------------------------------------------------------------
-      _get_full_prefix: ->
-        return '' if ( not @cfg.prefix? )
-        return '' if @cfg.prefix is '(NOPREFIX)'
-        return '' if @cfg.prefix is ''
-        return "#{@cfg.prefix}_"
+      _get_prefix_re: ->
+        return /|/ if @prefix is ''
+        return /// ^ _? #{RegExp.escape @prefix} _ .* $ ///
 
       #---------------------------------------------------------------------------------------------------
       _get_w: ->
