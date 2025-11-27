@@ -68,7 +68,7 @@ BRICS =
         unless d?
           throw new Error "Ωlfti___2 unable to process values of type #{type_of d}"
         unless ( prototype = Object.getPrototypeOf d ) in known_prototypes
-          throw new Error "Ωlfti___3 unable to process values of type #{type_of d}"
+          throw new Error "Ωlfti___3 unable to process values of type #{d.constructor.name ? type_of d}"
         R = if prototype? then ( new d.constructor ) else ( Object.create null )
         Object.assign R, d
         fn R, P... if fn?

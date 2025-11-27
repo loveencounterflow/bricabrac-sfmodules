@@ -143,8 +143,6 @@ UNSTABLE_DBRIC_BRICS =
       @open: ( db_path, cfg ) ->
         clasz       = @
         R           = new clasz db_path, cfg
-        debug 'Ωdbric___3', { clasz_name: clasz.name, }
-        debug 'Ωdbric___4', { R, }
         ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
         contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
         the instance. ###
@@ -162,7 +160,6 @@ UNSTABLE_DBRIC_BRICS =
         clasz               = @constructor
         @db                 = new clasz.db_class db_path
         # @db                 = new SQLITE.DatabaseSync db_path
-        debug 'Ωdbric___5', { cfg, }
         @cfg                = Object.freeze { clasz.cfg..., db_path, cfg..., }
         ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
         instead, we prepare statements on-demand and cache them here: ###
