@@ -162,14 +162,7 @@ UNSTABLE_DBRIC_BRICS =
         @initialize()
         #...................................................................................................
         fn_cfg_template = { deterministic: true, varargs: false, }
-        for name, fn_cfg of clasz.functions
-          if ( typeof fn_cfg ) is 'function'
-            [ call, fn_cfg, ] = [ fn_cfg, {}, ]
-          else
-            { call, } = fn_cfg
-          fn_cfg  = { fn_cfg_template..., fn_cfg, }
-          call    = call.bind @
-          @db.function name, fn_cfg, call
+        @create_udfs()
         #...................................................................................................
         ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
         contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
@@ -347,6 +340,36 @@ UNSTABLE_DBRIC_BRICS =
 
       #=====================================================================================================
       # FUNCTIONS
+      #-----------------------------------------------------------------------------------------------------
+      create_udfs: ->
+        clasz               = @constructor
+        ### TAINT should be put somewhere else? ###
+        names_of_callables  =
+          function:             [ 'call', ]
+          aggregate_function:   [ 'start', 'step', 'result', ]
+          window_function:      [ 'start', 'step', 'inverse', 'result', ]
+          table_function:       [ 'rows', ]
+          virtual_table:        [ 'rows', ]
+        #...................................................................................................
+        for category in [ 'function', \
+          'aggregate_function', 'window_function', 'table_function', 'virtual_table', ]
+          property_name = "#{category}s"
+          method_name   = "create_#{category}"
+          continue unless ( collection = clasz[ property_name ] )?
+          #.................................................................................................
+          for name, fn_cfg of collection
+            #...............................................................................................
+            fn_cfg = lets fn_cfg, ( d ) =>
+              d.name ?= name
+              #.............................................................................................
+              for name_of_callable in names_of_callables[ category ]
+                continue unless ( callable = d[ name_of_callable ] )?
+                d[ name_of_callable ] = callable.bind @
+              return null
+            @[ method_name ] fn_cfg
+        #...................................................................................................
+        return null
+
       #-----------------------------------------------------------------------------------------------------
       create_function: ( cfg ) ->
         if ( type_of @db.function ) isnt 'function'
