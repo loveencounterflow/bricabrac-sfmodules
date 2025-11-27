@@ -11,11 +11,14 @@ UNSTABLE_DBRIC_BRICS =
   require_dbric: ->
 
     #=======================================================================================================
+    SFMODULES                 = require './main'
     { hide,
-      set_getter,           } = ( require './main' ).require_managed_property_tools()
-    { type_of,              } = ( require './main' ).unstable.require_type_of()
-    # { show_no_colors: rpr,  } = ( require './main' ).unstable.require_show()
-    { rpr_string,           } = ( require './main' ).require_rpr_string()
+      set_getter,           } = SFMODULES.require_managed_property_tools()
+    { type_of,              } = SFMODULES.unstable.require_type_of()
+    # { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
+    { rpr_string,           } = SFMODULES.require_rpr_string()
+    { lets,
+      freeze,               } = SFMODULES.require_letsfreezethat_infra().simple
     SQLITE                    = require 'node:sqlite'
     { debug,
       warn                  } = console
