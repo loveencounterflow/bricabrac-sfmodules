@@ -140,31 +140,19 @@ UNSTABLE_DBRIC_BRICS =
       @db_class:    SQLITE.DatabaseSync
 
       #-----------------------------------------------------------------------------------------------------
-      @open: ( db_path, cfg ) ->
-        clasz       = @
-        R           = new clasz db_path, cfg
-        ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
-        contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
-        the instance. ###
-        R.is_fresh  = not R.is_ready
-        R.build()
-        R._prepare_statements()
-        return R
-
-      #-----------------------------------------------------------------------------------------------------
       constructor: ( db_path, cfg ) ->
         @_validate_is_property 'is_ready'
         @_validate_is_property 'prefix'
         @_validate_is_property 'full_prefix'
         #...................................................................................................
         clasz               = @constructor
-        @db                 = new clasz.db_class db_path
+        hide @, 'db',         new clasz.db_class db_path
         # @db                 = new SQLITE.DatabaseSync db_path
         @cfg                = Object.freeze { clasz.cfg..., db_path, cfg..., }
         ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
         instead, we prepare statements on-demand and cache them here: ###
         hide @, 'statements', {}
-        hide @, '_w', null
+        hide @, '_w',         null
         #...................................................................................................
         @run_standard_pragmas()
         @initialize()
@@ -178,6 +166,13 @@ UNSTABLE_DBRIC_BRICS =
           fn_cfg  = { fn_cfg_template..., fn_cfg, }
           call    = call.bind @
           @db.function name, fn_cfg, call
+        #...................................................................................................
+        ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
+        contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
+        the instance. ###
+        @is_fresh = not @is_ready
+        @build()
+        @_prepare_statements()
         return undefined
 
       #-----------------------------------------------------------------------------------------------------
