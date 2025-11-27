@@ -4,6 +4,7 @@
 
 - [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
   - [To Do](#to-do)
+    - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
     - [Fast Line Reader](#fast-line-reader)
     - [DBric Database Adapter](#dbric-database-adapter)
     - [JetStream](#jetstream)
@@ -30,6 +31,61 @@
 
 
 ## To Do
+
+### Infrastructure for `letsfreezethat`
+
+* Clone actions:
+  * **`take`**
+  * **`toss`**
+  * **`call`**
+  * **`fallback`**
+  * **`error`**
+  * **`assign`**
+  * **`dive`**
+
+rename `clone` -> `project`
+
+```coffee
+s =
+  take:     Symbol 'take'
+  toss:     Symbol 'toss'
+  call:     Symbol 'call'
+  error:    Symbol 'error'
+  assign:   Symbol 'assign'
+  dive:     Symbol 'dive'
+s.fallback = s.error
+
+clone = ( x, howto = new Howto() ) ->
+
+  if x?
+    protoype  = Object.getPrototypeOf x
+    R         = if protoype?  then ( new x.constructor ) else ( Object.create null )
+    switch action
+      when 'assign'
+        Object.assign R, x
+      when 'dive'
+        for k, v of x
+          R[ k ] = clone v
+      else throw new Error "Ω___8 unknown action #{rpr_string action}"
+    return R
+  else
+    protoype  = null
+    R     = x
+```
+
+
+```
+p = Object.getPrototypeOf
+debug 'Ωjzrsdb__11', p {}
+debug 'Ωjzrsdb__12', p 8
+debug 'Ωjzrsdb__13', p Bsql3
+debug 'Ωjzrsdb__14', p new Bsql3()
+debug 'Ωjzrsdb__15', ( p -> ) is ( p -> )
+misfit = Symbol 'misfit'
+clone = ( x, seen = new Map() ) ->
+```
+
+
 
 ### Fast Line Reader
 
