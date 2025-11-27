@@ -197,7 +197,7 @@ UNSTABLE_DBRIC_BRICS =
       _validate_is_property: ( name ) ->
         descriptor = get_property_descriptor @, name
         return null if ( type_of descriptor.get ) is 'function'
-        throw new Error "Ωdbric___6 not allowed to override property #{rpr_string name}; use '_get_#{name} instead"
+        throw new Error "Ωdbric___3 not allowed to override property #{rpr_string name}; use '_get_#{name} instead"
 
       #-----------------------------------------------------------------------------------------------------
       _get_db_objects: ->
@@ -231,7 +231,7 @@ UNSTABLE_DBRIC_BRICS =
         #...................................................................................................
         ### TAINT use proper validation ###
         unless type_of_build in [ 'undefined', 'null', 'list', ]
-          throw new Error "Ωdbric___8 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
+          throw new Error "Ωdbric___5 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
         #...................................................................................................
         return -1 if ( not clasz.build? )
         return  0 if ( clasz.build.length is 0 )
@@ -261,7 +261,7 @@ UNSTABLE_DBRIC_BRICS =
           for name, { type, message, } of expected_db_objects
             continue unless type is 'error'
             messages.push message
-          throw new Error "Ωdbric___9 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
+          throw new Error "Ωdbric___6 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
         #...................................................................................................
         present_db_objects = @_get_db_objects()
         for name, { type: expected_type, } of expected_db_objects
@@ -319,7 +319,7 @@ UNSTABLE_DBRIC_BRICS =
         #     when name.startsWith 'insert_'
         #       null
         #     else
-        #       throw new Error "Ωnql__10 unable to parse statement name #{rpr_string name}"
+        #       throw new Error "Ωnql___7 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
         hide @, 'statements', {}
         build_statement_name  = @_name_of_build_statements
@@ -341,7 +341,7 @@ UNSTABLE_DBRIC_BRICS =
         try
           R = @db.prepare sql
         catch cause
-          throw new Error "Ωdbric__11 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+          throw new Error "Ωdbric___8 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
 
       #=====================================================================================================
@@ -349,7 +349,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_function: ( cfg ) ->
         if ( type_of @db.function ) isnt 'function'
-          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
+          throw new Error "Ωdbric___9 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
           call,
           directOnly,
@@ -360,7 +360,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_aggregate_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
+          throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
         { name,
           start,
           step,
@@ -373,7 +373,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_window_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
+          throw new Error "Ωdbric__11 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
         { name,
           start,
           step,
@@ -387,7 +387,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_table_function: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__15 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
+          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
         { name,
           parameters,
           columns,
@@ -400,7 +400,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_virtual_table: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__16 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
+          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
         { name, create,   } = { templates.create_virtual_table_cfg..., cfg..., }
         return @db.table name, create
 
