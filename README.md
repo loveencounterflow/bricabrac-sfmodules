@@ -107,6 +107,13 @@ clone = ( x, seen = new Map() ) ->
     assume `null` for missing parameters).
   * subtle differences in the interpretation of options for UDF aggregate functions
 
+* handlers invoked for lifetime stages:
+  * `on_create()`
+  * `on_prepared()`
+  * `on_fresh()`
+  * `on_populated()`
+
+
 ### JetStream
 
 * JetStream is a utlity to construct data processing pipelines from series of data transform.
