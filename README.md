@@ -113,6 +113,17 @@ clone = ( x, seen = new Map() ) ->
   * `on_fresh()`
   * `on_populated()`
 
+* consider to apply [Gaps and Islands empty select statements for referential integrity
+  (ESSFRIs)](https://github.com/loveencounterflow/gaps-and-islands?tab=readme-ov-file#essfri-improving-integrity-checks-in-sqlite)
+  (i.e. `select * from my_view where false;`) to newly created views
+  * alternatively, implement a method to do zero-row selects from all relations / only views; call it
+    always on instantiation
+  * create a method to do system-defined and user-defined health checks on DB
+
+* generate `insert` statements
+* implement the optiona to generate `trigger`s to be called before each `insert`, thus enabling error
+  messages that quote the offending row; this could be enabled by registering a function with a suitable
+  know name, such as `trigger_on_before_insert()`
 
 ### JetStream
 
