@@ -11,18 +11,18 @@ UNSTABLE_DBRIC_BRICS =
   require_dbric: ->
 
     #=======================================================================================================
-    SFMODULES                 = require './main'
+    SFMODULES                       = require './main'
     { hide,
-      set_getter,           } = SFMODULES.require_managed_property_tools()
-    { type_of,              } = SFMODULES.unstable.require_type_of()
+      set_getter,                 } = SFMODULES.require_managed_property_tools()
+    { type_of,                    } = SFMODULES.unstable.require_type_of()
     # { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
-    { rpr_string,           } = SFMODULES.require_rpr_string()
+    { rpr_string,                 } = SFMODULES.require_rpr_string()
     { lets,
-      freeze,               } = SFMODULES.require_letsfreezethat_infra().simple
-    SQLITE                    = require 'node:sqlite'
+      freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
+    SQLITE                          = require 'node:sqlite'
     { debug,
-      warn                  } = console
-    misfit                    = Symbol 'misfit'
+      warn                        } = console
+    misfit                          = Symbol 'misfit'
 
     #-------------------------------------------------------------------------------------------------------
     ### TAINT put into separate module ###
