@@ -26,6 +26,8 @@ UNSTABLE_DBRIC_BRICS =
 
     #-------------------------------------------------------------------------------------------------------
     ### TAINT put into separate module ###
+    ### TAINT rewrite with `get_all_in_prototype_chain()` ###
+    ### TAINT rewrite as `get_first_descriptor_in_prototype_chain()`, `get_first_in_prototype_chain()` ###
     get_property_descriptor = ( x, name, fallback = misfit ) ->
       while x?
         return R if ( R = Object.getOwnPropertyDescriptor x, name )?
