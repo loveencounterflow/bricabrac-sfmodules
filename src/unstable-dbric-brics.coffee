@@ -148,6 +148,7 @@ UNSTABLE_DBRIC_BRICS =
       @db_class:    SQLITE.DatabaseSync
 
       #-----------------------------------------------------------------------------------------------------
+      ### TAINT use normalize-function-arguments ###
       constructor: ( db_path, cfg ) ->
         @_validate_is_property 'is_ready'
         @_validate_is_property 'prefix'
@@ -159,8 +160,6 @@ UNSTABLE_DBRIC_BRICS =
         hide @, 'db',         new clasz.db_class db_path
         # @db                 = new SQLITE.DatabaseSync db_path
         @cfg                = Object.freeze { clasz.cfg..., db_path, cfg..., }
-        ### NOTE we can't just prepare all the statements as they might depend on non-existant DB objects;
-        instead, we prepare statements on-demand and cache them here: ###
         hide @, 'statements', {}
         hide @, '_w',         null
         #...................................................................................................
