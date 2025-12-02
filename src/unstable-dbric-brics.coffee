@@ -342,7 +342,7 @@ UNSTABLE_DBRIC_BRICS =
         try
           R = @db.prepare sql
         catch cause
-          throw new Error "Ωdbric___8 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+          throw new Error "Ωdbric___9 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
 
       #=====================================================================================================
@@ -380,7 +380,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_function: ( cfg ) ->
         if ( type_of @db.function ) isnt 'function'
-          throw new Error "Ωdbric___9 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
+          throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
           call,
           directOnly,
@@ -391,7 +391,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_aggregate_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
+          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
         { name,
           start,
           step,
@@ -404,7 +404,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_window_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__11 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
+          throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
         { name,
           start,
           step,
@@ -418,7 +418,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_table_function: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
+          throw new Error "Ωdbric__16 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
         { name,
           parameters,
           columns,
@@ -431,8 +431,8 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_virtual_table: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
         { name, create,   } = { templates.create_virtual_table_cfg..., cfg..., }
+          throw new Error "Ωdbric__18 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
         return @db.table name, create
 
 
