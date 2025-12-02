@@ -56,6 +56,7 @@ BRICS =
 
     #-------------------------------------------------------------------------------------------------------
     remap = ( x, mapping ) ->
+      ### TAINT unify with `letsfreezethat-infra#project()`? ###
       throw new Error "Ωrca___2 unable to remap frozen object" if Object.isFrozen x
       original_keys = Object.getOwnPropertyNames x
       tmp           = {}
