@@ -348,7 +348,7 @@ UNSTABLE_DBRIC_BRICS =
       #=====================================================================================================
       # FUNCTIONS
       #-----------------------------------------------------------------------------------------------------
-      create_udfs: ->
+      _create_udfs: ->
         clasz               = @constructor
         ### TAINT should be put somewhere else? ###
         names_of_callables  =
