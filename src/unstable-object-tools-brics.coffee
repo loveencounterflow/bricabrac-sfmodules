@@ -72,6 +72,32 @@ BRICS =
     #.......................................................................................................
     return exports = { remap, omit, }
 
+  #=========================================================================================================
+  ### NOTE Future Single-File Module ###
+  require_get_prototype_chain: ->
+
+    #-------------------------------------------------------------------------------------------------------
+    get_prototype_chain = ( x ) ->
+      return [] unless x?
+      R = [ x, ]
+      loop
+        break unless ( x = Object.getPrototypeOf x )?
+        R.push x
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    get_all_in_prototype_chain = ( x, name ) ->
+      seen      = new Set()
+      R         = []
+      for protoype in get_prototype_chain x
+        continue unless Object.hasOwn protoype, name
+        R.push protoype[ name ]
+      return R
+
+    #.......................................................................................................
+    return exports = { get_prototype_chain, get_all_in_prototype_chain, }
+
+
 #===========================================================================================================
 Object.assign module.exports, BRICS
 
