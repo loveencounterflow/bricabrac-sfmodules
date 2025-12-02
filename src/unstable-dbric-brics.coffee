@@ -153,6 +153,8 @@ UNSTABLE_DBRIC_BRICS =
         @_validate_is_property 'prefix'
         @_validate_is_property 'prefix_re'
         #...................................................................................................
+        db_path            ?= ':memory:'
+        #...................................................................................................
         clasz               = @constructor
         hide @, 'db',         new clasz.db_class db_path
         # @db                 = new SQLITE.DatabaseSync db_path
