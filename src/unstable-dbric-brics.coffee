@@ -23,6 +23,8 @@ UNSTABLE_DBRIC_BRICS =
     { debug,
       warn                        } = console
     misfit                          = Symbol 'misfit'
+    { get_prototype_chain,
+      get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
 
     #-------------------------------------------------------------------------------------------------------
     ### TAINT put into separate module ###
@@ -225,22 +227,25 @@ UNSTABLE_DBRIC_BRICS =
 
       #-----------------------------------------------------------------------------------------------------
       rebuild: ->
-        clasz         = @constructor
-        type_of_build = type_of clasz.build
+        clasz                 = @constructor
+        count                 = 0
+        build_statements_list = ( get_all_in_prototype_chain clasz, 'build' ).reverse()
+        has_torn_down         = false
         #...................................................................................................
-        ### TAINT use proper validation ###
-        unless type_of_build in [ 'undefined', 'null', 'list', ]
-          throw new Error "Ωdbric___5 expected an optional list for #{clasz.name}.build, got a #{type_of_build}"
+        for build_statements in build_statements_list
+          ### TAINT use proper validation ###
+          unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
+            throw new Error "Ωdbric___5 expected an optional list for #{clasz.name}.build, got a #{type}"
+          #.................................................................................................
+          continue if ( not build_statements? ) or ( build_statements.length is 0 )
+          #.................................................................................................
+          @teardown() unless has_torn_down
+          has_torn_down = true
+          #.................................................................................................
+          for build_statement in build_statements
+            count++
+            ( @prepare build_statement ).run()
         #...................................................................................................
-        return -1 if ( not clasz.build? )
-        return  0 if ( clasz.build.length is 0 )
-        #...................................................................................................
-        @teardown()
-        count = 0
-        #...................................................................................................
-        for build_statement in clasz.build
-          count++
-          ( @prepare build_statement ).run()
         return count
 
       #---------------------------------------------------------------------------------------------------
