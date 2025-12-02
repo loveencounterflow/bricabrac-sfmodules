@@ -51,23 +51,27 @@ UNSTABLE_DBRIC_BRICS =
         deterministic:  true
         varargs:        false
         directOnly:     false
+        overwrite:      false
       #.....................................................................................................
       create_aggregate_function_cfg:
         deterministic:  true
         varargs:        false
         directOnly:     false
         start:          null
+        overwrite:      false
       #.....................................................................................................
       create_window_function_cfg:
         deterministic:  true
         varargs:        false
         directOnly:     false
         start:          null
+        overwrite:      false
       #.....................................................................................................
       create_table_function_cfg:
         deterministic:  true
         varargs:        false
         directOnly:     false
+        overwrite:      false
       #.....................................................................................................
       create_virtual_table_cfg: {}
 
@@ -167,7 +171,7 @@ UNSTABLE_DBRIC_BRICS =
         @initialize()
         #...................................................................................................
         fn_cfg_template = { deterministic: true, varargs: false, }
-        @create_udfs()
+        @_create_udfs()
         #...................................................................................................
         ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
         contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
@@ -250,10 +254,11 @@ UNSTABLE_DBRIC_BRICS =
         return count
 
       #---------------------------------------------------------------------------------------------------
-      set_getter @::, 'is_ready',     -> @_get_is_ready()
-      set_getter @::, 'prefix',       -> @_get_prefix()
-      set_getter @::, 'prefix_re',    -> @_get_prefix_re()
-      set_getter @::, 'w',            -> @_get_w()
+      set_getter @::, 'is_ready',         -> @_get_is_ready()
+      set_getter @::, 'prefix',           -> @_get_prefix()
+      set_getter @::, 'prefix_re',        -> @_get_prefix_re()
+      set_getter @::, '_function_names',  -> @_get_function_names()
+      set_getter @::, 'w',                -> @_get_w()
 
       #-----------------------------------------------------------------------------------------------------
       _get_is_ready: ->
@@ -290,6 +295,10 @@ UNSTABLE_DBRIC_BRICS =
         return @_w
 
       #---------------------------------------------------------------------------------------------------
+      _get_function_names: -> new Set ( name for { name, } from \
+        @walk SQL"select name from pragma_function_list() order by name;" )
+
+      #---------------------------------------------------------------------------------------------------
       _get_objects_in_build_statements: ->
         ### TAINT does not yet deal with quoted names ###
         clasz           = @constructor
@@ -323,13 +332,16 @@ UNSTABLE_DBRIC_BRICS =
         #     else
         #       throw new Error "Ωnql___7 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
-        hide @, 'statements', {}
-        build_statement_name  = @_name_of_build_statements
-        for name, statement of @constructor.statements
-          # if ( type_of statement ) is 'list'
-          #   @statements[ name ] = ( @prepare sub_statement for sub_statement in statement )
-          #   continue
-          @statements[ name ] = @prepare statement
+        clasz = @constructor
+        statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
+        for statements in statements_list
+          for statement_name, statement of statements
+            if @statements[ statement_name ]?
+              throw new Error "Ωdbric___8 statement #{rpr_string statement_name} is already declared"
+            # if ( type_of statement ) is 'list'
+            #   @statements[ statement_name ] = ( @prepare sub_statement for sub_statement in statement )
+            #   continue
+            @statements[ statement_name ] = @prepare statement
         return null
 
       #-----------------------------------------------------------------------------------------------------
@@ -361,20 +373,23 @@ UNSTABLE_DBRIC_BRICS =
         #...................................................................................................
         for category in [ 'function', \
           'aggregate_function', 'window_function', 'table_function', 'virtual_table', ]
-          property_name = "#{category}s"
-          method_name   = "create_#{category}"
-          continue unless ( collection = clasz[ property_name ] )?
-          #.................................................................................................
-          for name, fn_cfg of collection
+          property_name     = "#{category}s"
+          method_name       = "create_#{category}"
+          declarations_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
+          for declarations in declarations_list
+            continue unless declarations?
             #...............................................................................................
-            fn_cfg = lets fn_cfg, ( d ) =>
-              d.name ?= name
+            for udf_name, fn_cfg of declarations
               #.............................................................................................
-              for name_of_callable in names_of_callables[ category ]
-                continue unless ( callable = d[ name_of_callable ] )?
-                d[ name_of_callable ] = callable.bind @
-              return null
-            @[ method_name ] fn_cfg
+              fn_cfg = lets fn_cfg, ( d ) =>
+                d.name ?= udf_name
+                #...........................................................................................
+                ### bind UDFs to `this` ###
+                for name_of_callable in names_of_callables[ category ]
+                  continue unless ( callable = d[ name_of_callable ] )?
+                  d[ name_of_callable ] = callable.bind @
+                return null
+              @[ method_name ] fn_cfg
         #...................................................................................................
         return null
 
@@ -383,10 +398,13 @@ UNSTABLE_DBRIC_BRICS =
         if ( type_of @db.function ) isnt 'function'
           throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
+          overwrite,
           call,
           directOnly,
           deterministic,
           varargs,        } = { templates.create_function_cfg..., cfg..., }
+        if ( not overwrite ) and ( @_function_names.has name )
+          throw new Error "Ωdbric__11 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.function name, { deterministic, varargs, directOnly, }, call
 
       #-----------------------------------------------------------------------------------------------------
@@ -394,12 +412,15 @@ UNSTABLE_DBRIC_BRICS =
         if ( type_of @db.aggregate ) isnt 'function'
           throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
         { name,
+          overwrite,
           start,
           step,
           result,
           directOnly,
           deterministic,
           varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
+        if ( not overwrite ) and ( @_function_names.has name )
+          throw new Error "Ωdbric__13 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
@@ -407,6 +428,7 @@ UNSTABLE_DBRIC_BRICS =
         if ( type_of @db.aggregate ) isnt 'function'
           throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
         { name,
+          overwrite,
           start,
           step,
           inverse,
@@ -414,6 +436,8 @@ UNSTABLE_DBRIC_BRICS =
           directOnly,
           deterministic,
           varargs,        } = { templates.create_window_function_cfg..., cfg..., }
+        if ( not overwrite ) and ( @_function_names.has name )
+          throw new Error "Ωdbric__15 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
@@ -421,19 +445,26 @@ UNSTABLE_DBRIC_BRICS =
         if ( type_of @db.table ) isnt 'function'
           throw new Error "Ωdbric__16 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
         { name,
+          overwrite,
           parameters,
           columns,
           rows,
           directOnly,
           deterministic,
           varargs,        } = { templates.create_table_function_cfg..., cfg..., }
+        if ( not overwrite ) and ( @_function_names.has name )
+          throw new Error "Ωdbric__17 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_virtual_table: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-        { name, create,   } = { templates.create_virtual_table_cfg..., cfg..., }
           throw new Error "Ωdbric__18 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
+        { name,
+          overwrite,
+          create,   } = { templates.create_virtual_table_cfg..., cfg..., }
+        if ( not overwrite ) and ( @_function_names.has name )
+          throw new Error "Ωdbric__19 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, create
 
 
@@ -445,7 +476,12 @@ UNSTABLE_DBRIC_BRICS =
         prefix: 'std'
 
       #-----------------------------------------------------------------------------------------------------
-      @functions:   {}
+      @functions:
+
+        #---------------------------------------------------------------------------------------------------
+        regexp:
+          deterministic:  true
+          call: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
 
       #-----------------------------------------------------------------------------------------------------
       @statements:
