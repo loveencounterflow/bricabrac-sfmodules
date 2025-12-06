@@ -95,7 +95,7 @@ require_coarse_sqlite_statement_segmenter = ->
   internals = {}
 
   #=========================================================================================================
-  class Statement_walker
+  class Segmenter
 
     #-------------------------------------------------------------------------------------------------------
     constructor: ->
@@ -185,7 +185,7 @@ require_coarse_sqlite_statement_segmenter = ->
 
 
   #=========================================================================================================
-  class Statement_applicator
+  class Undumper
 
     #-------------------------------------------------------------------------------------------------------
     constructor: ({ db, }) ->
@@ -193,7 +193,7 @@ require_coarse_sqlite_statement_segmenter = ->
       @_execute         = ( @db.exec ? @db.execute ).bind @db
       @statement_count  = 0
       @statement        = ''
-      @statement_walker = new Statement_walker { Grammar, }
+      @statement_walker = new Segmenter { Grammar, }
       return undefined
 
     #-------------------------------------------------------------------------------------------------------
@@ -219,7 +219,7 @@ require_coarse_sqlite_statement_segmenter = ->
 
   #=========================================================================================================
   internals = Object.freeze { internals..., }
-  return exports = { Statement_walker, Statement_applicator, internals, }
+  return exports = { Segmenter, Undumper, internals, }
 
 module.exports = { require_coarse_sqlite_statement_segmenter, }
 
