@@ -74,6 +74,7 @@ Error-Resilient Strategies (ERS):
 require_coarse_sqlite_statement_segmenter = ->
 
   #=========================================================================================================
+  { Grammar,                    } = require 'interlex'
   SFMODULES                       = require './main'
   # { hide,
   #   set_getter,                 } = SFMODULES.require_managed_property_tools()
@@ -97,13 +98,13 @@ require_coarse_sqlite_statement_segmenter = ->
   class Statement_walker
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: ({ Grammar, }) ->
-      @_create_lexer Grammar
+    constructor: ->
+      @_create_lexer()
       @statement = ''
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
-    _create_lexer: ( Grammar ) ->
+    _create_lexer: ->
       @g          = new Grammar()
       top         = @g.new_level { name: 'top', }
       string      = @g.new_level { name: 'string', }
@@ -187,7 +188,7 @@ require_coarse_sqlite_statement_segmenter = ->
   class Statement_applicator
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: ({ db, Grammar, }) ->
+    constructor: ({ db, }) ->
       @db               = db
       @statement_count  = 0
       @statement        = ''
