@@ -190,6 +190,7 @@ require_coarse_sqlite_statement_segmenter = ->
     #-------------------------------------------------------------------------------------------------------
     constructor: ({ db, }) ->
       @db               = db
+      @_execute         = ( @db.exec ? @db.execute ).bind @db
       @statement_count  = 0
       @statement        = ''
       @statement_walker = new Statement_walker { Grammar, }
