@@ -76,16 +76,16 @@ require_coarse_sqlite_statement_segmenter = ->
   #=========================================================================================================
   { Grammar,                    } = require 'interlex'
   SFMODULES                       = require './main'
+  { type_of,                    } = SFMODULES.unstable.require_type_of()
+  { rpr_string,                 } = SFMODULES.require_rpr_string()
+  { debug,
+    warn                        } = console
   # { hide,
   #   set_getter,                 } = SFMODULES.require_managed_property_tools()
-  { type_of,                    } = SFMODULES.unstable.require_type_of()
   # # { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
-  # { rpr_string,                 } = SFMODULES.require_rpr_string()
   # { lets,
   #   freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
   # SQLITE                          = require 'node:sqlite'
-  { debug,
-    warn                        } = console
   # misfit                          = Symbol 'misfit'
   # { get_prototype_chain,
   #   get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
@@ -201,12 +201,14 @@ require_coarse_sqlite_statement_segmenter = ->
       @statement_count  = 0
       for statement_candidate from @statement_walker.scan line
         @statement += statement_candidate
-        error       = null
+        cause       = null
         try
-          @db.exec @statement
-        catch error
-          throw error unless error.message is 'incomplete input'
-        unless error?
+          @_execute @statement
+        catch cause
+          continue if cause.message is 'incomplete input'
+          throw new Error "Ωcsql___1 when trying to execute SQL statement #{rpr_string @statement}," \
+            + " an error was thrown: #{rpr_string cause.message}", { cause, }
+        unless cause?
           yield @statement
           @statement = ''
           @statement_count++
