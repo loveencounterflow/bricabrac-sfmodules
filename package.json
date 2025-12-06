@@ -14,5 +14,8 @@
   "dependencies": {
     "env-paths": "^3.0.0",
     "normalize-function-arguments": "^0.2.0"
+  },
+  "peerDependencies": {
+    "interlex": "^0.13.1"
   }
 }
