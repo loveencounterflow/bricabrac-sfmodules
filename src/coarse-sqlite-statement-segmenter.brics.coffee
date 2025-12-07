@@ -92,7 +92,7 @@ require_coarse_sqlite_statement_segmenter = ->
   #.........................................................................................................
   ### TAINT move to bric ###
   bind                            = ( ctx, fn ) -> fn.bind ctx
-  internals = {}
+  internals = { bind, }
 
   #=========================================================================================================
   class Segmenter
@@ -206,6 +206,31 @@ require_coarse_sqlite_statement_segmenter = ->
       throw new Error "Ωcsql___3 expected a text, got a #{type}" unless ( type = type_of line ) is 'text'
       return do bind @, -> yield from @g.scan line
 
+  #=========================================================================================================
+  internals = Object.freeze { internals..., }
+  return exports = { Segmenter, internals, }
+
+
+#===========================================================================================================
+### NOTE Future Single-File Module ###
+require_sqlite_undumper = ->
+
+  #=========================================================================================================
+  # { Grammar,                    } = require 'interlex'
+  SFMODULES                       = require './main'
+  { Segmenter,                  } = require_coarse_sqlite_statement_segmenter()
+  { type_of,                    } = SFMODULES.unstable.require_type_of()
+  { rpr_string,                 } = SFMODULES.require_rpr_string()
+  { debug,
+    warn                        } = console
+  { walk_lines_with_positions,  } = SFMODULES.unstable.require_fast_linereader()
+  { wc,                         } = SFMODULES.require_wc()
+  { Benchmarker,                } = SFMODULES.unstable.require_benchmarking()
+  benchmarker                     = new Benchmarker()
+  timeit                          = ( P... ) -> benchmarker.timeit P...
+  #.........................................................................................................
+  internals                       = { benchmarker, timeit, }
+
 
   #=========================================================================================================
   class Undumper
@@ -216,13 +241,13 @@ require_coarse_sqlite_statement_segmenter = ->
       @_execute         = ( @db.exec ? @db.execute ).bind @db
       @statement_count  = 0
       @statement        = ''
-      @statement_walker = new Segmenter { Grammar, mode, }
+      @segmenter        = new Segmenter { mode, }
       return undefined
 
     #-------------------------------------------------------------------------------------------------------
     scan: ( line ) ->
       @statement_count  = 0
-      for statement_candidate from @statement_walker.scan line
+      for statement_candidate from @segmenter.scan line
         @statement += '\n' if ( @statement isnt '' ) and ( not @statement.endsWith '\n' )
         @statement += statement_candidate
         cause       = null
@@ -238,13 +263,28 @@ require_coarse_sqlite_statement_segmenter = ->
           @statement_count++
       ;null
 
-
-
+    #-------------------------------------------------------------------------------------------------------
+    @undump: ({ db, path, mode = 'fast', }={}) ->
+      # db.teardown { test: '*', }
+      line_count      = ( wc path ).lines
+      undumper        = new Undumper { db, mode, }
+      statement_count = 0
+      timeit { total: line_count, brand: 'undump', }, read_and_apply_dump = ({ progress, }) ->
+        for { line, } from walk_lines_with_positions path
+          progress { delta: 1, }
+          for statement from undumper.scan line
+            statement_count++
+      # debug 'Ωcsql___5', benchmarker
+      dt_ms             = benchmarker.brands.undump.read_and_apply_dump[ 0 ]
+      statements_per_s  = Math.round statement_count / dt_ms * 1_000
+      return { line_count, statement_count, dt_ms, statements_per_s, }
 
   #=========================================================================================================
   internals = Object.freeze { internals..., }
-  return exports = { Segmenter, Undumper, internals, }
+  return exports = { Undumper, internals, }
 
-module.exports = { require_coarse_sqlite_statement_segmenter, }
+
+#===========================================================================================================
+module.exports = { require_coarse_sqlite_statement_segmenter, require_sqlite_undumper, }
 
 
