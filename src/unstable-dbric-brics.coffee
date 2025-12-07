@@ -240,7 +240,7 @@ UNSTABLE_DBRIC_BRICS =
         for build_statements in build_statements_list
           ### TAINT use proper validation ###
           unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
-            throw new Error "Ωdbric___5 expected an optional list for #{clasz.name}.build, got a #{type}"
+            throw new Error "Ωdbric___6 expected an optional list for #{clasz.name}.build, got a #{type}"
           #.................................................................................................
           continue if ( not build_statements? ) or ( build_statements.length is 0 )
           #.................................................................................................
@@ -271,7 +271,7 @@ UNSTABLE_DBRIC_BRICS =
           for name, { type, message, } of expected_db_objects
             continue unless type is 'error'
             messages.push message
-          throw new Error "Ωdbric___6 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
+          throw new Error "Ωdbric___7 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
         #...................................................................................................
         present_db_objects = @_get_db_objects()
         for name, { type: expected_type, } of expected_db_objects
@@ -330,14 +330,14 @@ UNSTABLE_DBRIC_BRICS =
         #     when name.startsWith 'insert_'
         #       null
         #     else
-        #       throw new Error "Ωnql___7 unable to parse statement name #{rpr_string name}"
+        #       throw new Error "Ωnql___8 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
         clasz = @constructor
         statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
         for statements in statements_list
           for statement_name, statement of statements
             if @statements[ statement_name ]?
-              throw new Error "Ωdbric___8 statement #{rpr_string statement_name} is already declared"
+              throw new Error "Ωdbric___9 statement #{rpr_string statement_name} is already declared"
             # if ( type_of statement ) is 'list'
             #   @statements[ statement_name ] = ( @prepare sub_statement for sub_statement in statement )
             #   continue
@@ -355,7 +355,7 @@ UNSTABLE_DBRIC_BRICS =
         try
           R = @db.prepare sql
         catch cause
-          throw new Error "Ωdbric___9 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+          throw new Error "Ωdbric__10 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         return R
 
       #=====================================================================================================
@@ -396,7 +396,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_function: ( cfg ) ->
         if ( type_of @db.function ) isnt 'function'
-          throw new Error "Ωdbric__10 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
+          throw new Error "Ωdbric__11 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
           overwrite,
           call,
@@ -404,13 +404,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__11 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__12 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.function name, { deterministic, varargs, directOnly, }, call
 
       #-----------------------------------------------------------------------------------------------------
       create_aggregate_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__12 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
+          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
         { name,
           overwrite,
           start,
@@ -420,13 +420,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__13 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__14 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_window_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
+          throw new Error "Ωdbric__15 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
         { name,
           overwrite,
           start,
@@ -437,13 +437,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_window_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__15 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__16 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_table_function: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__16 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
+          throw new Error "Ωdbric__17 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
         { name,
           overwrite,
           parameters,
@@ -453,18 +453,18 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_table_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__17 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__18 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_virtual_table: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__18 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
+          throw new Error "Ωdbric__19 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
         { name,
           overwrite,
           create,   } = { templates.create_virtual_table_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__19 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__20 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, create
 
 
