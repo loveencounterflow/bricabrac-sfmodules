@@ -25,6 +25,7 @@ UNSTABLE_DBRIC_BRICS =
     misfit                          = Symbol 'misfit'
     { get_prototype_chain,
       get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
+    { Undumper,                   } = SFMODULES.require_coarse_sqlite_statement_segmenter()
 
     #-------------------------------------------------------------------------------------------------------
     ### TAINT put into separate module ###
