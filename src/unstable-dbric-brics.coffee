@@ -223,7 +223,7 @@ UNSTABLE_DBRIC_BRICS =
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
           catch error
-            warn "Ωdbric___4 ignored error: #{error.message}"
+            warn "Ωdbric___5 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
         ( @prepare SQL"pragma foreign_keys = on;" ).run()
         return count
 
