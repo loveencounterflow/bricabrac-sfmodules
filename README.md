@@ -6,6 +6,7 @@
   - [To Do](#to-do)
     - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
     - [Fast Line Reader](#fast-line-reader)
+    - [Coarse SQLite Statement Segmenter](#coarse-sqlite-statement-segmenter)
     - [DBric Database Adapter](#dbric-database-adapter)
     - [JetStream](#jetstream)
       - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
@@ -96,6 +97,55 @@ clone = ( x, seen = new Map() ) ->
   * **`[—]`** treatment of `\r` in the vicinity of `\n`
   * **`[+]`** treatment of trailing empty lines
   * **`[—]`** `( '\n' ).split /\r\n|\r|\n/` gives `[ '', '', ]`, so this method should do the same
+
+### Coarse SQLite Statement Segmenter
+
+
+* meant to be the basis for being able to read SQLite DB dump files from within a DBric application
+
+* necessitated by the fact that calls UDFs may be present in DDL statements for generated columns, views,
+  and triggers
+
+* even using the `REGEXP` operator will fail with the `sqlite3` command line tool in case a regular
+  expression with capabilities beyond what `sqlite3` offers is used (e.g. it doesn't understand `\p{...}`
+  escapes which JavaScript does with the `v` flag, as in `/^\p{L}+/v`)
+
+* to do its job, the segmenter has to locate those semicolons in an SQL source that are not part of
+  comments, string literals, quoted names, or are statement-internal syntax
+
+* turns out a lexer that recognizes line comments (double backslash `//` to the end of line), block comments
+  (enclosed in `/* ... */`), string literals (using single quotes `'...'`), quoted names (enclosed in either
+  quotes as in `"name"` or brackets as in `[name]`), the only remaining cases are statement-internal
+  semicolons; those can only appear in `CREATE TRIGGER` statements.
+
+  Unfortunately, since the relevant portions of SQLite's SQL syntax both allow arbitrary expressions in the
+  crucial parts of `CREATE TRIGGER` statements combined with the fact that SQLite is happy not only to
+  accept but also to emit, also and entirely unnecessarily in dump files, unquoted names that are also
+  keywords (such as in `delete from end where end = 'x' returning end;`, which is, incredibly, valid SQL as
+  understood by SQLite), recognizing *all* top-level statement-final semicolons is beyond what can be done
+  with a lexer without turning it into a more-or-less full-fledged parser.
+
+  We therefore accept that lexing can capture a good portion but not all of what one might encounter in a
+  file full of SQL statements and provide—next to a `Segmenter` class that does its best to fish good
+  candidates for portions of text that represent exactly one statement—another class, `Undumper`, that, when
+  given a `DBric` instance, will walk over the segments (candidate statements) yielded by the `Segmenter`
+  and apply them to the `DBric` database; if this should result in an `incomplete source` error, it will
+  then glob on the next segment to the source and try again; if the source file is well-formed, this will
+  eventually lead to the database accepting the input. This is not a beautiful state of affairs but it's
+  also irrelevant to performance in realistic cases.
+
+  To this we may add that given how SQL is commonly written and what SQLite itself produces for its dump
+  files, it can be safely said that with a high degree of certainty the syntactically relevant semicolons of
+  SQL source text are found as the last character of lines. That is, as soon as we have the 'incomplete
+  source' coping mechanism in place, we can actually fall back to a much faster way to process the
+  source—essentially only looking for semicolons at the end of lines, `/;[\x20\x09]*\n/gm`.
+
+* two modes of operation:
+  * `{ mode: 'fast', }`: assume only line-trailing semicolons. This should be compatible with DB dump files
+    produced by the SQLite command line tool. Observe that since `fast` mode gives a 20x speed gain over
+    `slow` mode, it has been made the default. If the assumption is violated by the input, behavior is
+    undefined but will likely result in SQL errors; in that case, try `slow` mode.
+  * `{ mode: 'slow', }`: scan source for string literals, comments and so on
 
 ### DBric Database Adapter
 
