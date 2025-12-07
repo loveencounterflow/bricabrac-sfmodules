@@ -7,6 +7,7 @@
     - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
     - [Fast Line Reader](#fast-line-reader)
     - [Coarse SQLite Statement Segmenter](#coarse-sqlite-statement-segmenter)
+    - [SQLite Undumper](#sqlite-undumper)
     - [DBric Database Adapter](#dbric-database-adapter)
     - [JetStream](#jetstream)
       - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
@@ -146,6 +147,38 @@ clone = ( x, seen = new Map() ) ->
     `slow` mode, it has been made the default. If the assumption is violated by the input, behavior is
     undefined but will likely result in SQL errors; in that case, try `slow` mode.
   * `{ mode: 'slow', }`: scan source for string literals, comments and so on
+
+### SQLite Undumper
+
+Assuming `db` is an instance of `DBric`, `better-sqlite3`, or NodeJS `SQLITE.DatabaseSync`, then from within
+your application when you already have all necessary UDFs declared, a single call to `Undumper.undump()`
+will read a dump file line by line, look for statements, apply them to the `db` object's `.exec()` or
+`.execute()` method, and return a number of statistics when finished; while it's doing it's job, it'll
+display a nice progress bar in the terminal:
+
+```coffee
+{ Undumper, } = SFMODULES.require_sqlite_undumper()
+path          = 'path/to/my-db.dump.sql'
+statistics    = Undumper.undump { db, path, } # default is { mode: 'fast', }
+# statistics:
+{ line_count:         102726,
+  statement_count:    102600,
+  dt_ms:              1724.422669,
+  statements_per_s:   59498 }
+```
+
+```
+read_and_apply_dump:                      19 %▕██▌          ▏
+```
+
+```
+read_and_apply_dump:                     dt:              1,724.423 ms
+read_and_apply_dump:                     n:             102,700.000
+read_and_apply_dump:                     ???:                16.791 ms/1k
+read_and_apply_dump:                     f:              59,556.164 Hz
+```
+
+
 
 ### DBric Database Adapter
 
