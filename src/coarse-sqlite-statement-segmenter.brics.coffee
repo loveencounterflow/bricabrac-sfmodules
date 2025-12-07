@@ -164,6 +164,7 @@ require_coarse_sqlite_statement_segmenter = ->
     scan: ( line ) ->
       throw new Error "Ωcsql___1 expected a text, got a #{type}" unless ( type = type_of line ) is 'text'
       return do bind @, ->
+        line += '\n' unless line.endsWith '\n'
         for token from @g.scan line
           # debug 'Ωcsql___2', { fqname: token.fqname, hit: token.hit, }
           @statement += token.hit
