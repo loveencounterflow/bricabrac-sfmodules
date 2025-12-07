@@ -213,12 +213,24 @@ UNSTABLE_DBRIC_BRICS =
         return R
 
       #-----------------------------------------------------------------------------------------------------
-      teardown: ->
+      teardown: ({ test = null, }={}) ->
         count       = 0
-        prefix_re   = @prefix_re
+        #...................................................................................................
+        switch true
+          when test is '*'
+            test = ( name ) -> true
+          when ( type_of test ) is 'function'
+            null
+          when not test?
+            prefix_re = @prefix_re
+            test = ( name ) -> prefix_re.test name
+          else
+            type = type_of test
+            throw new Error "Ωdbric___4 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
+        #...................................................................................................
         ( @prepare SQL"pragma foreign_keys = off;" ).run()
         for _, { name, type, } of @_get_db_objects()
-          continue unless  prefix_re.test name
+          continue unless test name
           count++
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
