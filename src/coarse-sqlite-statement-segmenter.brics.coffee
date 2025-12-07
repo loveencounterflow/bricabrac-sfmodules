@@ -98,13 +98,36 @@ require_coarse_sqlite_statement_segmenter = ->
   class Segmenter
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: ->
+    constructor: ({ mode = 'fast', }={}) ->
+      @mode = mode
       @_create_lexer()
       @statement = ''
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
     _create_lexer: ->
+      switch @mode
+        when 'fast' then return @_create_fast_lexer()
+        when 'slow' then return @_create_slow_lexer()
+      throw new Error "Ωcsql___1 expected mode to be one of 'fast', 'slow', got #{rpr_string mode}"
+
+    #-------------------------------------------------------------------------------------------------------
+    _create_fast_lexer: ->
+      segment = ''
+      @g =
+        scan: ( line ) ->
+          line     += '\n' unless line.endsWith '\n'
+          segment  += line
+          if line.endsWith ';\n'
+            hit = segment.replace /^\n*(.*?)\n*$/s, '$1'
+            # hit = segment.trim()
+            yield { hit, fqname: 'top.semicolon', level: { name: 'top', }, }
+            segment = ''
+          ;null
+      ;null
+
+    #-------------------------------------------------------------------------------------------------------
+    _create_slow_lexer: ->
       @g          = new Grammar()
       top         = @g.new_level { name: 'top', }
       string      = @g.new_level { name: 'string', }
@@ -188,18 +211,19 @@ require_coarse_sqlite_statement_segmenter = ->
   class Undumper
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: ({ db, }) ->
+    constructor: ({ db, mode = 'fast', }={}) ->
       @db               = db
       @_execute         = ( @db.exec ? @db.execute ).bind @db
       @statement_count  = 0
       @statement        = ''
-      @statement_walker = new Segmenter { Grammar, }
+      @statement_walker = new Segmenter { Grammar, mode, }
       return undefined
 
     #-------------------------------------------------------------------------------------------------------
     scan: ( line ) ->
       @statement_count  = 0
       for statement_candidate from @statement_walker.scan line
+        @statement += '\n' if ( @statement isnt '' ) and ( not @statement.endsWith '\n' )
         @statement += statement_candidate
         cause       = null
         try
