@@ -162,11 +162,10 @@ require_coarse_sqlite_statement_segmenter = ->
 
     #-------------------------------------------------------------------------------------------------------
     scan: ( line ) ->
-      throw new Error "Ωcsql___1 expected a text, got a #{type}" unless ( type = type_of line ) is 'text'
+      throw new Error "Ωcsql___2 expected a text, got a #{type}" unless ( type = type_of line ) is 'text'
       return do bind @, ->
         line += '\n' unless line.endsWith '\n'
         for token from @g.scan line
-          # debug 'Ωcsql___2', { fqname: token.fqname, hit: token.hit, }
           @statement += token.hit
           if token.fqname is 'top.semicolon'
             yield @statement
@@ -203,12 +202,11 @@ require_coarse_sqlite_statement_segmenter = ->
       for statement_candidate from @statement_walker.scan line
         @statement += statement_candidate
         cause       = null
-        # debug "Ωcsql___4 executing (#{@statement.length}) #{rpr_string @statement}"[ .. 100 ]
         try
           @_execute @statement
         catch cause
           continue if cause.message is 'incomplete input'
-          throw new Error "Ωcsql___5 when trying to execute SQL statement #{rpr_string @statement}," \
+          throw new Error "Ωcsql___4 when trying to execute SQL statement #{rpr_string @statement}," \
             + " an error was thrown: #{rpr_string cause.message}", { cause, }
         unless cause?
           yield @statement
