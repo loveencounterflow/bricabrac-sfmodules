@@ -15,6 +15,7 @@ Object.assign module.exports, require './jetstream.brics'
 Object.assign module.exports, require './letsfreezethat-infra.brics'
 Object.assign module.exports, require './coarse-sqlite-statement-segmenter.brics'
 Object.assign module.exports, require './wc.brics'
+Object.assign module.exports, require './unicode-range-tools.brics'
 Object.assign module.exports, { unstable: {
   ( require './unstable-brics'                                    )...,
   ( require './unstable-benchmark-brics'                          )...,
