@@ -79,6 +79,18 @@ UNSTABLE_DBRIC_BRICS =
     #-------------------------------------------------------------------------------------------------------
     internals = { type_of, create_statement_re, templates, }
 
+    #=======================================================================================================
+    from_bool = ( x ) -> switch x
+      when true  then 1
+      when false then 0
+      else throw new Error "Ωjzrsdb___1 expected true or false, got #{rpr x}"
+
+    #-------------------------------------------------------------------------------------------------------
+    as_bool = ( x ) -> switch x
+      when 1 then true
+      when 0 then false
+      else throw new Error "Ωjzrsdb___2 expected 0 or 1, got #{rpr x}"
+
 
     #===========================================================================================================
     class Esql
@@ -159,14 +171,16 @@ UNSTABLE_DBRIC_BRICS =
         @_validate_is_property 'prefix'
         @_validate_is_property 'prefix_re'
         #...................................................................................................
-        db_path            ?= ':memory:'
+        db_path                  ?= ':memory:'
         #...................................................................................................
-        clasz               = @constructor
-        hide @, 'db',         new clasz.db_class db_path
-        # @db                 = new SQLITE.DatabaseSync db_path
-        @cfg                = Object.freeze { clasz.cfg..., db_path, cfg..., }
-        hide @, 'statements', {}
-        hide @, '_w',         null
+        clasz                     = @constructor
+        hide @, 'db',               new clasz.db_class db_path
+        # @db                       = new SQLITE.DatabaseSync db_path
+        @cfg                      = Object.freeze { clasz.cfg..., db_path, cfg..., }
+        hide @, 'statements',       {}
+        hide @, '_w',               null
+        hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
+        hide @, 'state',            { columns: null, }
         #...................................................................................................
         @run_standard_pragmas()
         @initialize()
@@ -181,6 +195,9 @@ UNSTABLE_DBRIC_BRICS =
         @build()
         @_prepare_statements()
         return undefined
+
+      #-----------------------------------------------------------------------------------------------------
+      isa_statement: ( x ) -> x instanceof @_statement_class
 
       #-----------------------------------------------------------------------------------------------------
       run_standard_pragmas: ->
@@ -361,14 +378,18 @@ UNSTABLE_DBRIC_BRICS =
       execute: ( sql ) -> @db.exec sql
 
       #-----------------------------------------------------------------------------------------------------
-      walk: ( sql, P... ) -> ( @db.prepare sql ).iterate P...
+      walk:       ( sql, P... ) -> ( @prepare sql ).iterate P...
+      get_all:    ( sql, P... ) -> [ ( @walk sql, P... )..., ]
+      get_first:  ( sql, P... ) -> ( @get_all sql, P... )[ 0 ] ? null
 
       #-----------------------------------------------------------------------------------------------------
       prepare: ( sql ) ->
+        return sql if @isa_statement sql
         try
           R = @db.prepare sql
         catch cause
           throw new Error "Ωdbric__10 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+        @state.columns = ( try R?.columns?() catch error then null ) ? []
         return R
 
       #=====================================================================================================
@@ -488,7 +509,7 @@ UNSTABLE_DBRIC_BRICS =
       @cfg: Object.freeze
         prefix: 'std'
 
-      #-----------------------------------------------------------------------------------------------------
+      #=====================================================================================================
       @functions:
 
         #---------------------------------------------------------------------------------------------------
@@ -496,28 +517,52 @@ UNSTABLE_DBRIC_BRICS =
           deterministic:  true
           call: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
 
-      #-----------------------------------------------------------------------------------------------------
+        #---------------------------------------------------------------------------------------------------
+        std_is_uc_normal:
+          deterministic:  true
+          ### NOTE: also see `String::isWellFormed()` ###
+          call: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
+
+      #=====================================================================================================
+      @table_functions:
+
+        #---------------------------------------------------------------------------------------------------
+        std_generate_series:
+          columns:      [ 'value', ]
+          parameters:   [ 'start', 'stop', 'step', ]
+          ### NOTE defaults and behavior as per https://sqlite.org/series.html#overview ###
+          rows: ( start, stop = 4_294_967_295, step = 1 ) ->
+            step  = 1 if step is 0 ### NOTE equivalent `( Object.is step, +0 ) or ( Object.is step, -0 ) ###
+            value = start
+            loop
+              if step > 0 then  break if value > stop
+              else              break if value < stop
+              yield { value, }
+              value += step
+            ;null
+
+      #=====================================================================================================
       @statements:
         std_get_schema: SQL"""
-          select * from sqlite_schema order by name, type;"""
+          select * from sqlite_schema;"""
         std_get_tables: SQL"""
-          select * from sqlite_schema where type is 'table' order by name, type;"""
+          select * from sqlite_schema where type is 'table';"""
         std_get_views: SQL"""
-          select * from sqlite_schema where type is 'view' order by name, type;"""
+          select * from sqlite_schema where type is 'view';"""
         std_get_relations: SQL"""
-          select * from sqlite_schema where type in ( 'table', 'view' ) order by name, type;"""
+          select * from sqlite_schema where type in ( 'table', 'view' );"""
 
       #-----------------------------------------------------------------------------------------------------
       @build: [
         SQL"""create view std_tables as
           select * from sqlite_schema
-            where type is 'table' order by name, type;"""
+            where type is 'table';"""
         SQL"""create view std_views as
           select * from sqlite_schema
-            where type is 'view' order by name, type;"""
+            where type is 'view';"""
         SQL"""create view "std_relations" as
           select * from sqlite_schema
-            where type in ( 'table', 'view' ) order by name, type;"""
+            where type in ( 'table', 'view' );"""
         ]
 
 
@@ -583,6 +628,8 @@ UNSTABLE_DBRIC_BRICS =
       Dbric_std,
       esql,
       SQL,
+      from_bool,
+      as_bool,
       internals, }
 
 
