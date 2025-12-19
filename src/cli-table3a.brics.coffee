@@ -9,7 +9,9 @@ BRICS =
   ### NOTE Future Single-File Module ###
   require_cli_table_3a: ->
     #-------------------------------------------------------------------------------------------------------
-    _Table = require 'cli-table3'
+    _Table                          = require 'cli-table3'
+    SFMODULES                       = require './main'
+    { ansi_colors_and_effects: C, } = SFMODULES.require_ansi_colors_and_effects()
 
     #-------------------------------------------------------------------------------------------------------
     templates =
@@ -74,7 +76,9 @@ BRICS =
       push: ( row ) ->
         for cell, idx in row
           # debug 'Ωjzrsdb___1', P
-          row[ idx ] = gold cell
+          ### TAINT not a good solution ###
+          # row[ idx ] = C.turquoise + cell + C.default
+          row[ idx ] = cell
         return super row
 
     #=======================================================================================================
