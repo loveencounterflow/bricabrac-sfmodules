@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       cli-table3:
-        specifier: github:loveencounterflow/cli-table3#cf58f19f530293aa18287b11340333fdd12749dc
-        version: https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/cf58f19f530293aa18287b11340333fdd12749dc
+        specifier: github:loveencounterflow/cli-table3#ca4ff6b
+        version: https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/ca4ff6be3c3a99a20c13af1a8088137bdde32e2f
       env-paths:
         specifier: ^3.0.0
         version: 3.0.0
@@ -34,8 +34,8 @@ packages:
   cleartype@0.0.7:
     resolution: {integrity: sha512-RoPd7mvyF4K4BiWktnNhPUkIdVE0RoRmpkga3JJpc4TWkPFdy1gcU41gCog2Ot/PPzQWAPFXtcqC1316fAAuZg==}
 
-  cli-table3@https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/cf58f19f530293aa18287b11340333fdd12749dc:
-    resolution: {tarball: https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/cf58f19f530293aa18287b11340333fdd12749dc}
+  cli-table3@https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/ca4ff6be3c3a99a20c13af1a8088137bdde32e2f:
+    resolution: {tarball: https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/ca4ff6be3c3a99a20c13af1a8088137bdde32e2f}
     version: 0.6.5
     engines: {node: 10.* || >= 12.*}
 
@@ -87,7 +87,7 @@ snapshots:
     dependencies:
       loupe: 3.2.1
 
-  cli-table3@https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/cf58f19f530293aa18287b11340333fdd12749dc:
+  cli-table3@https://codeload.github.com/loveencounterflow/cli-table3/tar.gz/ca4ff6be3c3a99a20c13af1a8088137bdde32e2f:
     dependencies:
       string-width: 4.2.3
     optionalDependencies:

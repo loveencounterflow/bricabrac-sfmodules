@@ -12,7 +12,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "dependencies": {
-    "cli-table3": "github:loveencounterflow/cli-table3#cf58f19f530293aa18287b11340333fdd12749dc",
+    "cli-table3": "github:loveencounterflow/cli-table3#ca4ff6b",
     "env-paths": "^3.0.0",
     "normalize-function-arguments": "^0.2.0"
   },
