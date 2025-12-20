@@ -77,9 +77,19 @@ BRICS =
       push: ( row ) ->
         for cell, idx in row
           ### TAINT not a good solution ###
-          row[ idx ] = C.turquoise + "#{cell}" + C.default
+          cell        = "#{cell}"
+          unless cell.startsWith '\x1b'
+            row[ idx ]  = C.yellow + "#{cell}" + C.default
         row.push '' while row.length < ( @options?.head?.length ? 1 )
         return super row
+
+      #-----------------------------------------------------------------------------------------------------
+      toString: ( P... ) ->
+        if ( caption = @options?.caption )?
+          caption = "#{C.bg_white + C.black + C.bold} #{caption} #{C.bold0 + C.default + C.bg_default}\n"
+        else
+          caption = ''
+        return caption + super P...
 
     #=======================================================================================================
     return exports = { Table, internals: { templates, }, }
