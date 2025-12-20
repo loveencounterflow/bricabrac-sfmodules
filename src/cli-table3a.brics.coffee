@@ -75,10 +75,9 @@ BRICS =
       #-----------------------------------------------------------------------------------------------------
       push: ( row ) ->
         for cell, idx in row
-          # debug 'Ωjzrsdb___1', P
           ### TAINT not a good solution ###
-          # row[ idx ] = C.turquoise + cell + C.default
-          row[ idx ] = cell
+          row[ idx ] = C.turquoise + "#{cell}" + C.default
+        row.push '' while row.length < ( @options?.head?.length ? 1 )
         return super row
 
     #=======================================================================================================
