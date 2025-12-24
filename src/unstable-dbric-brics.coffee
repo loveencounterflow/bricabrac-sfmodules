@@ -406,7 +406,7 @@ UNSTABLE_DBRIC_BRICS =
         clasz               = @constructor
         ### TAINT should be put somewhere else? ###
         names_of_callables  =
-          function:             [ 'call', ]
+          function:             [ 'value', ]
           aggregate_function:   [ 'start', 'step', 'result', ]
           window_function:      [ 'start', 'step', 'inverse', 'result', ]
           table_function:       [ 'rows', ]
@@ -440,13 +440,13 @@ UNSTABLE_DBRIC_BRICS =
           throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
           overwrite,
-          call,
+          value,
           directOnly,
           deterministic,
           varargs,        } = { templates.create_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
           throw new Error "Ωdbric__15 a UDF or built-in function named #{rpr_string name} has already been declared"
-        return @db.function name, { deterministic, varargs, directOnly, }, call
+        return @db.function name, { deterministic, varargs, directOnly, }, value
 
       #-----------------------------------------------------------------------------------------------------
       create_aggregate_function: ( cfg ) ->
@@ -521,12 +521,12 @@ UNSTABLE_DBRIC_BRICS =
 
         #---------------------------------------------------------------------------------------------------
         regexp:
-          call: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
+          value: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
 
         #---------------------------------------------------------------------------------------------------
         std_is_uc_normal:
           ### NOTE: also see `String::isWellFormed()` ###
-          call: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
+          value: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
 
       #=====================================================================================================
       @table_functions:
@@ -583,19 +583,19 @@ UNSTABLE_DBRIC_BRICS =
 
         #---------------------------------------------------------------------------------------------------
         rng_validate_lo:
-          call: ( lo ) ->
+          value: ( lo ) ->
             return False unless Number.isFinite lo
             return True
 
         #---------------------------------------------------------------------------------------------------
         rng_validate_hi:
-          call: ( hi ) ->
+          value: ( hi ) ->
             return False unless Number.isFinite hi
             return True
 
         #---------------------------------------------------------------------------------------------------
         rng_validate_lohi:
-          call: ( lo, hi ) ->
+          value: ( lo, hi ) ->
             return False unless lo <= hi
             return True
 
