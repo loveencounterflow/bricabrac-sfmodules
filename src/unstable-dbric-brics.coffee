@@ -42,7 +42,7 @@ UNSTABLE_DBRIC_BRICS =
     #-------------------------------------------------------------------------------------------------------
     create_statement_re = ///
       ^ \s*
-      create \s+
+      ( create | alter ) \s+
       (?<type> table | view | index | trigger ) \s+
       (?<name> \S+ ) \s+
       ///is
