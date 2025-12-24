@@ -16,6 +16,7 @@ UNSTABLE_DBRIC_BRICS =
       set_getter,                 } = SFMODULES.require_managed_property_tools()
     { type_of,                    } = SFMODULES.unstable.require_type_of()
     # { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
+    # { nameit,                     } = SFMODULES.require_nameit()
     { rpr_string,                 } = SFMODULES.require_rpr_string()
     { lets,
       freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
@@ -76,19 +77,22 @@ UNSTABLE_DBRIC_BRICS =
       #.....................................................................................................
       create_virtual_table_cfg: {}
 
-    #-------------------------------------------------------------------------------------------------------
-    internals = { type_of, create_statement_re, templates, }
 
     #=======================================================================================================
+    ```
+    const True  = 1;
+    const False = 0;
+    ```
+
     from_bool = ( x ) -> switch x
-      when true  then 1
-      when false then 0
+      when true  then True
+      when false then False
       else throw new Error "Ωjzrsdb___1 expected true or false, got #{rpr x}"
 
     #-------------------------------------------------------------------------------------------------------
     as_bool = ( x ) -> switch x
-      when 1 then true
-      when 0 then false
+      when True   then true
+      when False  then false
       else throw new Error "Ωjzrsdb___2 expected 0 or 1, got #{rpr x}"
 
 
@@ -99,11 +103,11 @@ UNSTABLE_DBRIC_BRICS =
       unquote_name: ( name ) ->
         ### TAINT use proper validation ###
         unless ( type = type_of name ) is 'text'
-          throw new Error "Ωdbric___1 expected a text, got a #{type}"
+          throw new Error "Ωdbric___3 expected a text, got a #{type}"
         switch true
           when /^[^"](.*)[^"]$/.test  name then return name
           when /^"(.+)"$/.test        name then return name[ 1 ... name.length - 1 ].replace /""/g, '"'
-        throw new Error "Ωdbric___2 expected a name, got #{rpr_string name}"
+        throw new Error "Ωdbric___4 expected a name, got #{rpr_string name}"
 
       #---------------------------------------------------------------------------------------------------------
       I: ( name ) => '"' + ( name.replace /"/g, '""' ) + '"'
@@ -174,7 +178,8 @@ UNSTABLE_DBRIC_BRICS =
         db_path                  ?= ':memory:'
         #...................................................................................................
         clasz                     = @constructor
-        hide @, 'db',               new clasz.db_class db_path
+        db_class                  = ( cfg?.db_class ) ? clasz.db_class
+        hide @, 'db',               new db_class db_path
         # @db                       = new SQLITE.DatabaseSync db_path
         @cfg                      = Object.freeze { clasz.cfg..., db_path, cfg..., }
         hide @, 'statements',       {}
@@ -221,7 +226,7 @@ UNSTABLE_DBRIC_BRICS =
       _validate_is_property: ( name ) ->
         descriptor = get_property_descriptor @, name
         return null if ( type_of descriptor.get ) is 'function'
-        throw new Error "Ωdbric___3 not allowed to override property #{rpr_string name}; use '_get_#{name} instead"
+        throw new Error "Ωdbric___5 not allowed to override property #{rpr_string name}; use '_get_#{name} instead"
 
       #-----------------------------------------------------------------------------------------------------
       _get_db_objects: ->
@@ -244,7 +249,7 @@ UNSTABLE_DBRIC_BRICS =
             test = ( name ) -> prefix_re.test name
           else
             type = type_of test
-            throw new Error "Ωdbric___4 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
+            throw new Error "Ωdbric___6 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
         #...................................................................................................
         ( @prepare SQL"pragma foreign_keys = off;" ).run()
         for _, { name, type, } of @_get_db_objects()
@@ -253,7 +258,7 @@ UNSTABLE_DBRIC_BRICS =
           try
             ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
           catch error
-            warn "Ωdbric___5 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+            warn "Ωdbric___7 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
         ( @prepare SQL"pragma foreign_keys = on;" ).run()
         return count
 
@@ -270,7 +275,7 @@ UNSTABLE_DBRIC_BRICS =
         for build_statements in build_statements_list
           ### TAINT use proper validation ###
           unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
-            throw new Error "Ωdbric___6 expected an optional list for #{clasz.name}.build, got a #{type}"
+            throw new Error "Ωdbric___8 expected an optional list for #{clasz.name}.build, got a #{type}"
           #.................................................................................................
           continue if ( not build_statements? ) or ( build_statements.length is 0 )
           #.................................................................................................
@@ -301,7 +306,7 @@ UNSTABLE_DBRIC_BRICS =
           for name, { type, message, } of expected_db_objects
             continue unless type is 'error'
             messages.push message
-          throw new Error "Ωdbric___7 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
+          throw new Error "Ωdbric___9 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr_string messages}"
         #...................................................................................................
         present_db_objects = @_get_db_objects()
         for name, { type: expected_type, } of expected_db_objects
@@ -360,14 +365,14 @@ UNSTABLE_DBRIC_BRICS =
         #     when name.startsWith 'insert_'
         #       null
         #     else
-        #       throw new Error "Ωnql___8 unable to parse statement name #{rpr_string name}"
+        #       throw new Error "Ωnql__10 unable to parse statement name #{rpr_string name}"
         # #   @[ name ] = @prepare sql
         clasz = @constructor
         statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
         for statements in statements_list
           for statement_name, statement of statements
             if @statements[ statement_name ]?
-              throw new Error "Ωdbric___9 statement #{rpr_string statement_name} is already declared"
+              throw new Error "Ωdbric__11 statement #{rpr_string statement_name} is already declared"
             # if ( type_of statement ) is 'list'
             #   @statements[ statement_name ] = ( @prepare sub_statement for sub_statement in statement )
             #   continue
@@ -385,10 +390,12 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       prepare: ( sql ) ->
         return sql if @isa_statement sql
+        unless ( type = type_of sql ) is 'text'
+          throw new Error "Ωdbric__12 expected a statement or a text, got a #{type}"
         try
           R = @db.prepare sql
         catch cause
-          throw new Error "Ωdbric__10 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
+          throw new Error "Ωdbric__13 when trying to prepare the following statement, an error with message: #{rpr_string cause.message} was thrown: #{rpr_string sql}", { cause, }
         @state.columns = ( try R?.columns?() catch error then null ) ? []
         return R
 
@@ -430,7 +437,7 @@ UNSTABLE_DBRIC_BRICS =
       #-----------------------------------------------------------------------------------------------------
       create_function: ( cfg ) ->
         if ( type_of @db.function ) isnt 'function'
-          throw new Error "Ωdbric__11 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
+          throw new Error "Ωdbric__14 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined functions"
         { name,
           overwrite,
           call,
@@ -438,13 +445,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__12 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__15 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.function name, { deterministic, varargs, directOnly, }, call
 
       #-----------------------------------------------------------------------------------------------------
       create_aggregate_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__13 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
+          throw new Error "Ωdbric__16 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined aggregate functions"
         { name,
           overwrite,
           start,
@@ -454,13 +461,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__14 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__17 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_window_function: ( cfg ) ->
         if ( type_of @db.aggregate ) isnt 'function'
-          throw new Error "Ωdbric__15 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
+          throw new Error "Ωdbric__18 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined window functions"
         { name,
           overwrite,
           start,
@@ -471,13 +478,13 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_window_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__16 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__19 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_table_function: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__17 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
+          throw new Error "Ωdbric__20 DB adapter class #{rpr_string @db.constructor.name} does not provide table-valued user-defined functions"
         { name,
           overwrite,
           parameters,
@@ -487,18 +494,18 @@ UNSTABLE_DBRIC_BRICS =
           deterministic,
           varargs,        } = { templates.create_table_function_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__18 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__21 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
       #-----------------------------------------------------------------------------------------------------
       create_virtual_table: ( cfg ) ->
         if ( type_of @db.table ) isnt 'function'
-          throw new Error "Ωdbric__19 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
+          throw new Error "Ωdbric__22 DB adapter class #{rpr_string @db.constructor.name} does not provide user-defined virtual tables"
         { name,
           overwrite,
           create,   } = { templates.create_virtual_table_cfg..., cfg..., }
         if ( not overwrite ) and ( @_function_names.has name )
-          throw new Error "Ωdbric__20 a UDF or built-in function named #{rpr_string name} has already been declared"
+          throw new Error "Ωdbric__23 a UDF or built-in function named #{rpr_string name} has already been declared"
         return @db.table name, create
 
 
@@ -514,12 +521,10 @@ UNSTABLE_DBRIC_BRICS =
 
         #---------------------------------------------------------------------------------------------------
         regexp:
-          deterministic:  true
           call: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
 
         #---------------------------------------------------------------------------------------------------
         std_is_uc_normal:
-          deterministic:  true
           ### NOTE: also see `String::isWellFormed()` ###
           call: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
 
@@ -567,70 +572,83 @@ UNSTABLE_DBRIC_BRICS =
 
 
     #=======================================================================================================
-    class Segment_width_db extends Dbric
+    class Dbric_rng extends Dbric_std
 
       #-----------------------------------------------------------------------------------------------------
+      @cfg: Object.freeze
+        prefix: 'rng'
+
+      #=====================================================================================================
       @functions:
-        #...................................................................................................
-        width_from_text:
-          deterministic:  true
-          varargs:        false
-          call:           ( text ) -> get_wc_max_line_length text
-        #...................................................................................................
-        length_from_text:
-          deterministic:  true
-          varargs:        false
-          call:           ( text ) -> text.length
 
-      #-----------------------------------------------------------------------------------------------------
+        #---------------------------------------------------------------------------------------------------
+        rng_validate_lo:
+          call: ( lo ) ->
+            return False unless Number.isFinite lo
+            return True
+
+        #---------------------------------------------------------------------------------------------------
+        rng_validate_hi:
+          call: ( hi ) ->
+            return False unless Number.isFinite hi
+            return True
+
+        #---------------------------------------------------------------------------------------------------
+        rng_validate_lohi:
+          call: ( lo, hi ) ->
+            return False unless lo <= hi
+            return True
+
+      # #=====================================================================================================
+      # @table_functions:
+
+      #   #---------------------------------------------------------------------------------------------------
+      #   rng_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz:
+      #     columns:      [ 'value', ]
+      #     parameters:   [ 'start', 'stop', 'step', ]
+      #     rows: ( start, stop = 4_294_967_295, step = 1 ) ->
+      #       yield return null
+      #       ;null
+
+      #=====================================================================================================
       @statements:
-        #...................................................................................................
-        create_table_segments: SQL"""
-          drop table if exists segments;
-          create table segments (
-              segment_text      text    not null primary key,
-              segment_width     integer not null generated always as ( width_from_text(  segment_text ) ) stored,
-              segment_length    integer not null generated always as ( length_from_text( segment_text ) ) stored,
-            constraint segment_width_eqgt_zero  check ( segment_width  >= 0 ),
-            constraint segment_length_eqgt_zero check ( segment_length >= 0 ) );"""
-        # #.................................................................................................
-        # insert_segment: SQL"""
-        #   insert into segments  ( segment_text,   segment_width,  segment_length  )
-        #                 values  ( $segment_text,  $segment_width, $segment_length )
-        #     on conflict ( segment_text ) do update
-        #                 set     (                 segment_width,  segment_length  ) =
-        #                         ( excluded.segment_width, excluded.segment_length );"""
-        #...................................................................................................
-        insert_segment: SQL"""
-          insert into segments  ( segment_text  )
-                        values  ( $segment_text )
-            on conflict ( segment_text ) do nothing
-            returning *;"""
-        #...................................................................................................
-        select_row_from_segments: SQL"""
-          select * from segments where segment_text = $segment_text limit 1;"""
+
+        #---------------------------------------------------------------------------------------------------
+        rng_add_range: SQL"""
+          insert into rng_ranges ( lo, hi, data ) values ( $lo, $hi, $data )
+            ;"""
+
+        #---------------------------------------------------------------------------------------------------
+        rng_all_ranges: SQL"""
+          select * from rng_ranges order by id;"""
 
       #-----------------------------------------------------------------------------------------------------
-      constructor: ( db_path ) ->
-        super db_path
-        clasz   = @constructor
-        @cache  = new Map()
-        ### TAINT should be done automatically ###
-        @statements =
-          insert_segment:           @prepare clasz.statements.insert_segment
-          select_row_from_segments: @prepare clasz.statements.select_row_from_segments
-        return undefined
+      @build: [
+        SQL"""create table rng_ranges (
+            id      integer not null primary key autoincrement,
+            lo      integer not null,
+            hi      integer not null,
+            data    json    not null,
+          constraint "Ωlo_isa_number__24" check ( rng_validate_lo( lo ) )
+          constraint "Ωhi_isa_number__25" check ( rng_validate_hi( hi ) )
+          constraint "Ωlo_lte_hi_rng__26" check ( rng_validate_lohi( lo, hi ) )
+          );"""
+        ]
+
 
     #=======================================================================================================
-    internals = Object.freeze { internals..., Segment_width_db, }
     return exports = {
       Dbric,
       Dbric_std,
+      Dbric_rng,
       esql,
       SQL,
+      True,
+      False,
       from_bool,
       as_bool,
-      internals, }
+      internals: Object.freeze { type_of, create_statement_re, templates, }
+      }
 
 
 #===========================================================================================================
