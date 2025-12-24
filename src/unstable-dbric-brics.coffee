@@ -629,10 +629,10 @@ UNSTABLE_DBRIC_BRICS =
             id      integer not null primary key autoincrement,
             lo      integer not null,
             hi      integer not null,
-            data    json    not null,
-          constraint "Ωlo_isa_number__24" check ( rng_validate_lo( lo ) )
-          constraint "Ωhi_isa_number__25" check ( rng_validate_hi( hi ) )
-          constraint "Ωlo_lte_hi_rng__26" check ( rng_validate_lohi( lo, hi ) )
+            data    jsonb   not null,
+          constraint "Ωrng_validate_lo__24"   check ( rng_validate_lo( lo ) )
+          constraint "Ωrng_validate_hi__25"   check ( rng_validate_hi( hi ) )
+          constraint "Ωrng_validate_lohi__26" check ( rng_validate_lohi( lo, hi ) )
           );"""
         ]
 
