@@ -289,6 +289,7 @@ UNSTABLE_DBRIC_BRICS =
         return count
 
       #---------------------------------------------------------------------------------------------------
+      set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
       set_getter @::, 'is_ready',         -> @_get_is_ready()
       set_getter @::, 'prefix',           -> @_get_prefix()
       set_getter @::, 'prefix_re',        -> @_get_prefix_re()
