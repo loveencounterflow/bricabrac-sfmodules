@@ -636,6 +636,14 @@ UNSTABLE_DBRIC_BRICS =
           );"""
         ]
 
+      #=====================================================================================================
+      ### TAINT use normalize-function-arguments ###
+      rng_add_range: ( row ) ->
+        data  = row.data ? {}
+        unless ( type_of data ) is 'text'
+          keys  = ( Object.keys data ).sort()
+          data  = JSON.stringify Object.fromEntries ( [ key, data[ key ], ] for key in keys )
+        @statements.rng_add_range.run { row..., data, }
 
     #=======================================================================================================
     return exports = {
