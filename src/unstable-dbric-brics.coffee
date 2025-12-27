@@ -615,34 +615,47 @@ UNSTABLE_DBRIC_BRICS =
       @statements:
 
         #---------------------------------------------------------------------------------------------------
-        rng_add_range: SQL"""
-          insert into rng_ranges ( lo, hi, data ) values ( $lo, $hi, $data )
-            ;"""
-
-        #---------------------------------------------------------------------------------------------------
-        rng_all_ranges: SQL"""
-          select * from rng_ranges order by id;"""
+        rng_add_range:  SQL"insert into rng_ranges ( lo, hi, data ) values ( $lo, $hi, $data );"
+        rng_all_ranges: SQL"select * from rng_ranges order by lo;"
+        rng_get_range:  SQL"select * from rng_ranges where $n between lo and hi;"
+        rng_has_ranges: SQL"select exists ( select lo from rng_ranges limit 1 ) as has_ranges;"
 
       #-----------------------------------------------------------------------------------------------------
       @build: [
         SQL"""create table rng_ranges (
-            id      integer not null primary key autoincrement,
-            lo      integer not null,
-            hi      integer not null,
-            data    jsonb   not null,
+            -- id      integer not null primary key autoincrement,
+            lo      integer unique  not null,
+            hi      integer unique  not null,
+            data    jsonb           not null,
+          primary key ( lo ), -- or ( lo, hi ) ?
           constraint "Ωrng_validate_lo__24"   check ( rng_validate_lo( lo ) )
           constraint "Ωrng_validate_hi__25"   check ( rng_validate_hi( hi ) )
           constraint "Ωrng_validate_lohi__26" check ( rng_validate_lohi( lo, hi ) )
           );"""
+        # SQL"""create trigger rng_ranges_insert
+        #   before insert on rng_ranges
+        #   for each row begin
+        #     select rng_trigger_on_add_range(  );
+        #     end;"""
         ]
 
       #=====================================================================================================
       ### TAINT use normalize-function-arguments ###
       rng_add_range: ( row ) ->
-        data  = row.data ? {}
+        row.hi ?=  row.lo
+        row.lo ?=  row.hi
+        data    = row.data ? {}
         unless ( type_of data ) is 'text'
           keys  = ( Object.keys data ).sort()
+          ### TAINT must delete all `undefined` values ###
           data  = JSON.stringify Object.fromEntries ( [ key, data[ key ], ] for key in keys )
+        if @statements.rng_has_ranges.get().has_ranges
+          debug 'Ωdbric__28', "has range(s)"
+        else
+          debug 'Ωdbric__29', "has no range(s)"
+          # unless row.lo is ro.hi
+        # debug 'Ωdbric__30', @statements.rng_get_range.get { n: row.lo, }
+        # debug 'Ωdbric__31', @statements.rng_get_range.get { n: row.hi, }
         @statements.rng_add_range.run { row..., data, }
 
     #=======================================================================================================
