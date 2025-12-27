@@ -32,7 +32,7 @@ require_unicode_range_tools = ->
       lo:         0x000000
       hi:         0x10ffff
       skip: [
-        { lo: 0x00e000, hi: 0x00efff, } # BMP PUAs
+        # { lo: 0x00e000, hi: 0x00efff, } # BMP PUAs
         { lo: 0x00d800, hi: 0x00dfff, } # Surrogates
         { lo: 0x0f0000, hi: 0x10ffff, } # PUA-A, PUA-B
         # { lo: 0x0f0000, hi: 0x0fffff, } # PUA-A
