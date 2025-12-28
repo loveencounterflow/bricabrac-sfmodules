@@ -51,6 +51,9 @@
       hide @, 'scatter', cfg.scatter ? null
 
     #-------------------------------------------------------------------------------------------------------
+    [Symbol.iterator]: -> yield from [ @lo .. @hi ]
+
+    #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'data', -> @scatter.data
     set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
 
@@ -71,6 +74,12 @@
       hide @, 'cfg',    Object.freeze cfg # { normalize, }
       hide @, 'state',  { is_normalized: true, }
       ;undefined
+
+    #-------------------------------------------------------------------------------------------------------
+    [Symbol.iterator]: ->
+      @normalize() unless @is_normalized
+      yield from run for run in @runs
+      ;null
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'is_normalized', -> @state.is_normalized
