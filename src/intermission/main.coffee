@@ -76,6 +76,21 @@
     set_getter @::, 'is_normalized', -> @state.is_normalized
 
     #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'min', ->
+      return null if @runs.length is 0
+      return ( @runs.at 0 ).lo if @is_normalized
+      return Math.min ( run.lo for run in @runs )...
+
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'max', ->
+      return null if @runs.length is 0
+      return ( @runs.at -1 ).hi if @is_normalized
+      return Math.max ( run.hi for run in @runs )...
+
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'minmax', -> { min: @min, max: @max, }
+
+    #-------------------------------------------------------------------------------------------------------
     _insert: ( run ) ->
       ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
       sorting all ranges when needed by a method like `Scatter::normalize()` ###
