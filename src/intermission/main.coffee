@@ -51,7 +51,8 @@
       hide @, 'scatter', cfg.scatter ? null
 
     #-------------------------------------------------------------------------------------------------------
-    set_getter @, 'data', -> @scatter.data
+    set_getter @::, 'data', -> @scatter.data
+    set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
 
     #-------------------------------------------------------------------------------------------------------
     as_halfopen:                -> { start: @lo, end: @hi + 1, }
@@ -67,14 +68,19 @@
       ### TAINT should freeze data ###
       @data   = data
       @runs   = []
-      hide @, 'cfg', Object.freeze cfg # { normalize, }
+      hide @, 'cfg',    Object.freeze cfg # { normalize, }
+      hide @, 'state',  { is_normalized: true, }
       ;undefined
+
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'is_normalized', -> @state.is_normalized
 
     #-------------------------------------------------------------------------------------------------------
     _insert: ( run ) ->
       ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
       sorting all ranges when needed by a method like `Scatter::normalize()` ###
       @runs.push run
+      @state.is_normalized = false
       ;null
 
     #-------------------------------------------------------------------------------------------------------
@@ -107,6 +113,7 @@
       halfopens = IFN.simplify ( run.as_halfopen() for run in @runs )
       @clear()
       @runs.push Run.from_halfopen halfopen for halfopen in halfopens
+      @state.is_normalized = true
       return null
 
     #-------------------------------------------------------------------------------------------------------
