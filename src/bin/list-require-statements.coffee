@@ -86,7 +86,7 @@ _collect_transitive_require_statements = ( path, collector, seen_paths ) ->
               continue
             #   throw new Error "ΩLRS__12 detected cyclic dependency from #{rpr path} to #{rpr dependent_path}"
             seen_paths.add dependent_path
-            collector.push { disposition, source_path: path, path: dependent_path, }
+            collector.push { disposition, source_path: path, path: dependent_path, selector, }
             _collect_transitive_require_statements dependent_path, collector, seen_paths
           # when 'outside'
           #   warn "ΩLRS__13 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
@@ -96,7 +96,11 @@ _collect_transitive_require_statements = ( path, collector, seen_paths ) ->
         warn "ΩLRS__15 ignoring require statement with type #{rpr type}"
   return collector
 
-dependents = collect_transitive_require_statements source_path
-info 'ΩLRS__16', rpr dependent.path for dependent in dependents
+dependencies = collect_transitive_require_statements source_path
+# info 'ΩLRS__16', ( rpr d.path ), ( "(#{rpr d.selector})" ) for d in dependencies
+cwd         = process.cwd()
+for d in dependencies
+  source_path = PATH.relative cwd, d.source_path
+  info 'ΩLRS__16', d.disposition, ( rpr source_path ), ( "(#{rpr d.selector})" )
 
 
