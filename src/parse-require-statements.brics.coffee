@@ -16,6 +16,7 @@ BRICS =
     #=======================================================================================================
     FS                          = require 'node:fs'
     PATH                        = require 'node:path'
+    { isBuiltin,              } = require 'node:module'
     { rpr_string,             } = ( require './rpr-string.brics' ).require_rpr_string()
     { is_inside,              } = ( require './path-tools.brics' ).require_path_tools()
     { walk_js_tokens,
@@ -121,7 +122,8 @@ BRICS =
             #...............................................................................................
             switch true
               #.............................................................................................
-              when state.selector.startsWith 'node:'            then  state.disposition = 'node'
+              # when state.selector.startsWith 'node:'            then  state.disposition = 'node'
+              when isBuiltin state.selector                     then  state.disposition = 'node'
               when not /// ^ \.{1,2} \/ ///.test state.selector then  state.disposition = 'npm'
               when app_details?
                 pkg_location = PATH.resolve anchor, state.selector
