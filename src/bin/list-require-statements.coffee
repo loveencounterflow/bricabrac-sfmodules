@@ -102,38 +102,54 @@ _collect_transitive_require_statements = ( path, collector, seen_paths ) ->
               continue
             #   throw new Error "ΩLRS__11 detected cyclic dependency from #{rpr path} to #{rpr dependent_path}"
             seen_paths.add dependent_path
-            # debug 'ΩLRS__18', findPackageJSON selector, path
-            # debug 'ΩLRS__18', findPackageJSON path
-            # debug 'ΩLRS__18', findPackageJSON selector
+            # debug 'ΩLRS__12', findPackageJSON selector, path
+            # debug 'ΩLRS__13', findPackageJSON path
+            # debug 'ΩLRS__14', findPackageJSON selector
             collector.push { disposition, source_path: path, path: dependent_path, selector, }
             _collect_transitive_require_statements dependent_path, collector, seen_paths
           # when 'outside'
-          #   warn "ΩLRS__12 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+          #   warn "ΩLRS__15 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
           when 'unresolved'
-            warn "ΩLRS__13 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+            warn "ΩLRS__16 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
       else
-        warn "ΩLRS__14 ignoring require statement with type #{rpr type}"
+        warn "ΩLRS__17 ignoring require statement with type #{rpr type}"
   return collector
 
 dependencies = collect_transitive_require_statements source_path
-# info 'ΩLRS__15', ( rpr d.path ), ( "(#{rpr d.selector})" ) for d in dependencies
-cwd         = process.cwd()
+# info 'ΩLRS__18', ( rpr d.path ), ( "(#{rpr d.selector})" ) for d in dependencies
+# cwd         = process.cwd()
+{ Shell,  } = require '../../../bvfs'
+remote_urls = {}
+rows        = []
+#...........................................................................................................
 for d in dependencies
-  source_path = PATH.relative cwd, d.source_path
-  info 'ΩLRS__16', d.disposition, ( rpr source_path ), ( "(#{rpr d.selector})" )
+  #.........................................................................................................
+  cwd = PATH.dirname d.path
+  unless ( remote_url = remote_urls[ cwd ] )?
+    sh = new Shell { cwd, lines: false, only_stdout: true, }
+    try
+      remote_url          = sh.call 'git', 'config', '--get', 'remote.origin.url'
+      remote_urls[ cwd ]  = remote_url
+    catch error
+      warn 'ΩLRS__19', error.message
+      remote_url          = '?unknown?'
+      remote_urls[ cwd ]  = remote_url
+  #.........................................................................................................
+  source_relpath    = PATH.relative cwd, d.source_path
+  target_path       = PATH.resolve ( PATH.dirname d.source_path ), d.selector
+  rows.push           { source_relpath, selector: d.selector, target_path, remote_url, }
+  info 'ΩLRS__20', d.disposition, source_relpath, target_path, d.selector, remote_url
+#...........................................................................................................
+rows.sort ( a, b ) ->
+  return +1 if a.remote_url  > b.remote_url
+  return -1 if a.remote_url  < b.remote_url
+  return +1 if a.target_path > b.target_path
+  return -1 if a.target_path < b.target_path
+  return 0
+console.table Object.fromEntries ( [ idx + 1, row, ] for row, idx in rows )
 
-{ Shell, } = require '../../../bvfs'
-shell_cfg = { cwd: __dirname, lines: false, only_stdout: true, }
 # shell_cfg = { cwd: '/tmp', lines: false, only_stdout: true, }
-sh = new Shell shell_cfg
 
-debug 'ΩLRS__17', 'git config --get remote.origin.url'
-try
-  remote_url = sh.call 'git', 'config', '--get', 'remote.origin.url'
-  debug 'ΩLRS__18', rpr remote_url
-catch error
-  warn 'ΩLRS__19', error.message
-  warn 'ΩLRS__20', error.name
 
 
 
