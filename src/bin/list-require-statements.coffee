@@ -4,8 +4,8 @@
 'use strict'
 
 #===========================================================================================================
-{ log,
-  debug,                } = console
+# { log,
+#   debug,                } = console
 #-----------------------------------------------------------------------------------------------------------
 SFMODULES                 = require '../main'
 # SFMODULES                 = require 'bricabrac-sfmodules'
@@ -15,25 +15,16 @@ SFMODULES                 = require '../main'
 { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
 { walk_require_statements,
                         } = SFMODULES.require_parse_require_statements()
+{ strip_ansi,           } = SFMODULES.require_strip_ansi()
+# { SQL: SH,              } = SFMODULES.unstable.require_dbric()
 # { walk_js_tokens,
 #   walk_essential_js_tokens,
 #   summarize,            } = SFMODULES.require_walk_js_tokens()
 PATH                      = require 'node:path'
 FS                        = require 'node:fs'
-warn = ( P... ) ->
-  x = ( "#{p}" for p in P ).join ' '
-  log "#{C.bg_navy}#{C.red}#{C.bold}#{x}#{C.bold0}#{C.default}#{C.bg_default}"
-info = ( P... ) ->
-  x = ( "#{p}" for p in P ).join ' '
-  log "#{C.bg_honeydew}#{C.black}#{C.bold}#{x}#{C.bold0}#{C.default}#{C.bg_default}"
-whisper = ( P... ) ->
-  x = ( "#{p}" for p in P ).join ' '
-  log "#{C.bg_slategray}#{C.black}#{C.bold}#{x}#{C.bold0}#{C.default}#{C.bg_default}"
-
-debug "ΩLRS___1 ————————————————————————————————————————"
-
-{ createRequire,        } = require 'node:module'
-# { findPackageJSON,      } = require 'node:module'
+#-----------------------------------------------------------------------------------------------------------
+{ createRequire,
+  findPackageJSON,      } = require 'node:module'
 # { pathToFileURL,        } = require 'node:url'
 # { register,             } = require 'node:module'
 # { stripTypeScriptTypes, } = require 'node:module'
@@ -41,6 +32,31 @@ debug "ΩLRS___1 —————————————————————
 # isBuiltin('node:fs'); // true
 # isBuiltin('fs'); // true
 # isBuiltin('wss'); // false
+#-----------------------------------------------------------------------------------------------------------
+{ warn,
+  info,
+  debug,
+  whisper,              } = do \
+require_console_output = ->
+  line_width = if process.stdout.isTTY then process.stdout.columns else 108
+  pen = ( P... ) ->
+    text = ( "#{p}" for p in P ).join ' '
+     # ( strip_ansi text ).length
+    return text.padEnd line_width, ' '
+  warn = ( P... ) ->
+    console.log "#{C.bg_navy}#{C.red}#{C.bold}#{pen P...}#{C.bold0}#{C.default}#{C.bg_default}"
+  info = ( P... ) ->
+    console.log "#{C.bg_honeydew}#{C.black}#{C.bold}#{pen P...}#{C.bold0}#{C.default}#{C.bg_default}"
+  whisper = ( P... ) ->
+    console.log "#{C.bg_slategray}#{C.black}#{C.bold}#{pen P...}#{C.bold0}#{C.default}#{C.bg_default}"
+  debug = ( P... ) ->
+    console.log "#{C.bg_violet}#{C.white}#{C.bold}#{pen P...}#{C.bold0}#{C.default}#{C.bg_default}"
+  return exports = { pen, warn, info, whisper, debug, }
+
+
+#===========================================================================================================
+debug "ΩLRS___1 ————————————————————————————————————————"
+
 
 ### NOTE: it's possible to use customized logic for `require()` ###
 # { registerHooks,        } = require 'node:module'
@@ -81,26 +97,43 @@ _collect_transitive_require_statements = ( path, collector, seen_paths ) ->
             warn "ΩLRS___9 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
           when 'inside', 'outside'
             dependent_path = custom_require.resolve selector
-            whisper 'ΩLRS__11', "(#{disposition}) #{path} -> #{dependent_path}"
+            whisper 'ΩLRS__10', "(#{disposition}) #{path} -> #{dependent_path}"
             if seen_paths.has dependent_path
               continue
-            #   throw new Error "ΩLRS__12 detected cyclic dependency from #{rpr path} to #{rpr dependent_path}"
+            #   throw new Error "ΩLRS__11 detected cyclic dependency from #{rpr path} to #{rpr dependent_path}"
             seen_paths.add dependent_path
+            # debug 'ΩLRS__18', findPackageJSON selector, path
+            # debug 'ΩLRS__18', findPackageJSON path
+            # debug 'ΩLRS__18', findPackageJSON selector
             collector.push { disposition, source_path: path, path: dependent_path, selector, }
             _collect_transitive_require_statements dependent_path, collector, seen_paths
           # when 'outside'
-          #   warn "ΩLRS__13 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+          #   warn "ΩLRS__12 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
           when 'unresolved'
-            warn "ΩLRS__14 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+            warn "ΩLRS__13 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
       else
-        warn "ΩLRS__15 ignoring require statement with type #{rpr type}"
+        warn "ΩLRS__14 ignoring require statement with type #{rpr type}"
   return collector
 
 dependencies = collect_transitive_require_statements source_path
-# info 'ΩLRS__16', ( rpr d.path ), ( "(#{rpr d.selector})" ) for d in dependencies
+# info 'ΩLRS__15', ( rpr d.path ), ( "(#{rpr d.selector})" ) for d in dependencies
 cwd         = process.cwd()
 for d in dependencies
   source_path = PATH.relative cwd, d.source_path
   info 'ΩLRS__16', d.disposition, ( rpr source_path ), ( "(#{rpr d.selector})" )
+
+{ Shell, } = require '../../../bvfs'
+shell_cfg = { cwd: __dirname, lines: false, only_stdout: true, }
+# shell_cfg = { cwd: '/tmp', lines: false, only_stdout: true, }
+sh = new Shell shell_cfg
+
+debug 'ΩLRS__17', 'git config --get remote.origin.url'
+try
+  remote_url = sh.call 'git', 'config', '--get', 'remote.origin.url'
+  debug 'ΩLRS__18', rpr remote_url
+catch error
+  warn 'ΩLRS__19', error.message
+  warn 'ΩLRS__20', error.name
+
 
 
