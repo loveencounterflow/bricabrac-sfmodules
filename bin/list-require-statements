@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+home="$(realpath "$(realpath "${BASH_SOURCE[0]}" | xargs dirname)"/..)" # ; cd "$home"
+
+
+choose_first_executable() {
+    local executables=("$@")
+    for exe in "${executables[@]}"; do
+        if command -v "$exe" >/dev/null 2>&1; then
+            echo "$exe"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Usage:
+node=$(choose_first_executable nodexh node)
+source_path="$1"
+script_path="$home"/lib/bin/list-require-statements.js
+echo "Ωlrs___1 CWD:                 $(pwd)"
+echo "Ωlrs___2 home:                $home"
+echo "Ωlrs___3 script path:         $script_path"
+echo "Ωlrs___4 run with:            $node"
+echo "Ωlrs___5 using source path:   $source_path"
+
+"$node" "$script_path" "$source_path"
+
+
+
+
+
