@@ -18,8 +18,8 @@ importers:
         specifier: ^0.13.1
         version: 0.13.1
       normalize-function-arguments:
-        specifier: github:loveencounterflow/normalize-function-arguments#a81d18e
-        version: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2
+        specifier: github:loveencounterflow/normalize-function-arguments#v0.2.1
+        version: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/9f908689d776ba2bfd8b4172a7a99f717ba1015f
 
 packages:
 
@@ -65,9 +65,9 @@ packages:
   normalize-function-arguments@0.1.0:
     resolution: {integrity: sha512-ske8wWMhYLNV9rhnJKENJ4NEKzmIMzrX39UZpt5aVRsEBlK0ea3o046NtdC8yPbODaU6I3sQggTIPVw6zlBNhA==}
 
-  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2:
-    resolution: {tarball: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2}
-    version: 0.2.0
+  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/9f908689d776ba2bfd8b4172a7a99f717ba1015f:
+    resolution: {tarball: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/9f908689d776ba2bfd8b4172a7a99f717ba1015f}
+    version: 0.2.1
 
   regex-utilities@2.3.0:
     resolution: {integrity: sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng==}
@@ -128,7 +128,7 @@ snapshots:
     dependencies:
       loupe: 3.2.1
 
-  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2:
+  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/9f908689d776ba2bfd8b4172a7a99f717ba1015f:
     dependencies:
       bricabrac-sfmodules: 0.18.0
       loupe: 3.2.1
