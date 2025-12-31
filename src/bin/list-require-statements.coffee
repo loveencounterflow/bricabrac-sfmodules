@@ -115,6 +115,7 @@ dependencies = collect_transitive_require_statements source_path
 { Shell,  } = require '../../../bvfs'
 remote_urls = {}
 rows        = []
+process_cwd = process.cwd()
 #...........................................................................................................
 for d in dependencies
   #.........................................................................................................
@@ -129,9 +130,9 @@ for d in dependencies
       remote_url          = '?unknown?'
       remote_urls[ cwd ]  = remote_url
   #.........................................................................................................
-  source_relpath    = PATH.relative cwd, d.source_path
+  source_relpath    = PATH.relative process_cwd, d.source_path
   target_path       = PATH.resolve ( PATH.dirname d.source_path ), d.selector
-  rows.push           { source_relpath, selector: d.selector, target_path, remote_url, }
+  rows.push           { source_relpath, selector: d.selector, target_path, remote_url, annotation: d.annotation, }
   info 'ΩLRS__20', d.disposition, source_relpath, target_path, d.selector, remote_url
 #...........................................................................................................
 rows.sort ( a, b ) ->
