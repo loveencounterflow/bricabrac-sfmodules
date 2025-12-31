@@ -88,7 +88,8 @@ _collect_transitive_require_statements = ( path, collector, seen_paths ) ->
           when 'node'
             warn "ΩLRS___8 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
           when 'npm'
-            warn "ΩLRS___9 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+            # warn "ΩLRS___9 ignoring module with disposition #{rpr disposition}: #{rpr selector}"
+            collector.push { disposition, source_path: path, path: null, selector, }
           when 'inside', 'outside'
             dependent_path = custom_require.resolve selector
             whisper 'ΩLRS__10', "(#{disposition}) #{path} -> #{dependent_path}"
@@ -118,24 +119,32 @@ rows        = []
 process_cwd = process.cwd()
 #...........................................................................................................
 for d in dependencies
-  #.........................................................................................................
-  cwd = PATH.dirname d.path
-  unless ( remote_url = remote_urls[ cwd ] )?
-    sh = new Shell { cwd, lines: false, only_stdout: true, }
-    try
-      remote_url          = sh.call 'git', 'config', '--get', 'remote.origin.url'
-      remote_urls[ cwd ]  = remote_url
-    catch error
-      warn 'ΩLRS__19', error.message
-      remote_url          = '?unknown?'
-      remote_urls[ cwd ]  = remote_url
-  #.........................................................................................................
   source_relpath    = PATH.relative process_cwd, d.source_path
-  target_path       = PATH.resolve ( PATH.dirname d.source_path ), d.selector
-  rows.push           { source_relpath, selector: d.selector, target_path, remote_url, annotation: d.annotation, }
-  info 'ΩLRS__20', d.disposition, source_relpath, target_path, d.selector, remote_url
+  #.........................................................................................................
+  switch d.disposition
+    when 'inside', 'outside'
+      cwd = PATH.dirname d.path
+      unless ( remote_url = remote_urls[ cwd ] )?
+        sh = new Shell { cwd, lines: false, only_stdout: true, }
+        try
+          remote_url          = sh.call 'git', 'config', '--get', 'remote.origin.url'
+          remote_urls[ cwd ]  = remote_url
+        catch error
+          warn 'ΩLRS__19', error.message
+          remote_url          = '?unknown?'
+          remote_urls[ cwd ]  = remote_url
+      #.........................................................................................................
+      target_path       = PATH.resolve ( PATH.dirname d.source_path ), d.selector
+      rows.push { disposition: d.disposition, source_relpath, selector: d.selector, target_path, remote_url, annotation: d.annotation, }
+    when 'npm'
+      rows.push { disposition: d.disposition, source_relpath, selector: d.selector, target_path: null, remote_url: null, annotation: d.annotation, }
+    else
+      warn "ΩLRS__20 ignoring row with disposition #{rpr d.disposition}"
+  info 'ΩLRS__21', d.disposition, source_relpath, target_path, d.selector, remote_url
 #...........................................................................................................
 rows.sort ( a, b ) ->
+  return +1 if a.disposition > b.disposition
+  return -1 if a.disposition < b.disposition
   return +1 if a.remote_url  > b.remote_url
   return -1 if a.remote_url  < b.remote_url
   return +1 if a.target_path > b.target_path
