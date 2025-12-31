@@ -7,19 +7,13 @@
 # { log,
 #   debug,                } = console
 #-----------------------------------------------------------------------------------------------------------
-SFMODULES                 = require '../main'
-# SFMODULES                 = require 'bricabrac-sfmodules'
 { ansi_colors_and_effects: \
-    C,                  } = SFMODULES.require_ansi_colors_and_effects()
-{ type_of,              } = SFMODULES.unstable.require_type_of()
-{ show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
+    C,                  } = ( require '../ansi-brics' ).require_ansi_colors_and_effects()
+{ type_of,              } = ( require '../unstable-rpr-type_of-brics' ).require_type_of()
+{ show_no_colors: rpr,  } = ( require '../unstable-rpr-type_of-brics' ).require_show()
 { walk_require_statements,
-                        } = SFMODULES.require_parse_require_statements()
-{ strip_ansi,           } = SFMODULES.require_strip_ansi()
-# { SQL: SH,              } = SFMODULES.unstable.require_dbric()
-# { walk_js_tokens,
-#   walk_essential_js_tokens,
-#   summarize,            } = SFMODULES.require_walk_js_tokens()
+                        } = ( require '../parse-require-statements.brics' ).require_parse_require_statements()
+{ strip_ansi,           } = ( require '../ansi-brics' ).require_strip_ansi()
 PATH                      = require 'node:path'
 FS                        = require 'node:fs'
 #-----------------------------------------------------------------------------------------------------------

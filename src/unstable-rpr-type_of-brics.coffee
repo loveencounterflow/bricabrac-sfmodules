@@ -20,7 +20,7 @@ BRICS =
     # C                         = require '../../hengist-NG/node_modules/.pnpm/ansis@4.1.0/node_modules/ansis/index.cjs'
     { type_of,
       is_primitive_type,    } = BRICS.require_type_of()
-    { strip_ansi,           } = ( require './main' ).require_strip_ansi()
+    { strip_ansi,           } = ( require './ansi-brics' ).require_strip_ansi()
     # { hide,
     #   set_getter,   } = ( require './main' ).require_managed_property_tools()
     # SQLITE            = require 'node:sqlite'

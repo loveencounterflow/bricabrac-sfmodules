@@ -25,7 +25,7 @@ BRICS =
       summarize,              } = ( require './walk-js-tokens.brics'    ).require_walk_js_tokens()
     { get_app_details,        } = ( require './unstable-callsite-brics' ).require_get_app_details()
     { nfa,
-      get_signature,          } = require '../../normalize-function-arguments'
+      get_signature,          } = require 'normalize-function-arguments'
     #.......................................................................................................
     object_prototype            = Object.getPrototypeOf {}
     types                       =
