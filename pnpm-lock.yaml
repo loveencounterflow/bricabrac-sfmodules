@@ -18,8 +18,8 @@ importers:
         specifier: ^0.13.1
         version: 0.13.1
       normalize-function-arguments:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: github:loveencounterflow/normalize-function-arguments#a81d18e
+        version: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2
 
 packages:
 
@@ -30,6 +30,9 @@ packages:
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
+
+  bricabrac-sfmodules@0.18.0:
+    resolution: {integrity: sha512-rajGfQDa9hlEubD5ctV1D88UJN5d/xb4Cd2xDzYsqlzWeGVqV3mkQyAcA5S+mh7eK+jqt/i5+4xmwjjD32jq5A==}
 
   cleartype@0.0.7:
     resolution: {integrity: sha512-RoPd7mvyF4K4BiWktnNhPUkIdVE0RoRmpkga3JJpc4TWkPFdy1gcU41gCog2Ot/PPzQWAPFXtcqC1316fAAuZg==}
@@ -59,8 +62,12 @@ packages:
   normalize-function-arguments@0.0.11:
     resolution: {integrity: sha512-0YF49+WVwATNqQqzl42tAb3dwb4a++grXqIOnvF9H/Tf+xhRZ14pSVbyCHlznaMk4lRfxFTkNUKgZJZ7Wa4ADw==}
 
-  normalize-function-arguments@0.2.0:
-    resolution: {integrity: sha512-iICxJ8rWBffB807XWlqvvIgjlL2vvf3M+6pPkPQ/t8++1NKH0fbKvqEZuEx1z3fV+DrwK0n/TBzvljymT7tEow==}
+  normalize-function-arguments@0.1.0:
+    resolution: {integrity: sha512-ske8wWMhYLNV9rhnJKENJ4NEKzmIMzrX39UZpt5aVRsEBlK0ea3o046NtdC8yPbODaU6I3sQggTIPVw6zlBNhA==}
+
+  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2:
+    resolution: {tarball: https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2}
+    version: 0.2.0
 
   regex-utilities@2.3.0:
     resolution: {integrity: sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng==}
@@ -82,6 +89,11 @@ snapshots:
     optional: true
 
   ansi-regex@5.0.1: {}
+
+  bricabrac-sfmodules@0.18.0:
+    dependencies:
+      env-paths: 3.0.0
+      normalize-function-arguments: 0.1.0
 
   cleartype@0.0.7:
     dependencies:
@@ -112,8 +124,13 @@ snapshots:
     dependencies:
       loupe: 3.2.1
 
-  normalize-function-arguments@0.2.0:
+  normalize-function-arguments@0.1.0:
     dependencies:
+      loupe: 3.2.1
+
+  normalize-function-arguments@https://codeload.github.com/loveencounterflow/normalize-function-arguments/tar.gz/a81d18e63c15311390a324817597203b4ebd8ee2:
+    dependencies:
+      bricabrac-sfmodules: 0.18.0
       loupe: 3.2.1
 
   regex-utilities@2.3.0: {}
