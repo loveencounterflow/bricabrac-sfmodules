@@ -38,6 +38,10 @@
       lo:         null
       hi:         null
 
+  #=========================================================================================================
+  as_hex = ( n ) ->
+    sign = if n < 0 then '-' else '+'
+    return "#{sign}0x#{( Math.abs n ).toString 16}"
 
   #=========================================================================================================
   # run_class_count = 0
@@ -48,15 +52,15 @@
     cast_bound = ( bound ) ->
       switch type = type_of bound
         when 'float'
-          unless Integer.isInteger bound
+          unless Number.isInteger bound
             throw new Error "Ωim___1 expected an integer or a text, got a #{type}"
           R = bound
         when 'text'
           R = bound.codePointAt 0
         else
           throw new Error "Ωim___2 expected an integer or a text, got a #{type}"
-      if scatter? and not ( scatter.first <= R <= scatter.last )
-        throw new Error "Ωim___3 #{R} is not between #{scatter.first} and #{scatter.last}"
+      if scatter? and not ( scatter.cfg.first <= R <= scatter.cfg.last )
+        throw new Error "Ωim___3 #{as_hex R} is not between #{as_hex scatter.cfg.first} and #{as_hex scatter.cfg.last}"
       return R
 
     #-------------------------------------------------------------------------------------------------------
@@ -70,8 +74,6 @@
       #-------------------------------------------------------------------------------------------------------
       constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
         [ @lo, @hi, ] = get_hi_and_lo cfg
-        # @lo     = lo
-        # @hi     = hi
         hide @, 'scatter', cfg.scatter ? null
 
       #-------------------------------------------------------------------------------------------------------
@@ -103,6 +105,10 @@
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
+    ### NOTE override to define custom cast from arguments to bounds ###
+    get_hi_and_lo: null # ( cfg ) ->
+
+    #-------------------------------------------------------------------------------------------------------
     [Symbol.iterator]: ->
       @normalize() unless @is_normalized
       yield from run for run in @runs
@@ -114,7 +120,12 @@
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'is_normalized',  -> @state.is_normalized
-    set_getter @::, 'points',         -> [ ( new Set [ ( [ run..., ] for run in @runs )..., ].flat() )..., ].sort()
+    set_getter @::, 'points', ->
+      points = new Set [ ( [ run..., ] for run in @runs )..., ].flat()
+      return [ points..., ].sort ( a, b ) ->
+        return +1 if a > b
+        return -1 if a < b
+        return  0
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'min', ->
@@ -156,13 +167,16 @@
 
     #-------------------------------------------------------------------------------------------------------
     add: ( P... ) ->
-      run         = new Run P...
+      run         = new @run_class P...
       # unless
       run.scatter = @
       @_insert run
       if @cfg.normalize then @normalize()
       else if @cfg.sort then @sort()
       return null
+
+    #-------------------------------------------------------------------------------------------------------
+    add_codepoints_of: ( texts... ) -> @add chr for chr from new Set texts.join ''
 
     #-------------------------------------------------------------------------------------------------------
     normalize: ->
