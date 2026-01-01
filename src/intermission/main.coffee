@@ -74,11 +74,18 @@
 
     #-------------------------------------------------------------------------------------------------------
     contains: ( probe ) ->
+      #.....................................................................................................
       switch true
+        #...................................................................................................
         when Number.isFinite probe
           return @lo <= probe <= @hi
+        #...................................................................................................
         when probe instanceof Run
           return ( @lo <= probe.lo <= @hi ) and ( @lo <= probe.hi <= @hi )
+        #...................................................................................................
+        when ( type_of probe ) is 'text'
+          probe = ( chr.codePointAt 0 for chr in Array.from probe )
+      #.....................................................................................................
       for n from probe
         return false unless @lo <= n <= @hi
       return true
@@ -101,27 +108,22 @@
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
-    ### NOTE override to define custom cast from arguments to bounds ###
-    get_hi_and_lo: null # ( cfg ) ->
+    [Symbol.iterator]: -> yield from @walk()
 
     #-------------------------------------------------------------------------------------------------------
-    [Symbol.iterator]: ->
+    walk: ->
       @normalize() unless @is_normalized
       yield from run for run in @runs
       ;null
 
     #-------------------------------------------------------------------------------------------------------
-    walk:     -> yield from @
-    walk_raw: -> yield from @points
-
-    #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'is_normalized',  -> @state.is_normalized
-    set_getter @::, 'points', ->
-      points = new Set [ ( [ run..., ] for run in @runs )..., ].flat()
-      return [ points..., ].sort ( a, b ) ->
-        return +1 if a > b
-        return -1 if a < b
-        return  0
+    set_getter @::, 'points', -> [ @..., ]
+      # points = new Set [ ( [ run..., ] for run in @runs )..., ].flat()
+      # return [ points..., ].sort ( a, b ) ->
+      #   return +1 if a > b
+      #   return -1 if a < b
+      #   return  0
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'min', ->
@@ -163,8 +165,7 @@
 
     #-------------------------------------------------------------------------------------------------------
     add: ( P... ) ->
-      run         = @hoard.create_run P...
-      @_insert run
+      @_insert @hoard.create_run P...
       if @cfg.normalize then @normalize()
       else if @cfg.sort then @sort()
       return null
@@ -183,7 +184,6 @@
 
     #-------------------------------------------------------------------------------------------------------
     contains: ( probe ) ->
-      # @runs.some ( run ) -> run.contains probe
       @normalize() unless @is_normalized
       { min, max, } = @minmax
       #.....................................................................................................
@@ -199,7 +199,11 @@
         #...................................................................................................
         when probe instanceof Scatter
           probe.normalize() unless probe.is_normalized
+          return false unless ( min <= probe.min <= max ) and ( min <= probe.max <= max )
           return probe.runs.every ( run ) => @contains run
+        #...................................................................................................
+        when ( type_of probe ) is 'text'
+          probe = ( chr.codePointAt 0 for chr in Array.from probe )
       #.....................................................................................................
       for n from probe
         return false unless @runs.some ( run ) -> run.contains n
@@ -210,7 +214,10 @@
 
     #-------------------------------------------------------------------------------------------------------
     constructor: ( cfg ) ->
-      @cfg = freeze { templates.hoard_cfg..., cfg..., }
+      @cfg  = freeze { templates.hoard_cfg..., cfg..., }
+      @gaps = []
+      @hits = []
+      hide @, 'state',  { is_normalized: true, }
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
