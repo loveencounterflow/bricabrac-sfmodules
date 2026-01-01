@@ -17,6 +17,8 @@
   { type_of,              } = SFMODULES.unstable.require_type_of()
   { hide,
     set_getter,           } = SFMODULES.require_managed_property_tools()
+  { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
+  { freeze,               } = Object
   IFN                       = require '../../dependencies/intervals-fn-lib.ts'
 
   #=========================================================================================================
@@ -28,13 +30,20 @@
       scatter:    null
     #.......................................................................................................
     scatter_cfg:
+      hoard:      null
       data:       null
       sort:       false
       normalize:  false
+    #.......................................................................................................
+    scatter_add:
+      lo:         null
+      hi:         null
+    #.......................................................................................................
+    hoard_cfg:
       first:      0x00_0000
       last:       0x10_ffff
     #.......................................................................................................
-    scatter_add:
+    create_run:
       lo:         null
       hi:         null
 
@@ -43,65 +52,44 @@
     sign = if n < 0 then '-' else '+'
     return "#{sign}0x#{( Math.abs n ).toString 16}"
 
+
   #=========================================================================================================
-  # run_class_count = 0
-  create_run_class = ( scatter = null ) ->
-    # run_class_count++
+  class Run
 
     #-------------------------------------------------------------------------------------------------------
-    cast_bound = ( bound ) ->
-      switch type = type_of bound
-        when 'float'
-          unless Number.isInteger bound
-            throw new Error "Ωim___1 expected an integer or a text, got a #{type}"
-          R = bound
-        when 'text'
-          R = bound.codePointAt 0
-        else
-          throw new Error "Ωim___2 expected an integer or a text, got a #{type}"
-      if scatter? and not ( scatter.cfg.first <= R <= scatter.cfg.last )
-        throw new Error "Ωim___3 #{as_hex R} is not between #{as_hex scatter.cfg.first} and #{as_hex scatter.cfg.last}"
-      return R
+    constructor: ({ lo, hi, }) ->
+      @lo   = lo
+      @hi   = hi
+      ;undefined
 
     #-------------------------------------------------------------------------------------------------------
-    get_hi_and_lo = ( cfg ) ->
-      return scatter.get_hi_and_lo cfg if scatter?.get_hi_and_lo?
-      return [ ( cast_bound cfg.lo ), ( cast_bound cfg.hi ? cfg.lo ), ]
+    [Symbol.iterator]: -> yield from [ @lo .. @hi ]
 
-    #=========================================================================================================
-    R = class Run # ["Run_nr#{run_class_count}"]
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
 
-      #-------------------------------------------------------------------------------------------------------
-      constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
-        [ @lo, @hi, ] = get_hi_and_lo cfg
-        hide @, 'scatter', cfg.scatter ? null
+    #-------------------------------------------------------------------------------------------------------
+    as_halfopen:                -> { start: @lo, end: @hi + 1, }
+    @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
 
-      #-------------------------------------------------------------------------------------------------------
-      [Symbol.iterator]: -> yield from [ @lo .. @hi ]
+    #-------------------------------------------------------------------------------------------------------
+    contains: ( i ) -> @lo <= i <= @hi
 
-      #-------------------------------------------------------------------------------------------------------
-      set_getter @::, 'data', -> @scatter.data
-      set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
-
-      #-------------------------------------------------------------------------------------------------------
-      as_halfopen:                -> { start: @lo, end: @hi + 1, }
-      @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
-
-      #-------------------------------------------------------------------------------------------------------
-      has: ( i ) -> @lo <= i <= @hi
-    return R
-  Run = create_run_class null
 
   #=========================================================================================================
   class Scatter
-    constructor: nfa { template: templates.scatter_cfg, }, ( data, cfg ) ->
+
+    #-------------------------------------------------------------------------------------------------------
+    constructor: ( hoard, cfg ) ->
       ### TAINT validate ###
       ### TAINT should freeze data ###
-      @data   = data
-      @runs   = []
-      hide @, 'cfg',        Object.freeze cfg # { normalize, }
-      hide @, 'state',      { is_normalized: true, }
-      hide @, 'run_class',  create_run_class @
+      [ cfg,
+        { data, },  ] = deploy { templates.scatter_cfg..., cfg..., }, [ 'sort', 'normalize', ], [ 'data', ]
+      @data           = freeze data
+      @runs           = []
+      hide @, 'cfg',    freeze cfg
+      hide @, 'hoard',  hoard
+      hide @, 'state',  { is_normalized: true, }
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
@@ -167,9 +155,7 @@
 
     #-------------------------------------------------------------------------------------------------------
     add: ( P... ) ->
-      run         = new @run_class P...
-      # unless
-      run.scatter = @
+      run         = @hoard.create_run P...
       @_insert run
       if @cfg.normalize then @normalize()
       else if @cfg.sort then @sort()
@@ -188,11 +174,47 @@
       return null
 
     #-------------------------------------------------------------------------------------------------------
-    has: ( i ) -> @runs.some ( run ) -> run.has i
+    contains: ( i ) -> @runs.some ( run ) -> run.contains i
   
   #=========================================================================================================
-  internals = Object.freeze { IFN, }
-  return exports = {
-    Run,
-    Scatter,
-    internals, }
+  class Hoard
+
+    #-------------------------------------------------------------------------------------------------------
+    constructor: ( cfg ) ->
+      @cfg = freeze { templates.hoard_cfg..., cfg..., }
+      ;undefined
+
+    #-------------------------------------------------------------------------------------------------------
+    create_run: nfa { template: templates.create_run, }, ( lo, hi, cfg ) ->
+      # debug 'Ωim___1', { lo, hi, cfg, }
+      # debug 'Ωim___1', @_get_hi_and_lo cfg
+      return new Run @_get_hi_and_lo cfg
+
+    #-------------------------------------------------------------------------------------------------------
+    create_scatter: ( P... ) -> new Scatter  @, P...
+
+    #-------------------------------------------------------------------------------------------------------
+    _get_hi_and_lo: ( cfg ) ->
+      return { lo: ( @_cast_bound cfg.lo ), hi: ( @_cast_bound cfg.hi ? cfg.lo ), }
+
+    #-------------------------------------------------------------------------------------------------------
+    _cast_bound: ( bound ) ->
+      switch type = type_of bound
+        when 'float'
+          unless Number.isInteger bound
+            throw new Error "Ωim___2 expected an integer or a text, got a #{type}"
+          R = bound
+        when 'text'
+          R = bound.codePointAt 0
+        else
+          throw new Error "Ωim___3 expected an integer or a text, got a #{type}"
+      unless ( @cfg.first <= R <= @cfg.last )
+        throw new Error "Ωim___4 #{as_hex R} is not between #{as_hex @cfg.first} and #{as_hex @cfg.last}"
+      return R
+
+  #=========================================================================================================
+  return exports = do =>
+    internals = Object.freeze { Run, Scatter, templates, IFN, }
+    return {
+      Hoard,
+      internals, }
