@@ -73,7 +73,15 @@
     @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
 
     #-------------------------------------------------------------------------------------------------------
-    contains: ( i ) -> @lo <= i <= @hi
+    contains: ( probe ) ->
+      switch true
+        when Number.isFinite probe
+          return @lo <= probe <= @hi
+        when probe instanceof Run
+          return ( @lo <= probe.lo <= @hi ) and ( @lo <= probe.hi <= @hi )
+      for n from probe
+        return false unless @lo <= n <= @hi
+      return true
 
 
   #=========================================================================================================
@@ -174,7 +182,28 @@
       return null
 
     #-------------------------------------------------------------------------------------------------------
-    contains: ( i ) -> @runs.some ( run ) -> run.contains i
+    contains: ( probe ) ->
+      # @runs.some ( run ) -> run.contains probe
+      @normalize() unless @is_normalized
+      { min, max, } = @minmax
+      #.....................................................................................................
+      switch true
+        #...................................................................................................
+        when Number.isFinite probe
+          return false unless min <= probe <= max
+          return @runs.some ( run ) => run.contains probe
+        #...................................................................................................
+        when probe instanceof Run
+          return false unless ( min <= probe.lo <= max ) and ( min <= probe.hi <= max )
+          return @runs.some ( run ) => ( run.contains probe.lo ) and ( run.contains probe.hi )
+        #...................................................................................................
+        when probe instanceof Scatter
+          probe.normalize() unless probe.is_normalized
+          return probe.runs.every ( run ) => @contains run
+      #.....................................................................................................
+      for n from probe
+        return false unless @runs.some ( run ) -> run.contains n
+      return true
   
   #=========================================================================================================
   class Hoard
