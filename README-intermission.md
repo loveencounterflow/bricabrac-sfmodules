@@ -101,16 +101,36 @@
     ```sql
     create table jzr_glyphruns (
         rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
-        rsg       text    unique  not null,
-        is_cjk    boolean         not null,
+        scatter   text            not null,
         lo        integer         not null,
         hi        integer         not null,
-        name      text            not null,
       -- primary key ( rowid ),
+      foreign key scatter references jzr_glyphscatters ( rowid ),
       constraint "Ωconstraint___5" check ( lo between 0x000000 and 0x10ffff ),
       constraint "Ωconstraint___6" check ( hi between 0x000000 and 0x10ffff ),
       constraint "Ωconstraint___7" check ( lo <= hi ),
       constraint "Ωconstraint___8" check ( rowid regexp '^.*$' )
       );
     ```
+
+    ```sql
+    create table jzr_glyphscatters (
+        rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
+        data      json            not null
+      -- primary key ( rowid )
+      );
+    ```
+
+    ```sql
+    create table jzr_glyphhoard (
+        rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
+        data      json            not null
+      -- primary key ( rowid )
+      );
+    ```
+
+## To Do
+
+* **`[—]`** reject floats
+* **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
 

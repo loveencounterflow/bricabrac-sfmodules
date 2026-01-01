@@ -31,6 +31,8 @@
       data:       null
       sort:       false
       normalize:  false
+      first:      0x00_0000
+      last:       0x10_ffff
     #.......................................................................................................
     scatter_add:
       lo:         null
@@ -38,31 +40,55 @@
 
 
   #=========================================================================================================
-  class Run
+  # run_class_count = 0
+  create_run_class = ( scatter = null ) ->
+    # run_class_count++
 
     #-------------------------------------------------------------------------------------------------------
-    constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
-      { lo,
-        hi, } = lo if lo instanceof Run
-      lo     ?= hi ? 0
-      hi     ?= lo
-      @lo     = lo
-      @hi     = hi
-      hide @, 'scatter', cfg.scatter ? null
+    cast_bound = ( bound ) ->
+      switch type = type_of bound
+        when 'float'
+          unless Integer.isInteger bound
+            throw new Error "Ωim___1 expected an integer or a text, got a #{type}"
+          R = bound
+        when 'text'
+          R = bound.codePointAt 0
+        else
+          throw new Error "Ωim___2 expected an integer or a text, got a #{type}"
+      if scatter? and not ( scatter.first <= R <= scatter.last )
+        throw new Error "Ωim___3 #{R} is not between #{scatter.first} and #{scatter.last}"
+      return R
 
     #-------------------------------------------------------------------------------------------------------
-    [Symbol.iterator]: -> yield from [ @lo .. @hi ]
+    get_hi_and_lo = ( cfg ) ->
+      return scatter.get_hi_and_lo cfg if scatter?.get_hi_and_lo?
+      return [ ( cast_bound cfg.lo ), ( cast_bound cfg.hi ? cfg.lo ), ]
 
-    #-------------------------------------------------------------------------------------------------------
-    set_getter @::, 'data', -> @scatter.data
-    set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
+    #=========================================================================================================
+    R = class Run # ["Run_nr#{run_class_count}"]
 
-    #-------------------------------------------------------------------------------------------------------
-    as_halfopen:                -> { start: @lo, end: @hi + 1, }
-    @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
+      #-------------------------------------------------------------------------------------------------------
+      constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
+        [ @lo, @hi, ] = get_hi_and_lo cfg
+        # @lo     = lo
+        # @hi     = hi
+        hide @, 'scatter', cfg.scatter ? null
 
-    #-------------------------------------------------------------------------------------------------------
-    has: ( i ) -> @lo <= i <= @hi
+      #-------------------------------------------------------------------------------------------------------
+      [Symbol.iterator]: -> yield from [ @lo .. @hi ]
+
+      #-------------------------------------------------------------------------------------------------------
+      set_getter @::, 'data', -> @scatter.data
+      set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
+
+      #-------------------------------------------------------------------------------------------------------
+      as_halfopen:                -> { start: @lo, end: @hi + 1, }
+      @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
+
+      #-------------------------------------------------------------------------------------------------------
+      has: ( i ) -> @lo <= i <= @hi
+    return R
+  Run = create_run_class null
 
   #=========================================================================================================
   class Scatter
@@ -71,8 +97,9 @@
       ### TAINT should freeze data ###
       @data   = data
       @runs   = []
-      hide @, 'cfg',    Object.freeze cfg # { normalize, }
-      hide @, 'state',  { is_normalized: true, }
+      hide @, 'cfg',        Object.freeze cfg # { normalize, }
+      hide @, 'state',      { is_normalized: true, }
+      hide @, 'run_class',  create_run_class @
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
@@ -82,7 +109,12 @@
       ;null
 
     #-------------------------------------------------------------------------------------------------------
-    set_getter @::, 'is_normalized', -> @state.is_normalized
+    walk:     -> yield from @
+    walk_raw: -> yield from @points
+
+    #-------------------------------------------------------------------------------------------------------
+    set_getter @::, 'is_normalized',  -> @state.is_normalized
+    set_getter @::, 'points',         -> [ ( new Set [ ( [ run..., ] for run in @runs )..., ].flat() )..., ].sort()
 
     #-------------------------------------------------------------------------------------------------------
     set_getter @::, 'min', ->
@@ -125,6 +157,7 @@
     #-------------------------------------------------------------------------------------------------------
     add: ( P... ) ->
       run         = new Run P...
+      # unless
       run.scatter = @
       @_insert run
       if @cfg.normalize then @normalize()
