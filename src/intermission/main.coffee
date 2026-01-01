@@ -217,17 +217,54 @@
       @cfg  = freeze { templates.hoard_cfg..., cfg..., }
       @gaps = []
       @hits = []
-      hide @, 'state',  { is_normalized: true, }
+      hide @, 'scatters', []
+      hide @, 'state',    { is_normalized: true, }
       ;undefined
 
     #-------------------------------------------------------------------------------------------------------
     create_run: nfa { template: templates.create_run, }, ( lo, hi, cfg ) ->
       # debug 'Ωim___1', { lo, hi, cfg, }
-      # debug 'Ωim___1', @_get_hi_and_lo cfg
+      # debug 'Ωim___2', @_get_hi_and_lo cfg
       return new Run @_get_hi_and_lo cfg
 
     #-------------------------------------------------------------------------------------------------------
     create_scatter: ( P... ) -> new Scatter  @, P...
+
+    #-------------------------------------------------------------------------------------------------------
+    add_scatter: ( P... ) ->
+      R = @create_scatter P...
+      @scatters.push R
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    contains: ->
+
+    #-------------------------------------------------------------------------------------------------------
+    data_for: ( P... ) ->
+      R = []
+      for scatter in @scatters
+        continue unless scatter.contains P...
+        R.push scatter.data
+      return null if R.length is 0
+      return @normalize_data R...
+
+    #-------------------------------------------------------------------------------------------------------
+    normalize_data: ( items... ) ->
+      items = items.flat()
+      R     = {}
+      keys  = [ ( new Set ( key for key of item for item in items ).flat() )..., ].sort()
+      for key in keys
+        values    = ( item[ key ] for item in items )
+        R[ key ]  = ( @[ "normalize_data_#{key}" ] ? ( ( x ) -> x ) ).call @, values
+      # for item in items
+      #   for key, value of item
+      #     if key is 'data'
+        debug 'Ωim___3', values
+        debug 'Ωim___4', R[ key ]
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    normalize_data_tags: ( values ) -> [ ( new Set values.flat() )..., ]
 
     #-------------------------------------------------------------------------------------------------------
     _get_hi_and_lo: ( cfg ) ->
@@ -238,14 +275,14 @@
       switch type = type_of bound
         when 'float'
           unless Number.isInteger bound
-            throw new Error "Ωim___2 expected an integer or a text, got a #{type}"
+            throw new Error "Ωim___5 expected an integer or a text, got a #{type}"
           R = bound
         when 'text'
           R = bound.codePointAt 0
         else
-          throw new Error "Ωim___3 expected an integer or a text, got a #{type}"
+          throw new Error "Ωim___6 expected an integer or a text, got a #{type}"
       unless ( @cfg.first <= R <= @cfg.last )
-        throw new Error "Ωim___4 #{as_hex R} is not between #{as_hex @cfg.first} and #{as_hex @cfg.last}"
+        throw new Error "Ωim___7 #{as_hex R} is not between #{as_hex @cfg.first} and #{as_hex @cfg.last}"
       return R
 
   #=========================================================================================================
