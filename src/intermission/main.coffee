@@ -13,13 +13,14 @@
   { debug,                } = console
   { freeze,               } = Object
   IFN                       = require '../../dependencies/intervals-fn-lib.ts'
+  { T,                    } = require './types'
+  #.........................................................................................................
   { nfa,                  } = ( require '../unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
   { nameit,               } = ( require '../various-brics' ).require_nameit()
   { type_of,              } = ( require '../unstable-rpr-type_of-brics' ).require_type_of()
   { hide,
     set_getter,           } = ( require '../various-brics' ).require_managed_property_tools()
-  { Type,
-    Typespace,            } = ( require '../unstable-nanotypes-brics' ).require_nanotypes_v2()
+  { rpr,                  } = ( require '../loupe-brics' ).require_loupe()
   { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
 
   #=========================================================================================================
@@ -248,7 +249,7 @@
 
     #-------------------------------------------------------------------------------------------------------
     get_data_for_point: ( point ) ->
-      # unless
+      T.point.validate point
       R = []
       for scatter in @scatters
         continue unless scatter.contains point
