@@ -55,7 +55,7 @@
   #=========================================================================================================
   ### Strategies to be applied to summarize data items ###
   summarize_data =
-    as_set:         ( values ) -> [ ( new Set values.flat() )..., ]
+    as_unique_sorted: ( values ) -> [ ( new Set ( v for v in values.flat() when v? ).sort() )..., ]
     as_boolean_and: ( values ) -> values.reduce ( ( acc, cur ) -> acc and cur ? false ), true
     as_boolean_or:  ( values ) -> values.reduce ( ( acc, cur ) -> acc or  cur ? false ), false
 
@@ -170,14 +170,14 @@
       ;null
 
     #-------------------------------------------------------------------------------------------------------
-    add: ( P... ) ->
+    add_run: ( P... ) ->
       @_insert @hoard.create_run P...
       if @cfg.normalize then @normalize()
       else if @cfg.sort then @sort()
       return null
 
     #-------------------------------------------------------------------------------------------------------
-    add_codepoints_of: ( texts... ) -> @add chr for chr from new Set texts.join ''
+    add_codepoints_of: ( texts... ) -> @add_run chr for chr from new Set texts.join ''
 
     #-------------------------------------------------------------------------------------------------------
     normalize: ->
@@ -246,26 +246,31 @@
     contains: ->
 
     #-------------------------------------------------------------------------------------------------------
-    data_for: ( P... ) ->
+    get_data_for: ( point ) ->
       R = []
       for scatter in @scatters
-        continue unless scatter.contains P...
+        continue unless scatter.contains point
         R.push scatter.data
-      return null if R.length is 0
-      return @summarize_data R...
+      return R
 
     #-------------------------------------------------------------------------------------------------------
-    summarize_data: ( items... ) ->
+    summarize_data_for: ( point ) ->
+      R = @get_data_for point
+      return null if R.length is 0
+      return @_summarize_data R...
+
+    #-------------------------------------------------------------------------------------------------------
+    _summarize_data: ( items... ) ->
       items = items.flat()
       R     = {}
       keys  = [ ( new Set ( key for key of item for item in items ).flat() )..., ].sort()
       for key in keys
-        values    = ( item[ key ] for item in items )
+        values    = ( value for item in items when ( value = item[ key ] )? )
         R[ key ]  = ( @[ "summarize_data_#{key}" ] ? ( ( x ) -> x ) ).call @, values
       return R
 
     #-------------------------------------------------------------------------------------------------------
-    summarize_data_tags: ( values ) -> summarize_data.as_set values
+    summarize_data_tags: ( values ) -> summarize_data.as_unique_sorted values
 
     #-------------------------------------------------------------------------------------------------------
     _get_hi_and_lo: ( cfg ) ->
