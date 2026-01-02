@@ -11,8 +11,7 @@ BRICS =
     #-------------------------------------------------------------------------------------------------------
     _Table                          = require 'cli-table3'
     # _Table                          = require '../../cli-table3'
-    SFMODULES                       = require './main'
-    { ansi_colors_and_effects: C, } = SFMODULES.require_ansi_colors_and_effects()
+    { ansi_colors_and_effects: C, } = ( require './ansi-brics' ).require_ansi_colors_and_effects()
 
     #-------------------------------------------------------------------------------------------------------
     templates =

@@ -11,15 +11,16 @@
 
   #=========================================================================================================
   { debug,                } = console
-  SFMODULES                 = require '../main'
-  { nfa,                  } = SFMODULES.unstable.require_normalize_function_arguments()
-  { nameit,               } = SFMODULES.require_nameit()
-  { type_of,              } = SFMODULES.unstable.require_type_of()
-  { hide,
-    set_getter,           } = SFMODULES.require_managed_property_tools()
-  { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
   { freeze,               } = Object
   IFN                       = require '../../dependencies/intervals-fn-lib.ts'
+  { nfa,                  } = ( require '../unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
+  { nameit,               } = ( require '../various-brics' ).require_nameit()
+  { type_of,              } = ( require '../unstable-rpr-type_of-brics' ).require_type_of()
+  { hide,
+    set_getter,           } = ( require '../various-brics' ).require_managed_property_tools()
+  { Type,
+    Typespace,            } = ( require '../unstable-nanotypes-brics' ).require_nanotypes_v2()
+  { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
 
   #=========================================================================================================
   templates =
@@ -247,6 +248,7 @@
 
     #-------------------------------------------------------------------------------------------------------
     get_data_for_point: ( point ) ->
+      # unless
       R = []
       for scatter in @scatters
         continue unless scatter.contains point

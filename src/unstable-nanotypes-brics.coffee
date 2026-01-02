@@ -15,14 +15,13 @@ BRICS =
   require_nanotypes_v1: ->
 
     #=======================================================================================================
-    SFMODULES                 = require './main'
-    { clean_assign,         } = SFMODULES.unstable.require_clean_assign()
-    { hide,
-      set_getter,           } = SFMODULES.require_managed_property_tools()
-    { nameit,               } = SFMODULES.require_nameit()
-    { remap,                } = SFMODULES.unstable.require_remap()
     { freeze,               } = Object
-    { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
+    { clean_assign,         } = ( require './unstable-object-tools-brics' ).require_clean_assign()
+    { hide,
+      set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
+    { nameit,               } = ( require './various-brics' ).require_nameit()
+    { remap,                } = ( require './unstable-object-tools-brics' ).require_remap()
+    { show_no_colors: rpr,  } = ( require './unstable-rpr-type_of-brics' ).require_show()
     # { type_of,              } = SFMODULES.unstable.require_type_of()
     CFG                       = Symbol.for 'cfg'
 
@@ -87,14 +86,13 @@ BRICS =
   require_nanotypes_v2: ->
 
     #=======================================================================================================
-    SFMODULES                 = require './main'
-    { clean_assign,         } = SFMODULES.unstable.require_clean_assign()
-    { hide,
-      set_getter,           } = SFMODULES.require_managed_property_tools()
-    { nameit,               } = SFMODULES.require_nameit()
-    { remap,                } = SFMODULES.unstable.require_remap()
     { freeze,               } = Object
-    { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
+    { clean_assign,         } = ( require './unstable-object-tools-brics' ).require_clean_assign()
+    { hide,
+      set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
+    { nameit,               } = ( require './various-brics' ).require_nameit()
+    { remap,                } = ( require './unstable-object-tools-brics' ).require_remap()
+    { show_no_colors: rpr,  } = ( require './unstable-rpr-type_of-brics' ).require_show()
     # { type_of,              } = SFMODULES.unstable.require_type_of()
     CFG                       = Symbol.for 'cfg'
 
