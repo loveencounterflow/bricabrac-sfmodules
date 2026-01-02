@@ -246,7 +246,7 @@
     contains: ->
 
     #-------------------------------------------------------------------------------------------------------
-    get_data_for: ( point ) ->
+    get_data_for_point: ( point ) ->
       R = []
       for scatter in @scatters
         continue unless scatter.contains point
@@ -254,8 +254,8 @@
       return R
 
     #-------------------------------------------------------------------------------------------------------
-    summarize_data_for: ( point ) ->
-      R = @get_data_for point
+    summarize_data_for_point: ( point ) ->
+      R = @get_data_for_point point
       return null if R.length is 0
       return @_summarize_data R...
 
