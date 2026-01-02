@@ -143,13 +143,18 @@ for d in dependencies
   info 'ΩLRS__21', d.disposition, source_relpath, target_path, d.selector, remote_url
 #...........................................................................................................
 rows.sort ( a, b ) ->
-  return +1 if a.disposition > b.disposition
-  return -1 if a.disposition < b.disposition
-  return +1 if a.remote_url  > b.remote_url
-  return -1 if a.remote_url  < b.remote_url
-  return +1 if a.target_path > b.target_path
-  return -1 if a.target_path < b.target_path
+  return +1 if a.disposition    > b.disposition
+  return -1 if a.disposition    < b.disposition
+  return +1 if a.source_relpath > b.source_relpath
+  return -1 if a.source_relpath < b.source_relpath
+  return +1 if a.remote_url     > b.remote_url
+  return -1 if a.remote_url     < b.remote_url
+  return +1 if a.target_path    > b.target_path
+  return -1 if a.target_path    < b.target_path
   return 0
+for row in rows
+  delete row.remote_url
+  delete row.annotation
 console.table Object.fromEntries ( [ idx + 1, row, ] for row, idx in rows )
 
 # shell_cfg = { cwd: '/tmp', lines: false, only_stdout: true, }
