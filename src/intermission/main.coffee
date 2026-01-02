@@ -52,6 +52,12 @@
     sign = if n < 0 then '-' else '+'
     return "#{sign}0x#{( Math.abs n ).toString 16}"
 
+  #=========================================================================================================
+  ### Strategies to be applied to summarize data items ###
+  summarize_data =
+    as_set:         ( values ) -> [ ( new Set values.flat() )..., ]
+    as_boolean_and: ( values ) -> values.reduce ( ( acc, cur ) -> acc and cur ? false ), true
+    as_boolean_or:  ( values ) -> values.reduce ( ( acc, cur ) -> acc or  cur ? false ), false
 
   #=========================================================================================================
   class Run
@@ -246,25 +252,20 @@
         continue unless scatter.contains P...
         R.push scatter.data
       return null if R.length is 0
-      return @normalize_data R...
+      return @summarize_data R...
 
     #-------------------------------------------------------------------------------------------------------
-    normalize_data: ( items... ) ->
+    summarize_data: ( items... ) ->
       items = items.flat()
       R     = {}
       keys  = [ ( new Set ( key for key of item for item in items ).flat() )..., ].sort()
       for key in keys
         values    = ( item[ key ] for item in items )
-        R[ key ]  = ( @[ "normalize_data_#{key}" ] ? ( ( x ) -> x ) ).call @, values
-      # for item in items
-      #   for key, value of item
-      #     if key is 'data'
-        debug 'Ωim___3', values
-        debug 'Ωim___4', R[ key ]
+        R[ key ]  = ( @[ "summarize_data_#{key}" ] ? ( ( x ) -> x ) ).call @, values
       return R
 
     #-------------------------------------------------------------------------------------------------------
-    normalize_data_tags: ( values ) -> [ ( new Set values.flat() )..., ]
+    summarize_data_tags: ( values ) -> summarize_data.as_set values
 
     #-------------------------------------------------------------------------------------------------------
     _get_hi_and_lo: ( cfg ) ->
@@ -290,4 +291,5 @@
     internals = Object.freeze { Run, Scatter, templates, IFN, }
     return {
       Hoard,
+      summarize_data,
       internals, }
