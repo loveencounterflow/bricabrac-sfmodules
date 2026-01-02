@@ -8,6 +8,7 @@
 
 - [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
     - [Ranges / Integer Intervals](#ranges--integer-intervals)
+  - [To Do](#to-do)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -31,15 +32,29 @@
 <!-- * **Rangeset** -->
 <!-- * **Rangegroup** -->
 
-* **Bounds**: The `lo` and `hi` points of a **Run**.
+* **Points**: The smallest entity of a hoard, represented as an integer; integers between `0x00_0000` and
+  `0x10_ffff` can alternatively be represented as their corresponding Unicode character (i.e. a string that
+  will yield an array of length one when passed into `Array.from string`; it may have `string.length == 2`
+  notwithstanding, which is an unfortunate legacy of JavaScript being based on UTF-16 code *units*, not
+  Unicode 32bit code *points*).
+
+* **Bounds**:
+  * In the case of a **Run** instance, its defining `lo`west and `hi`ghest points.
+  * In the case of a **Scatter** instance, its `min`imal and `max`imal points found among the `lo`s and
+    `hi`s of its constituent runs, if any.
+  * In the case of a **Hoard** instance, its `first` and `last` points, which demarcate the maximal extent
+    of any runs it contains via its constituent scatters. The default has `first: 0x00_0000, last:
+    0x10_ffff` so as to accommodate all Unicode code points, although in an actual implementation one may
+    want to set `first: 0x00_0001` so as to avoid `'\x00'` for compatibility with traditional C string
+    processing.
 
 * **Run**: A span of consecutive integers `i` defined by two numbers `lo` and `hi` such that `lo <= hi` and
-  `lo <= i <= hi`; empty ranges are not representable, while for single-integer ranges `lo == i == hi`
-  holds.
+  `lo <= i <= hi`; empty intervals are not representable, nor are non-contiguous runs possible; for
+  single-integer runs `lo == i == hi` holds.
 
 * **Scatter**: A set of **Run**s that is associated with a shared set of data. For example, the Unicode
-  codepoints that are Latin letters that are representable with a single UTF-8 byte is commonly seen in the
-  regular expression `/[A-Za-z]/` which in our model can be represented as a scatter `[ (0x41,0x5a),
+  codepoints that are Latin letters and that are representable with a single UTF-8 byte is commonly seen in
+  the regular expression `/[A-Za-z]/` which in our model can be represented as a scatter `[ (0x41,0x5a),
   (0x61,0x7a), ]` (i.e. `[ ('A','Z'), ('a','z'), ]`).
 
   * The canonical ordering of a scatter is by ascending `lo` bounds, then by ascending `hi` bounds for runs
@@ -47,8 +62,8 @@
 
   * A normalized (a.k.a. 'simplified') scatter has no overlapping and no directly adjacent runs and is
     sorted by ascending bounds; thus, `[ (3,7), (0,5), ]` and `[ (0,5), (6,7), ]` both get normalized to `[
-    (0,7), ]`, but `[ (0,5), (7,7), ]` is already normal as it is ordered and there's a gap `(6,6)` between
-    its two runs.
+    (0,7), ]`, but `[ (0,5), (7,7), ]` is already normal as it is sorted and the gap at `(6,6)` prevents
+    further simplification.
 
   * A crucial functionality of our model is the ability to build non-normalized scatters which can at some
     later point get normalized to a lesser or greater degree depending on their associated data.
