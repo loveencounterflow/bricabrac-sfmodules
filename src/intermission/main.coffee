@@ -22,6 +22,12 @@
     set_getter,           } = ( require '../various-brics' ).require_managed_property_tools()
   { rpr,                  } = ( require '../loupe-brics' ).require_loupe()
   { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
+  { get_sha1sum7d,        } = require '../shasum'
+  { Dbric,
+    SQL,
+    esql,                 } = ( require '../unstable-dbric-brics' ).require_dbric()
+  { LIT, IDN, VEC,        } = esql
+
 
   #=========================================================================================================
   templates =
@@ -48,6 +54,13 @@
     create_run:
       lo:         null
       hi:         null
+    #.......................................................................................................
+    get_build_statements:
+      prefix:     'hrd'
+    #.......................................................................................................
+    get_udfs:
+      prefix:     'hrd'
+
 
   #=========================================================================================================
   as_hex = ( n ) ->
@@ -292,6 +305,67 @@
           throw new Error "Ωim___6 expected an integer or a text, got a #{type}"
       unless ( @cfg.first <= R <= @cfg.last )
         throw new Error "Ωim___7 #{as_hex R} is not between #{as_hex @cfg.first} and #{as_hex @cfg.last}"
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    @get_udfs: nfa { template: templates.get_udfs, }, ( prefix, cfg ) ->
+      R =
+        #---------------------------------------------------------------------------------------------------
+        ["#{prefix}_get_sha1sum7d"]:
+          ### NOTE assumes that `data` is in its normalized string form ###
+          name: "#{prefix}_get_sha1sum7d"
+          value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
+
+        #---------------------------------------------------------------------------------------------------
+        ["#{prefix}_normalize_data"]:
+          name: "#{prefix}_normalize_data"
+          value: ( data ) ->
+            return data if data is 'null'
+            data  = JSON.parse data
+            keys  = ( Object.keys data ).sort()
+            return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
+
+        #---------------------------------------------------------------------------------------------------
+        ["#{prefix}_as_lohi_hex"]:
+          name: "#{prefix}_as_lohi_hex"
+          value: ( lo, hi ) -> "(#{lo.toString 16},#{hi.toString 16})"
+
+      #.....................................................................................................
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    @get_build_statements: nfa { template: templates.get_build_statements, }, ( prefix, cfg ) ->
+      R = []
+      #---------------------------------------------------------------------------------------------------
+      R.push SQL"""
+        create table #{IDN "#{prefix}_hoard_scatters"} (
+            rowid     text    unique  not null generated always as ( 't:hrd:s:S=' || #{IDN "#{prefix}_get_sha1sum7d"}( is_hit, data ) ),
+            is_hit    boolean         not null default false,
+            data      json            not null
+            );"""
+
+      #---------------------------------------------------------------------------------------------------
+      R.push SQL"""
+        create trigger #{IDN "#{prefix}_hoard_scatters_insert"}
+          before insert on #{IDN "#{prefix}_hoard_scatters"}
+          for each row begin
+            select new.data = #{IDN "#{prefix}_get_sha1sum7d"}( new.data );
+            end;"""
+
+      #---------------------------------------------------------------------------------------------------
+      R.push SQL"""
+        create table #{IDN "#{prefix}_hoard_runs"} (
+            rowid     text    unique  not null generated always as ( 't:hrd:r:V=' || #{IDN "#{prefix}_as_lohi_hex"}( lo, hi ) ),
+            lo        integer         not null,
+            hi        integer         not null,
+            scatter   text            not null,
+          -- primary key ( rowid ),
+          foreign key ( scatter ) references #{IDN "#{prefix}_hoard_scatters"} ( rowid ),
+          constraint "Ωconstraint__10" check ( lo between 0x000000 and 0x10ffff ),
+          constraint "Ωconstraint__11" check ( hi between 0x000000 and 0x10ffff ),
+          constraint "Ωconstraint__12" check ( lo <= hi )
+          -- constraint "Ωconstraint__13" check ( rowid regexp '^.*$' )
+          );"""
       return R
 
   #=========================================================================================================
