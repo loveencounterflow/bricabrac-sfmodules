@@ -548,8 +548,7 @@ stream.push 'data', '#first', '#last', ( d ) ->
 
 * **`[—]`** publish `clean()` solution to the 'Assign-Problem with Intermediate Nulls and Undefineds' in the
   context of a Bric-A-Brac SFModule
-
 * **`[—]`** integrate `jizura-sources-db/bin/_lxu-utils` as a Bric-A-Brac SFModule
-
 * **`[—]`** implement API for `loadExtension`
+* **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo`
 
