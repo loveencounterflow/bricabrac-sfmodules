@@ -321,6 +321,7 @@
           name: "#{prefix}_normalize_data"
           value: ( data ) ->
             return data if data is 'null'
+            debug 'Ωim___5', rpr data
             data  = JSON.parse data
             keys  = ( Object.keys data ).sort()
             return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
@@ -341,7 +342,7 @@
         create table #{IDN "#{prefix}_hoard_scatters"} (
             rowid     text    unique  not null generated always as ( 't:hrd:s:S=' || #{IDN "#{prefix}_get_sha1sum7d"}( is_hit, data ) ),
             is_hit    boolean         not null default false,
-            data      json            not null
+            data      json            not null default 'null'
             );"""
 
       #---------------------------------------------------------------------------------------------------
@@ -349,7 +350,8 @@
         create trigger #{IDN "#{prefix}_hoard_scatters_insert"}
           before insert on #{IDN "#{prefix}_hoard_scatters"}
           for each row begin
-            select new.data = #{IDN "#{prefix}_get_sha1sum7d"}( new.data );
+            -- case when new.data != 'null' then
+            select new.data = #{IDN "#{prefix}_normalize_data"}( new.data );
             end;"""
 
       #---------------------------------------------------------------------------------------------------

@@ -647,6 +647,9 @@ require_dbric = ->
         select * from sqlite_schema where type in ( 'table', 'view' );"""
 
     #-------------------------------------------------------------------------------------------------------
+    ### select name, builtin, type from pragma_function_list() ###
+
+    #-------------------------------------------------------------------------------------------------------
     @build: [
       SQL"""create view std_tables as
         select * from sqlite_schema
