@@ -344,7 +344,7 @@ require_dbric = ->
         continue unless test name
         count++
         try
-          ( @prepare SQL"drop #{type} #{esql.I name};" ).run()
+          ( @prepare SQL"drop #{type} #{esql.IDN name};" ).run()
         catch error
           warn "Ωdbric___7 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
       ( @prepare SQL"pragma foreign_keys = on;" ).run()
