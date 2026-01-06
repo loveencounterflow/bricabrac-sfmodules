@@ -665,98 +665,14 @@ require_dbric = ->
           where type in ( 'table', 'view' );"""
       ]
 
-
-  #=========================================================================================================
-  class Dbric_rng extends Dbric_std
-
-    #-------------------------------------------------------------------------------------------------------
-    @cfg: Object.freeze
-      prefix: 'rng'
-
-    #=======================================================================================================
-    @functions:
-
-      #-----------------------------------------------------------------------------------------------------
-      rng_validate_lo:
-        value: ( lo ) ->
-          return False unless Number.isFinite lo
-          return True
-
-      #-----------------------------------------------------------------------------------------------------
-      rng_validate_hi:
-        value: ( hi ) ->
-          return False unless Number.isFinite hi
-          return True
-
-      #-----------------------------------------------------------------------------------------------------
-      rng_validate_lohi:
-        value: ( lo, hi ) ->
-          return False unless lo <= hi
-          return True
-
-    # #=====================================================================================================
-    # @table_functions:
-
-    #   #---------------------------------------------------------------------------------------------------
-    #   rng_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz:
-    #     columns:      [ 'value', ]
-    #     parameters:   [ 'start', 'stop', 'step', ]
-    #     rows: ( start, stop = 4_294_967_295, step = 1 ) ->
-    #       yield return null
-    #       ;null
-
-    #=======================================================================================================
-    @statements:
-
-      #-----------------------------------------------------------------------------------------------------
-      rng_add_range:  SQL"insert into rng_ranges ( lo, hi, data ) values ( $lo, $hi, $data );"
-      rng_all_ranges: SQL"select * from rng_ranges order by lo;"
-      rng_get_range:  SQL"select * from rng_ranges where $n between lo and hi;"
-      rng_has_ranges: SQL"select exists ( select lo from rng_ranges limit 1 ) as has_ranges;"
-
-    #-------------------------------------------------------------------------------------------------------
-    @build: [
-      SQL"""create table rng_ranges (
-          -- id      integer not null primary key autoincrement,
-          lo      integer unique  not null,
-          hi      integer unique  not null,
-          data    jsonb           not null,
-        primary key ( lo ), -- or ( lo, hi ) ?
-        constraint "Ωrng_validate_lo__24"   check ( rng_validate_lo( lo ) )
-        constraint "Ωrng_validate_hi__25"   check ( rng_validate_hi( hi ) )
-        constraint "Ωrng_validate_lohi__26" check ( rng_validate_lohi( lo, hi ) )
         );"""
-      # SQL"""create trigger rng_ranges_insert
-      #   before insert on rng_ranges
-      #   for each row begin
-      #     select rng_trigger_on_add_range(  );
-      #     end;"""
       ]
 
-    #=======================================================================================================
-    ### TAINT use normalize-function-arguments ###
-    rng_add_range: ( row ) ->
-      row.hi ?=  row.lo
-      row.lo ?=  row.hi
-      data    = row.data ? {}
-      unless ( type_of data ) is 'text'
-        keys  = ( Object.keys data ).sort()
-        ### TAINT must delete all `undefined` values ###
-        data  = JSON.stringify Object.fromEntries ( [ key, data[ key ], ] for key in keys )
-      if @statements.rng_has_ranges.get().has_ranges
-        debug 'Ωdbric__28', "has range(s)"
-      else
-        debug 'Ωdbric__29', "has no range(s)"
-        # unless row.lo is ro.hi
-      # debug 'Ωdbric__30', @statements.rng_get_range.get { n: row.lo, }
-      # debug 'Ωdbric__31', @statements.rng_get_range.get { n: row.hi, }
-      @statements.rng_add_range.run { row..., data, }
 
   #=========================================================================================================
   return exports = {
     Dbric,
     Dbric_std,
-    Dbric_rng,
     esql,
     SQL,
     True,
