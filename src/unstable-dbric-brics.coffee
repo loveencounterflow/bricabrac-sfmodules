@@ -682,7 +682,7 @@ require_dbric = ->
           value     integer           not null default 0,
           delta     integer           not null default +1,
         primary key ( name )
-        constraint "Ωconstraint_23" check ( delta != 0 )
+        constraint "Ωconstraint__24" check ( delta != 0 )
         );"""
       SQL"""insert into "std_sequences" ( name, value, delta ) values
         ( 'seq:global:rowid', 0, +1 )
