@@ -658,6 +658,11 @@ require_dbric = ->
         select * from sqlite_schema where type is 'view';"""
       std_get_relations: SQL"""
         select * from sqlite_schema where type in ( 'table', 'view' );"""
+      std_upsert_variable: SQL"""
+        insert into "std_variables" ( name, value ) values ( $name, $value )
+          on conflict ( name ) do update set value = excluded.value;"""
+      std_get_variable: SQL"""
+        select value from "std_variables" where name = $name;"""
 
     #-------------------------------------------------------------------------------------------------------
     ### select name, builtin, type from pragma_function_list() ###
@@ -689,6 +694,14 @@ require_dbric = ->
         ;"""
       ]
 
+    #=======================================================================================================
+    set_variable: ( name, value ) ->
+      ### TAINT consider to use normalized JSON ###
+      value = JSON.stringify value
+      return @statements.std_upsert_variable.run { name, value, }
+
+    #-------------------------------------------------------------------------------------------------------
+    get_variable: ( name ) -> JSON.parse ( @statements.std_get_variable.get { name, } ).value
 
 
   #=========================================================================================================
