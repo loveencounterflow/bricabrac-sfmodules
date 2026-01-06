@@ -128,11 +128,13 @@ require_dbric = ->
     throw new Error "unable to find descriptor for property #{String(name)} not found on object or its prototypes"
 
   #---------------------------------------------------------------------------------------------------------
-  create_statement_re = ///
+  build_statement_re = ///
     ^ \s*
-    ( create | alter ) \s+
-    (?<type> table | view | index | trigger ) \s+
-    (?<name> \S+ ) \s+
+    insert | (
+      ( create | alter ) \s+
+      (?<type> table | view | index | trigger ) \s+
+      (?<name> \S+ ) \s+
+      )
     ///is
 
   #---------------------------------------------------------------------------------------------------------
@@ -431,7 +433,7 @@ require_dbric = ->
       error_count     = 0
       for statement in clasz.build ? []
         statement_count++
-        if ( match = statement.match create_statement_re )?
+        if ( match = statement.match build_statement_re )?
           { name,
             type, }           = match.groups
           name                = esql.unquote_name name
@@ -760,7 +762,7 @@ require_dbric = ->
     False,
     from_bool,
     as_bool,
-    internals: Object.freeze { type_of, create_statement_re, templates, }
+    internals: Object.freeze { type_of, build_statement_re, templates, }
     }
 
 
