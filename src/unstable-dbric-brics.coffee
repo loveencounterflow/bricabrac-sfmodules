@@ -628,7 +628,6 @@ require_dbric = ->
               set value = value + delta
               where name = $name
             returning *;""", { name, }
-          debug 'Ωdbric__11', { name, value, delta, }
           return value
 
     #=======================================================================================================
