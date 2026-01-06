@@ -436,6 +436,7 @@ require_dbric = ->
         if ( match = statement.match build_statement_re )?
           { name,
             type, }           = match.groups
+          continue unless name? ### NOTE ignore statements like `insert` ###
           name                = esql.unquote_name name
           db_objects[ name ]  = { name, type, }
         else
