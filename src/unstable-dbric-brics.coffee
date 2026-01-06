@@ -620,6 +620,17 @@ require_dbric = ->
         ### NOTE: also see `String::isWellFormed()` ###
         value: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
 
+      #-----------------------------------------------------------------------------------------------------
+      std_get_next_in_sequence:
+        value: ( name ) ->
+          { name, value, delta, } = @w.get_first SQL"""
+            update "std_sequences"
+              set value = value + delta
+              where name = $name
+            returning *;""", { name, }
+          debug 'Ωdbric__11', { name, value, delta, }
+          return value
+
     #=======================================================================================================
     @table_functions:
 
@@ -663,10 +674,22 @@ require_dbric = ->
       SQL"""create view "std_relations" as
         select * from sqlite_schema
           where type in ( 'table', 'view' );"""
+      SQL"""create table "std_variables" (
+          name      text      unique  not null,
+          value     json              not null default 'null',
+        primary key ( name ) );"""
+      SQL"""create table "std_sequences" (
+          name      text      unique  not null,
+          value     integer           not null default 0,
+          delta     integer           not null default +1,
+        primary key ( name )
+        constraint "Ωconstraint_23" check ( delta != 0 )
+        );"""
+      SQL"""insert into "std_sequences" ( name, value, delta ) values
+        ( 'seq:global:rowid', 0, +1 )
+        ;"""
       ]
 
-        );"""
-      ]
 
 
   #=========================================================================================================
