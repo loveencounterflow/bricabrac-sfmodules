@@ -316,15 +316,15 @@
           name: "#{prefix}_get_sha1sum7d"
           value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
 
-        #---------------------------------------------------------------------------------------------------
-        ["#{prefix}_normalize_data"]:
-          name: "#{prefix}_normalize_data"
-          value: ( data ) ->
-            return data if data is 'null'
-            # debug 'Ωim___5', rpr data
-            data  = JSON.parse data
-            keys  = ( Object.keys data ).sort()
-            return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
+        # #---------------------------------------------------------------------------------------------------
+        # ["#{prefix}_normalize_data"]:
+        #   name: "#{prefix}_normalize_data"
+        #   value: ( data ) ->
+        #     return data if data is 'null'
+        #     # debug 'Ωim___5', rpr data
+        #     data  = JSON.parse data
+        #     keys  = ( Object.keys data ).sort()
+        #     return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
 
         #---------------------------------------------------------------------------------------------------
         ["#{prefix}_as_lohi_hex"]:
