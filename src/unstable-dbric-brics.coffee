@@ -309,7 +309,7 @@ require_dbric = ->
       ( @db.prepare SQL"pragma journal_mode = wal;"   ).run()
       ( @db.prepare SQL"pragma foreign_keys = on;"    ).run()
       ( @db.prepare SQL"pragma busy_timeout = 60000;" ).run() ### time in ms ###
-      ( @db.prepare SQL"pragma strict       = on;"    ).run() ### time in ms ###
+      ( @db.prepare SQL"pragma strict       = on;"    ).run()
       # @db.pragma SQL"journal_mode = wal"
       # @db.pragma SQL"foreign_keys = on"
       return null
