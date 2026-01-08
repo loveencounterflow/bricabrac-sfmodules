@@ -18,6 +18,20 @@ require_dbric_errors = ->
       return undefined ### always return `undefined` from constructor ###
 
   #---------------------------------------------------------------------------------------------------------
+  class E.Dbric_sql_value_error           extends E.Dbric_error
+    constructor: ( ref, type, value ) -> super ref, "unable to express a #{type} as SQL literal, got #{rpr value}"
+  class E.Dbric_sql_not_a_list_error      extends E.Dbric_error
+    constructor: ( ref, type, value ) -> super ref, "expected a list, got a #{type}"
+  class E.Dbric_expected_string extends E.Dbric_error
+    constructor: ( ref, type ) -> super ref, "expected a string, got a #{type}"
+  class E.Dbric_expected_json_object_string extends E.Dbric_error
+    constructor: ( ref, value ) -> super ref, "expected serialized JSON object, got #{rpr value}"
+  class E.Dbric_unknown_sequence          extends E.Dbric_error
+    constructor: ( ref, name )        -> super ref, "unknown sequence #{rpr name}"
+  # class E.Dbric_unknown_variable          extends E.Dbric_error
+  #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
+
+  #---------------------------------------------------------------------------------------------------------
   # class E.Dbric_cfg_error                 extends E.Dbric_error
   #   constructor: ( ref, message )     -> super ref, message
   # class E.Dbric_internal_error            extends E.Dbric_error
@@ -46,10 +60,6 @@ require_dbric_errors = ->
   #   constructor: ( ref, what )        -> super ref, "#{what} has been deprecated"
   # class E.Dbric_unexpected_db_object_type extends E.Dbric_error
   #   constructor: ( ref, type, value ) -> super ref, "µ769 unknown type #{rpr type} of DB object #{d}"
-  class E.Dbric_sql_value_error           extends E.Dbric_error
-    constructor: ( ref, type, value ) -> super ref, "unable to express a #{type} as SQL literal, got #{rpr value}"
-  class E.Dbric_sql_not_a_list_error      extends E.Dbric_error
-    constructor: ( ref, type, value ) -> super ref, "expected a list, got a #{type}"
   # class E.Dbric_unexpected_sql            extends E.Dbric_error
   #   constructor: ( ref, sql )         -> super ref, "unexpected SQL string #{rpr sql}"
   # class E.Dbric_sqlite_too_many_dbs       extends E.Dbric_error
@@ -74,8 +84,6 @@ require_dbric_errors = ->
   #   constructor: ( ref )              -> super ref, "cannot start a transaction within a transaction"
   # class E.Dbric_no_deferred_fks_in_tx     extends E.Dbric_error
   #   constructor: ( ref )              -> super ref, "cannot defer foreign keys inside a transaction"
-  # class E.Dbric_unknown_variable          extends E.Dbric_error
-  #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
   # class E.Dbric_invalid_timestamp         extends E.Dbric_error
   #   constructor: ( ref, x )           -> super ref, "not a valid Dbric timestamp: #{rpr x}"
 
@@ -107,6 +115,7 @@ require_dbric = ->
   # { rpr_string,                 } = SFMODULES.require_rpr_string()
   { lets,
     freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
+  { nfa,                        } = require 'normalize-function-arguments'
   SQLITE                          = require 'node:sqlite'
   { debug,
     warn                        } = console
@@ -251,7 +260,7 @@ require_dbric = ->
   class Dbric
 
     #-------------------------------------------------------------------------------------------------------
-    @cfg: Object.freeze
+    @cfg: freeze
       prefix: '(NOPREFIX)'
     @functions:   {}
     @statements:  {}
@@ -271,11 +280,11 @@ require_dbric = ->
       db_class                  = ( cfg?.db_class ) ? clasz.db_class
       hide @, 'db',               new db_class db_path
       # @db                       = new SQLITE.DatabaseSync db_path
-      @cfg                      = Object.freeze { clasz.cfg..., db_path, cfg..., }
+      @cfg                      = freeze { clasz.cfg..., db_path, cfg..., }
       hide @, 'statements',       {}
       hide @, '_w',               null
       hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
-      hide @, 'state',            { columns: null, }
+      hide @, 'state',            ( cfg?.state ) ? { columns: null, }
       #.....................................................................................................
       @run_standard_pragmas()
       @initialize()
@@ -417,7 +426,7 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     _get_w: ->
       return @_w if @_w?
-      @_w = new @constructor @cfg.db_path, { db_class: @db.constructor, }
+      @_w = new @constructor @cfg.db_path, { db_class: @db.constructor, state: @state, }
       return @_w
 
     #-------------------------------------------------------------------------------------------------------
@@ -602,10 +611,10 @@ require_dbric = ->
 
 
   #=========================================================================================================
-  class Dbric_std extends Dbric
+  class Dbric_std_base extends Dbric
 
     #-------------------------------------------------------------------------------------------------------
-    @cfg: Object.freeze
+    @cfg: freeze
       prefix: 'std'
 
     #=======================================================================================================
@@ -613,22 +622,24 @@ require_dbric = ->
 
       #-----------------------------------------------------------------------------------------------------
       regexp:
+        deterministic: true
         value: ( pattern, text ) -> if ( ( new RegExp pattern, 'v' ).test text ) then 1 else 0
 
       #-----------------------------------------------------------------------------------------------------
       std_is_uc_normal:
         ### NOTE: also see `String::isWellFormed()` ###
+        deterministic: true
         value: ( text, form = 'NFC' ) -> from_bool text is text.normalize form ### 'NFC', 'NFD', 'NFKC', or 'NFKD' ###
 
       #-----------------------------------------------------------------------------------------------------
-      std_get_next_in_sequence:
-        value: ( name ) ->
-          { name, value, delta, } = @w.get_first SQL"""
-            update "std_sequences"
-              set value = value + delta
-              where name = $name
-            returning *;""", { name, }
-          return value
+      std_normalize_text:
+        deterministic: true
+        value: ( text, form = 'NFC' ) -> @std_normalize_text text, form
+
+      #---------------------------------------------------------------------------------------------------
+      std_normalize_json_object:
+        deterministic: true
+        value: ( data, form = 'NFC' ) -> @std_normalize_json_object data, form
 
     #=======================================================================================================
     @table_functions:
@@ -658,50 +669,183 @@ require_dbric = ->
         select * from sqlite_schema where type is 'view';"""
       std_get_relations: SQL"""
         select * from sqlite_schema where type in ( 'table', 'view' );"""
-      std_upsert_variable: SQL"""
-        insert into "std_variables" ( name, value ) values ( $name, $value )
-          on conflict ( name ) do update set value = excluded.value;"""
-      std_get_variable: SQL"""
-        select value from "std_variables" where name = $name;"""
 
     #-------------------------------------------------------------------------------------------------------
     ### select name, builtin, type from pragma_function_list() ###
 
     #-------------------------------------------------------------------------------------------------------
     @build: [
-      SQL"""create view std_tables as
-        select * from sqlite_schema
-          where type is 'table';"""
-      SQL"""create view std_views as
-        select * from sqlite_schema
-          where type is 'view';"""
-      SQL"""create view "std_relations" as
-        select * from sqlite_schema
-          where type in ( 'table', 'view' );"""
-      SQL"""create table "std_variables" (
+      SQL"""create view std_tables    as select * from sqlite_schema where type is 'table';"""
+      SQL"""create view std_views     as select * from sqlite_schema where type is 'view';"""
+      SQL"""create view std_relations as select * from sqlite_schema where type in ( 'table', 'view' );"""
+      SQL"""create table std_variables (
           name      text      unique  not null,
           value     json              not null default 'null',
-        primary key ( name ) );"""
-      SQL"""create table "std_sequences" (
-          name      text      unique  not null,
-          value     integer           not null default 0,
-          delta     integer           not null default +1,
+          delta     integer               null default null,
         primary key ( name )
-        constraint "Ωconstraint__24" check ( delta != 0 )
+        constraint "Ωconstraint__24" check ( ( delta is null ) or ( delta != 0 ) )
         );"""
-      SQL"""insert into "std_sequences" ( name, value, delta ) values
-        ( 'seq:global:rowid', 0, +1 )
-        ;"""
+      SQL"""insert into std_variables ( name, value, delta ) values ( 'seq:global:rowid', 0, +1 );"""
       ]
 
     #=======================================================================================================
-    set_variable: ( name, value ) ->
-      ### TAINT consider to use normalized JSON ###
-      value = JSON.stringify value
-      return @statements.std_upsert_variable.run { name, value, }
+    ### UDF implementations ###
+    #-------------------------------------------------------------------------------------------------------
+    std_normalize_text: ( text, form = 'NFC' ) -> text.normalize form
 
     #-------------------------------------------------------------------------------------------------------
-    get_variable: ( name ) -> JSON.parse ( @statements.std_get_variable.get { name, } ).value
+    std_normalize_json_object: ( data, form = 'NFC' ) ->
+      unless ( type = type_of data ) is 'text'
+        throw new E.Dbric_expected_string 'Ωdbric__25', type, data
+      return data if data is 'null'
+      unless ( data.startsWith '{' ) and ( data.endsWith '}' )
+        throw new E.Dbric_expected_json_object_string 'Ωdbric__26', data
+      data  = JSON.parse data
+      keys  = ( Object.keys data ).sort()
+      R     = JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
+      return @std_normalize_text R, form
+
+
+  #=========================================================================================================
+  class Dbric_std_variables extends Dbric_std_base
+
+    #-------------------------------------------------------------------------------------------------------
+    constructor: ( P... ) ->
+      super P...
+      @state.std_variables                 ?= freeze {}
+      @state.std_transients                ?= freeze {}
+      @state.std_within_variables_context  ?= false
+      ;undefined
+
+    #=======================================================================================================
+    @functions:
+
+      #-----------------------------------------------------------------------------------------------------
+      std_get_next_in_sequence:
+        deterministic: false
+        value:  ( name ) -> @std_get_next_in_sequence name
+
+      #-----------------------------------------------------------------------------------------------------
+      std_get_variable:
+        deterministic: false
+        value:  ( name ) -> @std_get_variable name
+
+    #=======================================================================================================
+    @statements:
+      set_variable:     SQL"""
+        insert into std_variables ( name, value, delta ) values ( $name, $value, $delta )
+          on conflict ( name ) do update
+            set value = $value, delta = $delta;"""
+      get_variables:    SQL"select name, value, delta from std_variables order by name;"
+
+    #=======================================================================================================
+    _std_acquire_state: ( transients = {} ) ->
+      #.....................................................................................................
+      @state.std_variables = lets @state.std_variables, ( v ) =>
+        for { name, value, delta, } from @statements.get_variables.iterate()
+          value     = JSON.parse value
+          v[ name ] = { name, value, delta, }
+        ;null
+      #.....................................................................................................
+      @state.std_transients = lets @state.std_transients, ( t ) ->
+        for name, value of transients
+          t[ name ] = { name, value, }
+        ;null
+      #.....................................................................................................
+      ;null
+
+    #-------------------------------------------------------------------------------------------------------
+    _std_persist_state: ->
+      # whisper 'Ωbbdbr_234', "_std_persist_state"
+      #.....................................................................................................
+      for _, { name, value, delta, } of @state.std_variables
+        ### TAINT clear cache in @state.std_variables ? ###
+        # whisper 'Ωbbdbr_235', { name, value, delta, }
+        delta  ?= null
+        value   = JSON.stringify value
+        @statements.set_variable.run { name, value, delta, }
+      #.....................................................................................................
+      @state.std_transients = lets @state.std_transients, ( t ) ->
+        delete t[ name ] for name of t
+        ;null
+      #.....................................................................................................
+      ;null
+
+    #-------------------------------------------------------------------------------------------------------
+    std_with_variables: ( transients, fn ) ->
+      switch arity = arguments.length
+        when 1 then [ transients, fn, ] = [ {}, transients, ]
+        when 2 then null
+        else throw new Error "Ωbbdbr_238 expected 1 or 2 arguments, got #{arity}"
+      #.....................................................................................................
+      if @state.std_within_variables_context
+        throw new Error "Ωbbdbr_239 illegal to nest `std_with_variables()` contexts"
+      @state.std_within_variables_context = true
+      #.....................................................................................................
+      @_std_acquire_state transients
+      try
+        R = fn()
+      finally
+        @state.std_within_variables_context = false
+        @_std_persist_state()
+      return R
+
+    #-------------------------------------------------------------------------------------------------------
+    std_set_variable: ( name, value, delta ) ->
+      unless @state.std_within_variables_context
+        throw new Error "Ωbbdbr_240 illegal to set variable outside of `std_with_variables()` contexts"
+      if Reflect.has @state.std_transients, name
+        @state.std_transients = lets @state.std_transients, ( t ) => t[ name ] = { name, value, }
+      else
+        delta ?= null
+        @state.std_variables = lets @state.std_variables,   ( v ) => v[ name ] = { name, value, delta, }
+      ;null
+
+    #-------------------------------------------------------------------------------------------------------
+    std_get_variable: ( name ) ->
+      # unless @state.std_within_variables_context
+      #   throw new Error "Ωbbdbr_241 illegal to get variable outside of `std_with_variables()` contexts"
+      if Reflect.has @state.std_transients, name
+        return @state.std_transients[ name ].value
+      if Reflect.has @state.std_variables, name
+        return @state.std_variables[ name ].value
+      throw new Error "Ωbbdbr_242 unknown variable #{rpr name}"
+      ;null
+
+    #-------------------------------------------------------------------------------------------------------
+    std_get_next_in_sequence: ( name ) ->
+      unless @state.std_within_variables_context
+        throw new Error "Ωbbdbr_243 illegal to set variable outside of `std_with_variables()` contexts"
+      unless ( entry = @state.std_variables[ name ] )?
+        throw new Error "Ωbbdbr_244 unknown variable #{rpr name}"
+      unless ( delta = entry.delta )?
+        throw new Error "Ωbbdbr_245 not a sequence name: #{rpr name}"
+      entry.value += delta
+      return entry.value
+
+    #-------------------------------------------------------------------------------------------------------
+    _show_variables: ->
+      store       = Object.fromEntries ( \
+        [ name, { value, delta, }, ] \
+          for { name, value, delta, } from \
+            @statements.get_variables.iterate() )
+      cache_names = new Set Object.keys @state.std_variables
+      trans_names = new Set Object.keys @state.std_transients
+      store_names = new Set Object.keys store
+      all_names   = [ ( ( cache_names.union store_names ).union trans_names )..., ].sort()
+      R = {}
+      for name in all_names
+        s         = store[                  name ] ? {}
+        c         = @state.std_variables[   name ] ? {}
+        t         = @state.std_transients[  name ] ? {}
+        gv        = @std_get_variable name
+        R[ name ] = { sv: s.value, sd: s.delta, cv: c.value, cd: c.delta, tv: t.value, gv, }
+      console.table R
+      return R
+
+
+  #=========================================================================================================
+  class Dbric_std extends Dbric_std_variables
 
 
   #=========================================================================================================
@@ -714,7 +858,12 @@ require_dbric = ->
     False,
     from_bool,
     as_bool,
-    internals: Object.freeze { type_of, build_statement_re, templates, }
+    internals: freeze {
+      type_of,
+      build_statement_re,
+      templates,
+      Dbric_std_base,
+      Dbric_std_variables, }
     }
 
 
