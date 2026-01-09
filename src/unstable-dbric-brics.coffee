@@ -678,14 +678,6 @@ require_dbric = ->
       SQL"""create view std_tables    as select * from sqlite_schema where type is 'table';"""
       SQL"""create view std_views     as select * from sqlite_schema where type is 'view';"""
       SQL"""create view std_relations as select * from sqlite_schema where type in ( 'table', 'view' );"""
-      SQL"""create table std_variables (
-          name      text      unique  not null,
-          value     json              not null default 'null',
-          delta     integer               null default null,
-        primary key ( name )
-        constraint "Ωconstraint__24" check ( ( delta is null ) or ( delta != 0 ) )
-        );"""
-      SQL"""insert into std_variables ( name, value, delta ) values ( 'seq:global:rowid', 0, +1 );"""
       ]
 
     #=======================================================================================================
@@ -716,6 +708,22 @@ require_dbric = ->
       @state.std_transients                ?= freeze {}
       @state.std_within_variables_context  ?= false
       ;undefined
+
+    #=======================================================================================================
+    @build: [
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create table std_variables (
+          name      text      unique  not null,
+          value     json              not null default 'null',
+          delta     integer               null default null,
+        primary key ( name )
+        constraint "Ωconstraint__29" check ( ( delta is null ) or ( delta != 0 ) )
+        );"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""insert into std_variables ( name, value, delta ) values ( 'seq:global:rowid', 0, +1 );"""
+      ]
 
     #=======================================================================================================
     @functions:
