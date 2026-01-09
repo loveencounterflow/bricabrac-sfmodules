@@ -365,10 +365,13 @@ require_dbric = ->
     build: -> if @is_ready then 0 else @rebuild()
 
     #-------------------------------------------------------------------------------------------------------
+    @_get_build_statements_in_prototype_chain: -> ( get_all_in_prototype_chain @, 'build' ).reverse()
+
+    #-------------------------------------------------------------------------------------------------------
     rebuild: ->
       clasz                 = @constructor
       count                 = 0
-      build_statements_list = ( get_all_in_prototype_chain clasz, 'build' ).reverse()
+      build_statements_list = clasz._get_build_statements_in_prototype_chain()
       has_torn_down         = false
       #.....................................................................................................
       for build_statements in build_statements_list
@@ -436,24 +439,27 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     _get_objects_in_build_statements: ->
       ### TAINT does not yet deal with quoted names ###
-      clasz           = @constructor
-      db_objects      = {}
-      statement_count = 0
-      error_count     = 0
-      for statement in clasz.build ? []
-        statement_count++
-        if ( match = statement.match build_statement_re )?
-          { name,
-            type, }           = match.groups
-          continue unless name? ### NOTE ignore statements like `insert` ###
-          name                = esql.unquote_name name
-          db_objects[ name ]  = { name, type, }
-        else
-          error_count++
-          name                = "error_#{statement_count}"
-          type                = 'error'
-          message             = "non-conformant statement: #{rpr statement}"
-          db_objects[ name ]  = { name, type, message, }
+      clasz                 = @constructor
+      db_objects            = {}
+      statement_count       = 0
+      error_count           = 0
+      build_statements_list = clasz._get_build_statements_in_prototype_chain()
+      for build_statements in build_statements_list
+        continue unless build_statements?
+        for statement in build_statements
+          statement_count++
+          if ( match = statement.match build_statement_re )?
+            { name,
+              type, }           = match.groups
+            continue unless name? ### NOTE ignore statements like `insert` ###
+            name                = esql.unquote_name name
+            db_objects[ name ]  = { name, type, }
+          else
+            error_count++
+            name                = "error_#{statement_count}"
+            type                = 'error'
+            message             = "non-conformant statement: #{rpr statement}"
+            db_objects[ name ]  = { name, type, message, }
       return { error_count, statement_count, db_objects, }
 
     #-------------------------------------------------------------------------------------------------------
