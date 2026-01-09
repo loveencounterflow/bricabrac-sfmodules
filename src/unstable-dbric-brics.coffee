@@ -696,10 +696,10 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_normalize_json_object: ( data, form = 'NFC' ) ->
       unless ( type = type_of data ) is 'text'
-        throw new E.Dbric_expected_string 'Ωdbric__25', type, data
+        throw new E.Dbric_expected_string 'Ωdbric__24', type, data
       return data if data is 'null'
       unless ( data.startsWith '{' ) and ( data.endsWith '}' )
-        throw new E.Dbric_expected_json_object_string 'Ωdbric__26', data
+        throw new E.Dbric_expected_json_object_string 'Ωdbric__25', data
       data  = JSON.parse data
       keys  = ( Object.keys data ).sort()
       R     = JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
@@ -756,11 +756,11 @@ require_dbric = ->
 
     #-------------------------------------------------------------------------------------------------------
     _std_persist_state: ->
-      # whisper 'Ωbbdbr_234', "_std_persist_state"
+      # whisper 'Ωbbdbr__27', "_std_persist_state"
       #.....................................................................................................
       for _, { name, value, delta, } of @state.std_variables
         ### TAINT clear cache in @state.std_variables ? ###
-        # whisper 'Ωbbdbr_235', { name, value, delta, }
+        # whisper 'Ωbbdbr__28', { name, value, delta, }
         delta  ?= null
         value   = JSON.stringify value
         @statements.set_variable.run { name, value, delta, }
@@ -776,10 +776,10 @@ require_dbric = ->
       switch arity = arguments.length
         when 1 then [ transients, fn, ] = [ {}, transients, ]
         when 2 then null
-        else throw new Error "Ωbbdbr_238 expected 1 or 2 arguments, got #{arity}"
+        else throw new Error "Ωbbdbr__29 expected 1 or 2 arguments, got #{arity}"
       #.....................................................................................................
       if @state.std_within_variables_context
-        throw new Error "Ωbbdbr_239 illegal to nest `std_with_variables()` contexts"
+        throw new Error "Ωbbdbr__30 illegal to nest `std_with_variables()` contexts"
       @state.std_within_variables_context = true
       #.....................................................................................................
       @_std_acquire_state transients
@@ -793,7 +793,7 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_set_variable: ( name, value, delta ) ->
       unless @state.std_within_variables_context
-        throw new Error "Ωbbdbr_240 illegal to set variable outside of `std_with_variables()` contexts"
+        throw new Error "Ωbbdbr__31 illegal to set variable outside of `std_with_variables()` contexts"
       if Reflect.has @state.std_transients, name
         @state.std_transients = lets @state.std_transients, ( t ) => t[ name ] = { name, value, }
       else
@@ -804,22 +804,22 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_get_variable: ( name ) ->
       # unless @state.std_within_variables_context
-      #   throw new Error "Ωbbdbr_241 illegal to get variable outside of `std_with_variables()` contexts"
+      #   throw new Error "Ωbbdbr__32 illegal to get variable outside of `std_with_variables()` contexts"
       if Reflect.has @state.std_transients, name
         return @state.std_transients[ name ].value
       if Reflect.has @state.std_variables, name
         return @state.std_variables[ name ].value
-      throw new Error "Ωbbdbr_242 unknown variable #{rpr name}"
+      throw new Error "Ωbbdbr__33 unknown variable #{rpr name}"
       ;null
 
     #-------------------------------------------------------------------------------------------------------
     std_get_next_in_sequence: ( name ) ->
       unless @state.std_within_variables_context
-        throw new Error "Ωbbdbr_243 illegal to set variable outside of `std_with_variables()` contexts"
+        throw new Error "Ωbbdbr__34 illegal to set variable outside of `std_with_variables()` contexts"
       unless ( entry = @state.std_variables[ name ] )?
-        throw new Error "Ωbbdbr_244 unknown variable #{rpr name}"
+        throw new Error "Ωbbdbr__35 unknown variable #{rpr name}"
       unless ( delta = entry.delta )?
-        throw new Error "Ωbbdbr_245 not a sequence name: #{rpr name}"
+        throw new Error "Ωbbdbr__36 not a sequence name: #{rpr name}"
       entry.value += delta
       return entry.value
 
