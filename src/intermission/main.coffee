@@ -22,7 +22,7 @@
     set_getter,           } = ( require '../various-brics' ).require_managed_property_tools()
   { rpr,                  } = ( require '../loupe-brics' ).require_loupe()
   { deploy,               } = ( require '../unstable-object-tools-brics' ).require_deploy()
-  { get_sha1sum7d,        } = require '../shasum'
+  # { get_sha1sum7d,        } = require '../shasum'
   { Dbric,
     SQL,
     esql,                 } = ( require '../unstable-dbric-brics' ).require_dbric()
@@ -310,11 +310,11 @@
     #-------------------------------------------------------------------------------------------------------
     @get_udfs: nfa { template: templates.get_udfs, }, ( prefix, cfg ) ->
       R =
-        #---------------------------------------------------------------------------------------------------
-        ["#{prefix}_get_sha1sum7d"]:
-          ### NOTE assumes that `data` is in its normalized string form ###
-          name: "#{prefix}_get_sha1sum7d"
-          value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
+        # #---------------------------------------------------------------------------------------------------
+        # ["#{prefix}_get_sha1sum7d"]:
+        #   ### NOTE assumes that `data` is in its normalized string form ###
+        #   name: "#{prefix}_get_sha1sum7d"
+        #   value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
 
         # #---------------------------------------------------------------------------------------------------
         # ["#{prefix}_normalize_data"]:
@@ -340,7 +340,7 @@
       #---------------------------------------------------------------------------------------------------
       R.push SQL"""
         create table #{IDN "#{prefix}_hoard_scatters"} (
-            rowid     text    unique  not null generated always as ( 't:hrd:s:S=' || #{IDN "#{prefix}_get_sha1sum7d"}( is_hit, data ) ),
+            rowid     text    unique  not null, -- generated always as ( 't:hrd:s:S=' || #{IDN "#{prefix}_get_sha1sum7d"}( is_hit, data ) ),
             is_hit    boolean         not null default false,
             data      json            not null default 'null'
             );"""
