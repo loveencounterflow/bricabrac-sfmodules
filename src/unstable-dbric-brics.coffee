@@ -220,11 +220,11 @@ require_dbric = ->
         when 'float'      then return x.toString()
         when 'boolean'    then return ( if x then '1' else '0' )
         # when 'list'       then throw new Error "^dba@23^ use `X()` for lists"
-      throw new E.Dbric_sql_value_error '^dbay/sql@1^', type, x
+      throw new E.Dbric_sql_value_error 'Ωdbric___5^', type, x
 
     #-------------------------------------------------------------------------------------------------------
     VEC: ( x ) =>
-      throw new E.Dbric_sql_not_a_list_error '^dbay/sql@2^', type, x unless ( type = type_of x ) is 'list'
+      throw new E.Dbric_sql_not_a_list_error 'Ωdbric___6^', type, x unless ( type = type_of x ) is 'list'
       return '( ' + ( ( @LIT e for e in x ).join ', ' ) + ' )'
 
     # #-----------------------------------------------------------------------------------------------------
@@ -243,7 +243,7 @@ require_dbric = ->
     #       when '', 'I'  then return @I value
     #       when 'L'      then return @L value
     #       when 'V'      then return @V value
-    #     throw new E.Dbric_interpolation_format_unknown '^dbay/sql@3^', format
+    #     throw new E.Dbric_interpolation_format_unknown 'Ωdbric___7^', format
     # _interpolation_pattern: /(?<opener>[$?])(?<format>.?):(?<name>\w*)/g
   #---------------------------------------------------------------------------------------------------------
   esql = new Esql()
@@ -325,7 +325,7 @@ require_dbric = ->
     _validate_is_property: ( name ) ->
       descriptor = get_property_descriptor @, name
       return null if ( type_of descriptor.get ) is 'function'
-      throw new Error "Ωdbric___5 not allowed to override property #{rpr name}; use '_get_#{name} instead"
+      throw new Error "Ωdbric___8 not allowed to override property #{rpr name}; use '_get_#{name} instead"
 
     #-------------------------------------------------------------------------------------------------------
     _get_db_objects: ->
@@ -348,7 +348,7 @@ require_dbric = ->
           test = ( name ) -> prefix_re.test name
         else
           type = type_of test
-          throw new Error "Ωdbric___6 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
+          throw new Error "Ωdbric___9 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
       #.....................................................................................................
       ( @prepare SQL"pragma foreign_keys = off;" ).run()
       for _, { name, type, } of @_get_db_objects()
@@ -357,7 +357,7 @@ require_dbric = ->
         try
           ( @prepare SQL"drop #{type} #{esql.IDN name};" ).run()
         catch error
-          warn "Ωdbric___7 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+          warn "Ωdbric__10 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
       ( @prepare SQL"pragma foreign_keys = on;" ).run()
       return count
 
@@ -374,7 +374,7 @@ require_dbric = ->
       for build_statements in build_statements_list
         ### TAINT use proper validation ###
         unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
-          throw new Error "Ωdbric___8 expected an optional list for #{clasz.name}.build, got a #{type}"
+          throw new Error "Ωdbric__11 expected an optional list for #{clasz.name}.build, got a #{type}"
         #...................................................................................................
         continue if ( not build_statements? ) or ( build_statements.length is 0 )
         #...................................................................................................
@@ -406,7 +406,7 @@ require_dbric = ->
         for name, { type, message, } of expected_db_objects
           continue unless type is 'error'
           messages.push message
-        throw new Error "Ωdbric___9 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
+        throw new Error "Ωdbric__12 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
       #.....................................................................................................
       present_db_objects = @_get_db_objects()
       for name, { type: expected_type, } of expected_db_objects
@@ -466,14 +466,14 @@ require_dbric = ->
       #     when name.startsWith 'insert_'
       #       null
       #     else
-      #       throw new Error "Ωnql__10 unable to parse statement name #{rpr name}"
+      #       throw new Error "Ωnql__13 unable to parse statement name #{rpr name}"
       # #   @[ name ] = @prepare sql
       clasz = @constructor
       statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
       for statements in statements_list
         for statement_name, statement of statements
           if @statements[ statement_name ]?
-            throw new Error "Ωdbric__11 statement #{rpr statement_name} is already declared"
+            throw new Error "Ωdbric__14 statement #{rpr statement_name} is already declared"
           # if ( type_of statement ) is 'list'
           #   @statements[ statement_name ] = ( @prepare sub_statement for sub_statement in statement )
           #   continue
@@ -492,11 +492,11 @@ require_dbric = ->
     prepare: ( sql ) ->
       return sql if @isa_statement sql
       unless ( type = type_of sql ) is 'text'
-        throw new Error "Ωdbric__12 expected a statement or a text, got a #{type}"
+        throw new Error "Ωdbric__15 expected a statement or a text, got a #{type}"
       try
         R = @db.prepare sql
       catch cause
-        throw new Error "Ωdbric__13 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
+        throw new Error "Ωdbric__16 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
       @state.columns = ( try R?.columns?() catch error then null ) ? []
       return R
 
@@ -538,7 +538,7 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     create_function: ( cfg ) ->
       if ( type_of @db.function ) isnt 'function'
-        throw new Error "Ωdbric__14 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
+        throw new Error "Ωdbric__17 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
       { name,
         overwrite,
         value,
@@ -546,13 +546,13 @@ require_dbric = ->
         deterministic,
         varargs,        } = { templates.create_function_cfg..., cfg..., }
       if ( not overwrite ) and ( @_function_names.has name )
-        throw new Error "Ωdbric__15 a UDF or built-in function named #{rpr name} has already been declared"
+        throw new Error "Ωdbric__18 a UDF or built-in function named #{rpr name} has already been declared"
       return @db.function name, { deterministic, varargs, directOnly, }, value
 
     #-------------------------------------------------------------------------------------------------------
     create_aggregate_function: ( cfg ) ->
       if ( type_of @db.aggregate ) isnt 'function'
-        throw new Error "Ωdbric__16 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
+        throw new Error "Ωdbric__19 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
       { name,
         overwrite,
         start,
@@ -562,13 +562,13 @@ require_dbric = ->
         deterministic,
         varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
       if ( not overwrite ) and ( @_function_names.has name )
-        throw new Error "Ωdbric__17 a UDF or built-in function named #{rpr name} has already been declared"
+        throw new Error "Ωdbric__20 a UDF or built-in function named #{rpr name} has already been declared"
       return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
     #-------------------------------------------------------------------------------------------------------
     create_window_function: ( cfg ) ->
       if ( type_of @db.aggregate ) isnt 'function'
-        throw new Error "Ωdbric__18 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
+        throw new Error "Ωdbric__21 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
       { name,
         overwrite,
         start,
@@ -579,13 +579,13 @@ require_dbric = ->
         deterministic,
         varargs,        } = { templates.create_window_function_cfg..., cfg..., }
       if ( not overwrite ) and ( @_function_names.has name )
-        throw new Error "Ωdbric__19 a UDF or built-in function named #{rpr name} has already been declared"
+        throw new Error "Ωdbric__22 a UDF or built-in function named #{rpr name} has already been declared"
       return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
     #-------------------------------------------------------------------------------------------------------
     create_table_function: ( cfg ) ->
       if ( type_of @db.table ) isnt 'function'
-        throw new Error "Ωdbric__20 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
+        throw new Error "Ωdbric__23 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
       { name,
         overwrite,
         parameters,
@@ -595,18 +595,18 @@ require_dbric = ->
         deterministic,
         varargs,        } = { templates.create_table_function_cfg..., cfg..., }
       if ( not overwrite ) and ( @_function_names.has name )
-        throw new Error "Ωdbric__21 a UDF or built-in function named #{rpr name} has already been declared"
+        throw new Error "Ωdbric__24 a UDF or built-in function named #{rpr name} has already been declared"
       return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
     #-------------------------------------------------------------------------------------------------------
     create_virtual_table: ( cfg ) ->
       if ( type_of @db.table ) isnt 'function'
-        throw new Error "Ωdbric__22 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
+        throw new Error "Ωdbric__25 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
       { name,
         overwrite,
         create,   } = { templates.create_virtual_table_cfg..., cfg..., }
       if ( not overwrite ) and ( @_function_names.has name )
-        throw new Error "Ωdbric__23 a UDF or built-in function named #{rpr name} has already been declared"
+        throw new Error "Ωdbric__26 a UDF or built-in function named #{rpr name} has already been declared"
       return @db.table name, create
 
 
@@ -696,10 +696,10 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_normalize_json_object: ( data, form = 'NFC' ) ->
       unless ( type = type_of data ) is 'text'
-        throw new E.Dbric_expected_string 'Ωdbric__24', type, data
+        throw new E.Dbric_expected_string 'Ωdbric__27', type, data
       return data if data is 'null'
       unless ( data.startsWith '{' ) and ( data.endsWith '}' )
-        throw new E.Dbric_expected_json_object_string 'Ωdbric__25', data
+        throw new E.Dbric_expected_json_object_string 'Ωdbric__28', data
       data  = JSON.parse data
       keys  = ( Object.keys data ).sort()
       R     = JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
@@ -756,11 +756,11 @@ require_dbric = ->
 
     #-------------------------------------------------------------------------------------------------------
     _std_persist_state: ->
-      # whisper 'Ωbbdbr__27', "_std_persist_state"
+      # whisper 'Ωdbric__30', "_std_persist_state"
       #.....................................................................................................
       for _, { name, value, delta, } of @state.std_variables
         ### TAINT clear cache in @state.std_variables ? ###
-        # whisper 'Ωbbdbr__28', { name, value, delta, }
+        # whisper 'Ωdbric__31', { name, value, delta, }
         delta  ?= null
         value   = JSON.stringify value
         @statements.set_variable.run { name, value, delta, }
@@ -776,10 +776,10 @@ require_dbric = ->
       switch arity = arguments.length
         when 1 then [ transients, fn, ] = [ {}, transients, ]
         when 2 then null
-        else throw new Error "Ωbbdbr__29 expected 1 or 2 arguments, got #{arity}"
+        else throw new Error "Ωdbric__32 expected 1 or 2 arguments, got #{arity}"
       #.....................................................................................................
       if @state.std_within_variables_context
-        throw new Error "Ωbbdbr__30 illegal to nest `std_with_variables()` contexts"
+        throw new Error "Ωdbric__33 illegal to nest `std_with_variables()` contexts"
       @state.std_within_variables_context = true
       #.....................................................................................................
       @_std_acquire_state transients
@@ -793,7 +793,7 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_set_variable: ( name, value, delta ) ->
       unless @state.std_within_variables_context
-        throw new Error "Ωbbdbr__31 illegal to set variable outside of `std_with_variables()` contexts"
+        throw new Error "Ωdbric__34 illegal to set variable outside of `std_with_variables()` contexts"
       if Reflect.has @state.std_transients, name
         @state.std_transients = lets @state.std_transients, ( t ) => t[ name ] = { name, value, }
       else
@@ -804,22 +804,22 @@ require_dbric = ->
     #-------------------------------------------------------------------------------------------------------
     std_get_variable: ( name ) ->
       # unless @state.std_within_variables_context
-      #   throw new Error "Ωbbdbr__32 illegal to get variable outside of `std_with_variables()` contexts"
+      #   throw new Error "Ωdbric__35 illegal to get variable outside of `std_with_variables()` contexts"
       if Reflect.has @state.std_transients, name
         return @state.std_transients[ name ].value
       if Reflect.has @state.std_variables, name
         return @state.std_variables[ name ].value
-      throw new Error "Ωbbdbr__33 unknown variable #{rpr name}"
+      throw new Error "Ωdbric__36 unknown variable #{rpr name}"
       ;null
 
     #-------------------------------------------------------------------------------------------------------
     std_get_next_in_sequence: ( name ) ->
       unless @state.std_within_variables_context
-        throw new Error "Ωbbdbr__34 illegal to set variable outside of `std_with_variables()` contexts"
+        throw new Error "Ωdbric__37 illegal to set variable outside of `std_with_variables()` contexts"
       unless ( entry = @state.std_variables[ name ] )?
-        throw new Error "Ωbbdbr__35 unknown variable #{rpr name}"
+        throw new Error "Ωdbric__38 unknown variable #{rpr name}"
       unless ( delta = entry.delta )?
-        throw new Error "Ωbbdbr__36 not a sequence name: #{rpr name}"
+        throw new Error "Ωdbric__39 not a sequence name: #{rpr name}"
       entry.value += delta
       return entry.value
 
