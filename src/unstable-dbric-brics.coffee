@@ -838,7 +838,7 @@ require_dbric = ->
       return entry.value
 
     #-------------------------------------------------------------------------------------------------------
-    _show_variables: ->
+    _show_variables: ( print_table = false ) ->
       store       = Object.fromEntries ( \
         [ name, { value, delta, }, ] \
           for { name, value, delta, } from \
@@ -854,7 +854,7 @@ require_dbric = ->
         t         = @state.std_transients[  name ] ? {}
         gv        = @std_get_variable name
         R[ name ] = { sv: s.value, sd: s.delta, cv: c.value, cd: c.delta, tv: t.value, gv, }
-      console.table R
+      console.table R if print_table
       return R
 
 
