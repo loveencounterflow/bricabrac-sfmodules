@@ -24,6 +24,8 @@ require_dbric_errors = ->
     constructor: ( ref, type, value ) -> super ref, "expected a list, got a #{type}"
   class E.Dbric_expected_string extends E.Dbric_error
     constructor: ( ref, type ) -> super ref, "expected a string, got a #{type}"
+  class E.Dbric_expected_string_or_string_val_fn extends E.Dbric_error
+    constructor: ( ref, type ) -> super ref, "expected a string or a function that returns a string, got a #{type}"
   class E.Dbric_expected_json_object_string extends E.Dbric_error
     constructor: ( ref, value ) -> super ref, "expected serialized JSON object, got #{rpr value}"
   class E.Dbric_unknown_sequence          extends E.Dbric_error
@@ -447,6 +449,13 @@ require_dbric = ->
       for build_statements in build_statements_list
         continue unless build_statements?
         for statement in build_statements
+          switch type = type_of statement
+            when 'function'
+              statement = statement.call @
+              unless ( type = type_of statement ) is 'text'
+                throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbric__13', type
+            when 'text' then null
+            else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbric__14', type
           statement_count++
           if ( match = statement.match build_statement_re )?
             { name,
