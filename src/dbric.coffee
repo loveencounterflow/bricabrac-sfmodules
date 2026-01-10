@@ -88,7 +88,91 @@ templates =
 
 
 #===========================================================================================================
-class Dbric
+class Dbric_classprop_absorber
+
+  #---------------------------------------------------------------------------------------------------------
+  @_get_build_statements_in_prototype_chain: -> ( get_all_in_prototype_chain @, 'build' ).reverse()
+
+  #---------------------------------------------------------------------------------------------------------
+  _get_objects_in_build_statements: ->
+    ### TAINT does not yet deal with quoted names ###
+    clasz                 = @constructor
+    db_objects            = {}
+    statement_count       = 0
+    error_count           = 0
+    build_statements_list = clasz._get_build_statements_in_prototype_chain()
+    for build_statements in build_statements_list
+      continue unless build_statements?
+      for statement in build_statements
+        switch type = type_of statement
+          when 'function'
+            statement = statement.call @
+            unless ( type = type_of statement ) is 'text'
+              throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___6', type
+          when 'text' then null
+          else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___7', type
+        statement_count++
+        if ( match = statement.match build_statement_re )?
+          { name,
+            type, }           = match.groups
+          continue unless name? ### NOTE ignore statements like `insert` ###
+          name                = unquote_name name
+          db_objects[ name ]  = { name, type, }
+        else
+          error_count++
+          name                = "error_#{statement_count}"
+          type                = 'error'
+          message             = "non-conformant statement: #{rpr statement}"
+          db_objects[ name ]  = { name, type, message, }
+    return { error_count, statement_count, db_objects, }
+
+  #---------------------------------------------------------------------------------------------------------
+  _prepare_statements: ->
+    clasz = @constructor
+    statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
+    for statements in statements_list
+      for statement_name, statement of statements
+        if @statements[ statement_name ]?
+          throw new Error "Ωdbricm___8 statement #{rpr statement_name} is already declared"
+        @statements[ statement_name ] = @prepare statement
+    return null
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_udfs: ->
+    clasz               = @constructor
+    ### TAINT should be put somewhere else? ###
+    names_of_callables  =
+      function:             [ 'value', ]
+      aggregate_function:   [ 'start', 'step', 'result', ]
+      window_function:      [ 'start', 'step', 'inverse', 'result', ]
+      table_function:       [ 'rows', ]
+      virtual_table:        [ 'rows', ]
+    #.......................................................................................................
+    for category in [ 'function', \
+      'aggregate_function', 'window_function', 'table_function', 'virtual_table', ]
+      property_name     = "#{category}s"
+      method_name       = "create_#{category}"
+      declarations_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
+      for declarations in declarations_list
+        continue unless declarations?
+        #...................................................................................................
+        for udf_name, fn_cfg of declarations
+          #.................................................................................................
+          fn_cfg = lets fn_cfg, ( d ) =>
+            d.name ?= udf_name
+            #...............................................................................................
+            ### bind UDFs to `this` ###
+            for name_of_callable in names_of_callables[ category ]
+              continue unless ( callable = d[ name_of_callable ] )?
+              d[ name_of_callable ] = callable.bind @
+            return null
+          @[ method_name ] fn_cfg
+    #.......................................................................................................
+    return null
+
+
+#===========================================================================================================
+class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   @cfg: freeze
@@ -101,6 +185,7 @@ class Dbric
   #---------------------------------------------------------------------------------------------------------
   ### TAINT use normalize-function-arguments ###
   constructor: ( db_path, cfg ) ->
+    super()
     @_validate_is_property 'is_ready'
     @_validate_is_property 'prefix'
     @_validate_is_property 'prefix_re'
@@ -196,9 +281,6 @@ class Dbric
   build: -> if @is_ready then 0 else @rebuild()
 
   #---------------------------------------------------------------------------------------------------------
-  @_get_build_statements_in_prototype_chain: -> ( get_all_in_prototype_chain @, 'build' ).reverse()
-
-  #---------------------------------------------------------------------------------------------------------
   rebuild: ->
     clasz                 = @constructor
     count                 = 0
@@ -268,50 +350,6 @@ class Dbric
     @walk SQL"select name from pragma_function_list() order by name;" )
 
   #---------------------------------------------------------------------------------------------------------
-  _get_objects_in_build_statements: ->
-    ### TAINT does not yet deal with quoted names ###
-    clasz                 = @constructor
-    db_objects            = {}
-    statement_count       = 0
-    error_count           = 0
-    build_statements_list = clasz._get_build_statements_in_prototype_chain()
-    for build_statements in build_statements_list
-      continue unless build_statements?
-      for statement in build_statements
-        switch type = type_of statement
-          when 'function'
-            statement = statement.call @
-            unless ( type = type_of statement ) is 'text'
-              throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___6', type
-          when 'text' then null
-          else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___7', type
-        statement_count++
-        if ( match = statement.match build_statement_re )?
-          { name,
-            type, }           = match.groups
-          continue unless name? ### NOTE ignore statements like `insert` ###
-          name                = unquote_name name
-          db_objects[ name ]  = { name, type, }
-        else
-          error_count++
-          name                = "error_#{statement_count}"
-          type                = 'error'
-          message             = "non-conformant statement: #{rpr statement}"
-          db_objects[ name ]  = { name, type, message, }
-    return { error_count, statement_count, db_objects, }
-
-  #---------------------------------------------------------------------------------------------------------
-  _prepare_statements: ->
-    clasz = @constructor
-    statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
-    for statements in statements_list
-      for statement_name, statement of statements
-        if @statements[ statement_name ]?
-          throw new Error "Ωdbricm___8 statement #{rpr statement_name} is already declared"
-        @statements[ statement_name ] = @prepare statement
-    return null
-
-  #---------------------------------------------------------------------------------------------------------
   execute: ( sql ) -> @db.exec sql
 
   #---------------------------------------------------------------------------------------------------------
@@ -333,39 +371,6 @@ class Dbric
 
   #=========================================================================================================
   # FUNCTIONS
-  #---------------------------------------------------------------------------------------------------------
-  _create_udfs: ->
-    clasz               = @constructor
-    ### TAINT should be put somewhere else? ###
-    names_of_callables  =
-      function:             [ 'value', ]
-      aggregate_function:   [ 'start', 'step', 'result', ]
-      window_function:      [ 'start', 'step', 'inverse', 'result', ]
-      table_function:       [ 'rows', ]
-      virtual_table:        [ 'rows', ]
-    #.......................................................................................................
-    for category in [ 'function', \
-      'aggregate_function', 'window_function', 'table_function', 'virtual_table', ]
-      property_name     = "#{category}s"
-      method_name       = "create_#{category}"
-      declarations_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
-      for declarations in declarations_list
-        continue unless declarations?
-        #...................................................................................................
-        for udf_name, fn_cfg of declarations
-          #.................................................................................................
-          fn_cfg = lets fn_cfg, ( d ) =>
-            d.name ?= udf_name
-            #...............................................................................................
-            ### bind UDFs to `this` ###
-            for name_of_callable in names_of_callables[ category ]
-              continue unless ( callable = d[ name_of_callable ] )?
-              d[ name_of_callable ] = callable.bind @
-            return null
-          @[ method_name ] fn_cfg
-    #.......................................................................................................
-    return null
-
   #---------------------------------------------------------------------------------------------------------
   create_function: ( cfg ) ->
     if ( type_of @db.function ) isnt 'function'
