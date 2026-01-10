@@ -690,6 +690,22 @@ require_dbric = ->
       R     = JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
       return @std_normalize_text R, form
 
+        # #---------------------------------------------------------------------------------------------------
+        # ["#{prefix}_get_sha1sum7d"]:
+        #   ### NOTE assumes that `data` is in its normalized string form ###
+        #   name: "#{prefix}_get_sha1sum7d"
+        #   value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
+
+        # #---------------------------------------------------------------------------------------------------
+        # ["#{prefix}_normalize_data"]:
+        #   name: "#{prefix}_normalize_data"
+        #   value: ( data ) ->
+        #     return data if data is 'null'
+        #     # debug 'Ωim__31', rpr data
+        #     data  = JSON.parse data
+        #     keys  = ( Object.keys data ).sort()
+        #     return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
+
 
   #=========================================================================================================
   class Dbric_std_variables extends Dbric_std_base
