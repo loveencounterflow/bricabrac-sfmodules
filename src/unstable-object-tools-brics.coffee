@@ -102,12 +102,13 @@ BRICS =
       return R
 
     #-------------------------------------------------------------------------------------------------------
-    get_all_in_prototype_chain = ( x, name ) ->
+    get_all_in_prototype_chain = ( x, name, take = ( ( x ) -> x? ) ) ->
       seen      = new Set()
       R         = []
       for protoype in get_prototype_chain x
         continue unless Object.hasOwn protoype, name
-        R.push protoype[ name ]
+        continue unless take ( value = protoype[ name ] )
+        R.push value
       return R
 
     #.......................................................................................................

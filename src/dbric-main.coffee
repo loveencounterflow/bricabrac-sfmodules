@@ -88,7 +88,20 @@ templates =
 class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  @_get_build_statements_in_prototype_chain: -> ( get_all_in_prototype_chain @, 'build' ).reverse()
+  @_get_build_statements_in_prototype_chain: ->
+    candidates_list = ( get_all_in_prototype_chain @, 'build' ).reverse()
+    R               = []
+    for candidates in candidates_list
+      ### TAINT use proper validation ###
+      unless ( type = type_of candidates ) is 'list'
+        throw new Error "Ωdbricm___1 expected an optional list for #{clasz.name}.build, got a #{type}"
+      for candidate in candidates
+        if ( type_of candidate ) is 'function' then statement = candidate.call @
+        else                                        statement = candidate
+        unless ( type = type_of statement ) is 'text'
+          throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___2', type
+        R.push statement
+    return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_objects_in_build_statements: ->
@@ -97,30 +110,21 @@ class Dbric_classprop_absorber
     db_objects            = {}
     statement_count       = 0
     error_count           = 0
-    build_statements_list = clasz._get_build_statements_in_prototype_chain()
-    for build_statements in build_statements_list
-      continue unless build_statements?
-      for statement in build_statements
-        switch type = type_of statement
-          when 'function'
-            statement = statement.call @
-            unless ( type = type_of statement ) is 'text'
-              throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___1', type
-          when 'text' then null
-          else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___2', type
-        statement_count++
-        if ( match = statement.match build_statement_re )?
-          { name,
-            type, }           = match.groups
-          continue unless name? ### NOTE ignore statements like `insert` ###
-          name                = unquote_name name
-          db_objects[ name ]  = { name, type, }
-        else
-          error_count++
-          name                = "error_#{statement_count}"
-          type                = 'error'
-          message             = "non-conformant statement: #{rpr statement}"
-          db_objects[ name ]  = { name, type, message, }
+    build_statements      = clasz._get_build_statements_in_prototype_chain()
+    for build_statement in build_statements
+      statement_count++
+      if ( match = build_statement.match build_statement_re )?
+        { name,
+          type, }           = match.groups
+        continue unless name? ### NOTE ignore statements like `insert` ###
+        name                = unquote_name name
+        db_objects[ name ]  = { name, type, }
+      else
+        error_count++
+        name                = "error_#{statement_count}"
+        type                = 'error'
+        message             = "non-conformant statement: #{rpr build_statement}"
+        db_objects[ name ]  = { name, type, message, }
     return { error_count, statement_count, db_objects, }
 
   #---------------------------------------------------------------------------------------------------------
@@ -280,25 +284,14 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   rebuild: ->
     clasz                 = @constructor
-    count                 = 0
-    build_statements_list = clasz._get_build_statements_in_prototype_chain()
-    has_torn_down         = false
+    build_statements      = clasz._get_build_statements_in_prototype_chain()
+    @teardown()
     #.......................................................................................................
-    for build_statements in build_statements_list
-      ### TAINT use proper validation ###
-      unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
-        throw new Error "Ωdbricm___7 expected an optional list for #{clasz.name}.build, got a #{type}"
-      #.....................................................................................................
-      continue if ( not build_statements? ) or ( build_statements.length is 0 )
-      #.....................................................................................................
-      @teardown() unless has_torn_down
-      has_torn_down = true
-      #.....................................................................................................
-      for build_statement in build_statements
-        count++
-        ( @prepare build_statement ).run()
+    for build_statement in build_statements
+      # debug 'Ωdbricm___7', rpr build_statement
+      ( @prepare build_statement ).run()
     #.......................................................................................................
-    return count
+    return build_statements.length
 
   #---------------------------------------------------------------------------------------------------------
   set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
