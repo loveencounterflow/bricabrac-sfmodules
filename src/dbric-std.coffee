@@ -106,10 +106,10 @@ class Dbric_std_base extends Dbric
   #---------------------------------------------------------------------------------------------------------
   std_normalize_json_object: ( data, form = 'NFC' ) ->
     unless ( type = type_of data ) is 'text'
-      throw new E.Dbric_expected_string 'Ωdbricm__21', type, data
+      throw new E.Dbric_expected_string 'Ωdbrics___1', type, data
     return data if data is 'null'
     unless ( data.startsWith '{' ) and ( data.endsWith '}' )
-      throw new E.Dbric_expected_json_object_string 'Ωdbricm__22', data
+      throw new E.Dbric_expected_json_object_string 'Ωdbrics___2', data
     data  = JSON.parse data
     keys  = ( Object.keys data ).sort()
     R     = JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
@@ -126,7 +126,7 @@ class Dbric_std_base extends Dbric
       #   name: "#{prefix}_normalize_data"
       #   value: ( data ) ->
       #     return data if data is 'null'
-      #     # debug 'Ωim__23', rpr data
+      #     # debug 'Ωim___3', rpr data
       #     data  = JSON.parse data
       #     keys  = ( Object.keys data ).sort()
       #     return JSON.stringify Object.fromEntries ( [ k, data[ k ], ] for k in keys )
@@ -152,7 +152,7 @@ class Dbric_std_variables extends Dbric_std_base
         value     json              not null default 'null',
         delta     integer               null default null,
       primary key ( name )
-      constraint "Ωconstraint__24" check ( ( delta is null ) or ( delta != 0 ) )
+      constraint "Ωconstraint___4" check ( ( delta is null ) or ( delta != 0 ) )
       );"""
 
     #-------------------------------------------------------------------------------------------------------
@@ -198,11 +198,11 @@ class Dbric_std_variables extends Dbric_std_base
 
   #---------------------------------------------------------------------------------------------------------
   _std_persist_state: ->
-    # whisper 'Ωdbricm__25', "_std_persist_state"
+    # whisper 'Ωdbrics___5', "_std_persist_state"
     #.......................................................................................................
     for _, { name, value, delta, } of @state.std_variables
       ### TAINT clear cache in @state.std_variables ? ###
-      # whisper 'Ωdbricm__26', { name, value, delta, }
+      # whisper 'Ωdbrics___6', { name, value, delta, }
       delta  ?= null
       value   = JSON.stringify value
       @statements.set_variable.run { name, value, delta, }
@@ -218,10 +218,10 @@ class Dbric_std_variables extends Dbric_std_base
     switch arity = arguments.length
       when 1 then [ transients, fn, ] = [ {}, transients, ]
       when 2 then null
-      else throw new Error "Ωdbricm__27 expected 1 or 2 arguments, got #{arity}"
+      else throw new Error "Ωdbrics___7 expected 1 or 2 arguments, got #{arity}"
     #.......................................................................................................
     if @state.std_within_variables_context
-      throw new Error "Ωdbricm__28 illegal to nest `std_with_variables()` contexts"
+      throw new Error "Ωdbrics___8 illegal to nest `std_with_variables()` contexts"
     @state.std_within_variables_context = true
     #.......................................................................................................
     @_std_acquire_state transients
@@ -235,7 +235,7 @@ class Dbric_std_variables extends Dbric_std_base
   #---------------------------------------------------------------------------------------------------------
   std_set_variable: ( name, value, delta ) ->
     unless @state.std_within_variables_context
-      throw new Error "Ωdbricm__29 illegal to set variable outside of `std_with_variables()` contexts"
+      throw new Error "Ωdbrics___9 illegal to set variable outside of `std_with_variables()` contexts"
     if Reflect.has @state.std_transients, name
       @state.std_transients = lets @state.std_transients, ( t ) => t[ name ] = { name, value, }
     else
@@ -246,22 +246,22 @@ class Dbric_std_variables extends Dbric_std_base
   #---------------------------------------------------------------------------------------------------------
   std_get_variable: ( name ) ->
     # unless @state.std_within_variables_context
-    #   throw new Error "Ωdbricm__30 illegal to get variable outside of `std_with_variables()` contexts"
+    #   throw new Error "Ωdbrics__10 illegal to get variable outside of `std_with_variables()` contexts"
     if Reflect.has @state.std_transients, name
       return @state.std_transients[ name ].value
     if Reflect.has @state.std_variables, name
       return @state.std_variables[ name ].value
-    throw new Error "Ωdbricm__31 unknown variable #{rpr name}"
+    throw new Error "Ωdbrics__11 unknown variable #{rpr name}"
     ;null
 
   #---------------------------------------------------------------------------------------------------------
   std_get_next_in_sequence: ( name ) ->
     unless @state.std_within_variables_context
-      throw new Error "Ωdbricm__32 illegal to set variable outside of `std_with_variables()` contexts"
+      throw new Error "Ωdbrics__12 illegal to set variable outside of `std_with_variables()` contexts"
     unless ( entry = @state.std_variables[ name ] )?
-      throw new Error "Ωdbricm__33 unknown variable #{rpr name}"
+      throw new Error "Ωdbrics__13 unknown variable #{rpr name}"
     unless ( delta = entry.delta )?
-      throw new Error "Ωdbricm__34 not a sequence name: #{rpr name}"
+      throw new Error "Ωdbrics__14 not a sequence name: #{rpr name}"
     entry.value += delta
     return entry.value
 

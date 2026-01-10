@@ -105,9 +105,9 @@ class Dbric_classprop_absorber
           when 'function'
             statement = statement.call @
             unless ( type = type_of statement ) is 'text'
-              throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___6', type
+              throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___1', type
           when 'text' then null
-          else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___7', type
+          else throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___2', type
         statement_count++
         if ( match = statement.match build_statement_re )?
           { name,
@@ -130,7 +130,7 @@ class Dbric_classprop_absorber
     for statements in statements_list
       for statement_name, statement of statements
         if @statements[ statement_name ]?
-          throw new Error "Ωdbricm___8 statement #{rpr statement_name} is already declared"
+          throw new Error "Ωdbricm___3 statement #{rpr statement_name} is already declared"
         @statements[ statement_name ] = @prepare statement
     return null
 
@@ -238,7 +238,7 @@ class Dbric extends Dbric_classprop_absorber
   _validate_is_property: ( name ) ->
     descriptor = get_property_descriptor @, name
     return null if ( type_of descriptor.get ) is 'function'
-    throw new Error "Ωdbricm___1 not allowed to override property #{rpr name}; use '_get_#{name} instead"
+    throw new Error "Ωdbricm___4 not allowed to override property #{rpr name}; use '_get_#{name} instead"
 
   #---------------------------------------------------------------------------------------------------------
   _get_db_objects: ->
@@ -261,7 +261,7 @@ class Dbric extends Dbric_classprop_absorber
         test = ( name ) -> prefix_re.test name
       else
         type = type_of test
-        throw new Error "Ωdbricm___2 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
+        throw new Error "Ωdbricm___5 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
     #.......................................................................................................
     ( @prepare SQL"pragma foreign_keys = off;" ).run()
     for _, { name, type, } of @_get_db_objects()
@@ -270,7 +270,7 @@ class Dbric extends Dbric_classprop_absorber
       try
         ( @prepare SQL"drop #{type} #{IDN name};" ).run()
       catch error
-        warn "Ωdbricm___3 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+        warn "Ωdbricm___6 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
     ( @prepare SQL"pragma foreign_keys = on;" ).run()
     return count
 
@@ -287,7 +287,7 @@ class Dbric extends Dbric_classprop_absorber
     for build_statements in build_statements_list
       ### TAINT use proper validation ###
       unless ( type = type_of build_statements ) in [ 'undefined', 'null', 'list', ]
-        throw new Error "Ωdbricm___4 expected an optional list for #{clasz.name}.build, got a #{type}"
+        throw new Error "Ωdbricm___7 expected an optional list for #{clasz.name}.build, got a #{type}"
       #.....................................................................................................
       continue if ( not build_statements? ) or ( build_statements.length is 0 )
       #.....................................................................................................
@@ -319,7 +319,7 @@ class Dbric extends Dbric_classprop_absorber
       for name, { type, message, } of expected_db_objects
         continue unless type is 'error'
         messages.push message
-      throw new Error "Ωdbricm___5 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
+      throw new Error "Ωdbricm___8 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
     #.......................................................................................................
     present_db_objects = @_get_db_objects()
     for name, { type: expected_type, } of expected_db_objects
