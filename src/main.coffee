@@ -24,7 +24,7 @@ Object.assign module.exports, { unstable: {
   ( require './unstable-fast-linereader-brics'                    )...,
   ( require './unstable-getrandom-brics'                          )...,
   ( require './unstable-callsite-brics'                           )...,
-  ( require './unstable-dbric-brics'                              )...,
+  # ( require './unstable-dbric-brics'                              )...,
   ( require './unstable-temp-brics'                               )...,
   ( require './unstable-rpr-type_of-brics'                        )...,
   ( require './unstable-anybase-brics'                            )...,
@@ -32,5 +32,8 @@ Object.assign module.exports, { unstable: {
   ( require './unstable-nanotypes-brics'                          )...,
   ( require './unstable-capture-output'                           )...,
   ( require './unstable-normalize-function-arguments-brics'       )...,
+  #---------------------------------------------------------------------------------------------------------
+  ### NOTE temporary for backwards compatibility ###
+  { require_dbric: ( -> require './dbric' ),                      }...,
   }, }
 
