@@ -6,7 +6,7 @@
 SFMODULES                       = require './main'
 { hide,
   set_getter,                 } = SFMODULES.require_managed_property_tools()
-{ type_of,                    } = SFMODULES.unstable.require_type_of()
+{ type_of,                    } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
 { rpr,                        } = ( require './loupe-brics' ).require_loupe()
 # { show_no_colors: rpr,  } = SFMODULES.unstable.require_show()
 # { nameit,                     } = SFMODULES.require_nameit()
@@ -22,6 +22,17 @@ misfit                          = Symbol 'misfit'
   get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
 { Undumper,                   } = SFMODULES.require_coarse_sqlite_statement_segmenter()
 { E,                          } = require './dbric-errors'
+#-----------------------------------------------------------------------------------------------------------
+{ True,
+  False,
+  from_bool,
+  as_bool,
+  unquote_name,
+  IDN,
+  LIT,
+  VEC,
+  SQL,                        } = require './dbric-utilities'
+
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT put into separate module ###
@@ -74,84 +85,6 @@ templates =
   #.........................................................................................................
   create_virtual_table_cfg: {}
 
-
-#===========================================================================================================
-```
-const True  = 1;
-const False = 0;
-```
-
-from_bool = ( x ) -> switch x
-  when true  then True
-  when false then False
-  else throw new Error "Ωjzrsdb___1 expected true or false, got #{rpr x}"
-
-#-----------------------------------------------------------------------------------------------------------
-as_bool = ( x ) -> switch x
-  when True   then true
-  when False  then false
-  else throw new Error "Ωjzrsdb___2 expected 0 or 1, got #{rpr x}"
-
-
-#===========================================================================================================
-class Esql
-
-  #---------------------------------------------------------------------------------------------------------
-  unquote_name: ( name ) ->
-    ### TAINT use proper validation ###
-    unless ( type = type_of name ) is 'text'
-      throw new Error "Ωdbric___3 expected a text, got a #{type}"
-    switch true
-      when /^[^"](.*)[^"]$/.test  name then return name
-      when /^"(.+)"$/.test        name then return name[ 1 ... name.length - 1 ].replace /""/g, '"'
-    throw new Error "Ωdbric___4 expected a name, got #{rpr name}"
-
-  #---------------------------------------------------------------------------------------------------------
-  IDN: ( name ) => '"' + ( name.replace /"/g, '""' ) + '"'
-
-  #---------------------------------------------------------------------------------------------------------
-  LIT: ( x ) =>
-    return 'null' unless x?
-    switch type = type_of x
-      when 'text'       then return  "'" + ( x.replace /'/g, "''" ) + "'"
-      # when 'list'       then return "'#{@list_as_json x}'"
-      when 'float'      then return x.toString()
-      when 'boolean'    then return ( if x then '1' else '0' )
-      # when 'list'       then throw new Error "^dba@23^ use `X()` for lists"
-    throw new E.Dbric_sql_value_error 'Ωdbric___5^', type, x
-
-  #---------------------------------------------------------------------------------------------------------
-  VEC: ( x ) =>
-    throw new E.Dbric_sql_not_a_list_error 'Ωdbric___6^', type, x unless ( type = type_of x ) is 'list'
-    return '( ' + ( ( @LIT e for e in x ).join ', ' ) + ' )'
-
-  # #-------------------------------------------------------------------------------------------------------
-  # interpolate: ( sql, values ) =>
-  #   idx = -1
-  #   return sql.replace @_interpolation_pattern, ( $0, opener, format, name ) =>
-  #     idx++
-  #     switch opener
-  #       when '$'
-  #         validate.nonempty_text name
-  #         key = name
-  #       when '?'
-  #         key = idx
-  #     value = values[ key ]
-  #     switch format
-  #       when '', 'I'  then return @I value
-  #       when 'L'      then return @L value
-  #       when 'V'      then return @V value
-  #     throw new E.Dbric_interpolation_format_unknown 'Ωdbric___7^', format
-  # _interpolation_pattern: /(?<opener>[$?])(?<format>.?):(?<name>\w*)/g
-#-----------------------------------------------------------------------------------------------------------
-esql = new Esql()
-
-#-----------------------------------------------------------------------------------------------------------
-SQL = ( parts, expressions... ) ->
-  R = parts[ 0 ]
-  for expression, idx in expressions
-    R += expression.toString() + parts[ idx + 1 ]
-  return R
 
 
 #===========================================================================================================
@@ -253,7 +186,7 @@ class Dbric
       continue unless test name
       count++
       try
-        ( @prepare SQL"drop #{type} #{esql.IDN name};" ).run()
+        ( @prepare SQL"drop #{type} #{IDN name};" ).run()
       catch error
         warn "Ωdbricm___3 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
     ( @prepare SQL"pragma foreign_keys = on;" ).run()
@@ -357,7 +290,7 @@ class Dbric
           { name,
             type, }           = match.groups
           continue unless name? ### NOTE ignore statements like `insert` ###
-          name                = esql.unquote_name name
+          name                = unquote_name name
           db_objects[ name ]  = { name, type, }
         else
           error_count++
@@ -774,12 +707,16 @@ class Dbric_std extends Dbric_std_variables
 module.exports = {
   Dbric,
   Dbric_std,
-  esql,
   SQL,
+  IDN,
+  LIT,
+  SQL,
+  VEC,
   True,
   False,
-  from_bool,
   as_bool,
+  from_bool,
+  unquote_name,
   internals: freeze {
     E,
     type_of,
