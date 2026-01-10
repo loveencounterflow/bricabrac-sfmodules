@@ -464,25 +464,12 @@ require_dbric = ->
 
     #-------------------------------------------------------------------------------------------------------
     _prepare_statements: ->
-      # #...................................................................................................
-      # for name, sql of clasz.statements
-      #   switch true
-      #     when name.startsWith 'create_table_'
-      #       null
-      #     when name.startsWith 'insert_'
-      #       null
-      #     else
-      #       throw new Error "Ωnql__14 unable to parse statement name #{rpr name}"
-      # #   @[ name ] = @prepare sql
       clasz = @constructor
       statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
       for statements in statements_list
         for statement_name, statement of statements
           if @statements[ statement_name ]?
             throw new Error "Ωdbric__15 statement #{rpr statement_name} is already declared"
-          # if ( type_of statement ) is 'list'
-          #   @statements[ statement_name ] = ( @prepare sub_statement for sub_statement in statement )
-          #   continue
           @statements[ statement_name ] = @prepare statement
       return null
 
