@@ -15,7 +15,10 @@
   as_bool,
   from_bool,
   unquote_name,
-  internals, 			} = require './dbric-main'
+  internals: int_main, } = require './dbric-main'
+{ Dbric_std,
+  internals: int_std, } = require './dbric-std'
+
   # : {
   #   E,
   #   type_of,
@@ -37,4 +40,6 @@ module.exports = {
   as_bool,
   from_bool,
   unquote_name,
-  internals, 			 }
+  internals: { int_main..., int_std..., }, }
+
+
