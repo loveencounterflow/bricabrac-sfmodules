@@ -28,16 +28,16 @@ class E.Dbric_expected_json_object_string extends E.Dbric_error
   constructor: ( ref, value ) -> super ref, "expected serialized JSON object, got #{rpr value}"
 class E.Dbric_unknown_sequence          extends E.Dbric_error
   constructor: ( ref, name )        -> super ref, "unknown sequence #{rpr name}"
+class E.Dbric_internal_error            extends E.Dbric_error
+  constructor: ( ref, message )     -> super ref, message
+class E.Dbric_named_statement_exists extends E.Dbric_error
+  constructor: ( ref, name )      -> super ref, "statement #{rpr name} is already declared"
 # class E.Dbric_unknown_variable          extends E.Dbric_error
 #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
 
 #---------------------------------------------------------------------------------------------------------
 # class E.Dbric_cfg_error                 extends E.Dbric_error
 #   constructor: ( ref, message )     -> super ref, message
-# class E.Dbric_internal_error            extends E.Dbric_error
-#   constructor: ( ref, message )     -> super ref, message
-# class E.Dbric_schema_exists             extends E.Dbric_error
-#   constructor: ( ref, schema )      -> super ref, "schema #{rpr schema} already exists"
 # class E.Dbric_schema_unknown            extends E.Dbric_error
 #   constructor: ( ref, schema )      -> super ref, "schema #{rpr schema} does not exist"
 # class E.Dbric_object_unknown            extends E.Dbric_error

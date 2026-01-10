@@ -88,19 +88,35 @@ templates =
 class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  @_get_build_statements_in_prototype_chain: ->
-    candidates_list = ( get_all_in_prototype_chain @, 'build' ).reverse()
-    R               = []
+  _get_statements_in_prototype_chain: ( property_name, property_type ) ->
+    clasz           = @constructor
+    candidates_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
+    #.......................................................................................................
+    statement_from_candidate = ( candidate ) =>
+      if ( type_of candidate ) is 'function' then R = candidate.call @
+      else                                        R = candidate
+      unless ( type = type_of R ) is 'text'
+        throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___1', type
+      return R
+    #.......................................................................................................
+    R               = switch property_type
+      when 'list' then []
+      when 'pod'  then {}
+      else throw new E.Dbric_internal_error 'Ωdbricm___2', "unknown property_type #{rpr property_type}"
+    #.......................................................................................................
     for candidates in candidates_list
       ### TAINT use proper validation ###
-      unless ( type = type_of candidates ) is 'list'
-        throw new Error "Ωdbricm___1 expected an optional list for #{clasz.name}.build, got a #{type}"
-      for candidate in candidates
-        if ( type_of candidate ) is 'function' then statement = candidate.call @
-        else                                        statement = candidate
-        unless ( type = type_of statement ) is 'text'
-          throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___2', type
-        R.push statement
+      unless ( type = type_of candidates ) is property_type
+        throw new Error "Ωdbricm___3 expected an optional #{property_type} for #{clasz.name}.#{property_name}, got a #{type}"
+      #.....................................................................................................
+      if property_type is 'list'
+        for candidate in candidates
+          R.push statement_from_candidate candidate
+      else
+        for statement_name, candidate of candidates
+          if Reflect.has R, statement_name
+            throw new E.Dbric_named_statement_exists 'Ωdbricm___4', statement_name
+          R[ statement_name ] = statement_from_candidate candidate
     return R
 
   #---------------------------------------------------------------------------------------------------------
@@ -110,7 +126,7 @@ class Dbric_classprop_absorber
     db_objects            = {}
     statement_count       = 0
     error_count           = 0
-    build_statements      = clasz._get_build_statements_in_prototype_chain()
+    build_statements      = @_get_statements_in_prototype_chain 'build', 'list'
     for build_statement in build_statements
       statement_count++
       if ( match = build_statement.match build_statement_re )?
@@ -129,13 +145,10 @@ class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   _prepare_statements: ->
-    clasz = @constructor
-    statements_list = ( get_all_in_prototype_chain clasz, 'statements' ).reverse()
-    for statements in statements_list
-      for statement_name, statement of statements
-        if @statements[ statement_name ]?
-          throw new Error "Ωdbricm___3 statement #{rpr statement_name} is already declared"
-        @statements[ statement_name ] = @prepare statement
+    clasz       = @constructor
+    statements  = @_get_statements_in_prototype_chain 'statements', 'pod'
+    for statement_name, statement of statements
+      @statements[ statement_name ] = @prepare statement
     return null
 
   #---------------------------------------------------------------------------------------------------------
@@ -284,7 +297,7 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   rebuild: ->
     clasz                 = @constructor
-    build_statements      = clasz._get_build_statements_in_prototype_chain()
+    build_statements      = @_get_statements_in_prototype_chain 'build', 'list'
     @teardown()
     #.......................................................................................................
     for build_statement in build_statements
