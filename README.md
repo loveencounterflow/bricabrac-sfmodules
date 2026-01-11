@@ -17,6 +17,8 @@
 # Bric-A-Brac Standard Brics
 
 
+(before README-dbric.md)
+
 <!-- BEGIN <!insert src=./README-dbric.md> -->
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -70,10 +72,7 @@
 
 <!-- END <!insert src=./README-dbric.md> -->
 
-
-<!doesitshow>???
-
-
+(after README-dbric.md)
 
 <!--insert src=./README-intermission.md-->
 
