@@ -64,7 +64,7 @@ if file_has_uncommitted_changes target_path
 #===========================================================================================================
 clear target_path
 for { line, } from walk_lines_with_positions main_path
-  debug 'Ωcrmmd___4', rpr line
+  # debug 'Ωcrmmd___4', rpr line
   append target_path, line
 
 
