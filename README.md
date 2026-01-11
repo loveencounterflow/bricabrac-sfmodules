@@ -2,28 +2,36 @@
 
 # Bric-A-Brac Standard Brics
 
+------------------------------------------------------------------------------------------------------------
+<!-- BEGIN <!insert src=./README-intro.md> -->
+
+
+A collection of (sometimes not-so) small-ish utilities
+
+
+
+<!-- END <!insert src=./README-intro.md> -->
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Bric-A-Brac Standard Brics](#bric-a-brac-standard-brics)
-  - [DBric Database Adapter](#dbric-database-adapter)
-    - [To Do](#to-do)
-  - [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
-    - [Ranges / Integer Intervals](#ranges--integer-intervals)
+- [DBric Database Adapter](#dbric-database-adapter)
+  - [To Do](#to-do)
+- [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
+  - [Ranges / Integer Intervals](#ranges--integer-intervals)
   - [To Do](#to-do-1)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 
-# Bric-A-Brac Standard Brics
 
 
+------------------------------------------------------------------------------------------------------------
 <!-- BEGIN <!insert src=./README-dbric.md> -->
 
 
-## DBric Database Adapter
+# DBric Database Adapter
 
 * can use `node:sqlite` ('nSQL') or `better-sqlite3` ('bSQL') as implementation class for the `Dbric::db`
   property, but since there are subtle (and not so subtle) differences in behavior and capabilities, it will
@@ -52,7 +60,7 @@
   known name, such as `trigger_on_before_insert()`
 
 
-### To Do
+## To Do
 
 * **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo`
 * **`[—]`** adapter for recutils?
@@ -62,11 +70,12 @@
 
 
 <!-- END <!insert src=./README-dbric.md> -->
+------------------------------------------------------------------------------------------------------------
 <!-- BEGIN <!insert src=./README-intermission.md> -->
 
-## InterMission: Tables and Methods to Handle Integer Intervals
+# InterMission: Tables and Methods to Handle Integer Intervals
 
-### Ranges / Integer Intervals
+## Ranges / Integer Intervals
 
 <!--
 * An integer range `ir` is defined by its lowest element `ir.lo` and its highest element `ir.hi` and an
@@ -203,6 +212,7 @@
 
 
 <!-- END <!insert src=./README-intermission.md> -->
+------------------------------------------------------------------------------------------------------------
 
 
 
