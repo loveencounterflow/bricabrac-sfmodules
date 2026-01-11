@@ -81,9 +81,9 @@ for { line, } from walk_lines_with_positions main_path
     continue
   groups      = { match.groups..., }
   insert_path = resolve join insertion_ref_path, groups.path
-  debug 'Ωcrmmd___4'
-  debug 'Ωcrmmd___5', groups
-  debug 'Ωcrmmd___6', insert_path
+  # debug 'Ωcrmmd___4'
+  # debug 'Ωcrmmd___5', groups
+  log 'Ωcrmmd___6', "inserting #{insert_path}"
   #.........................................................................................................
   append target_path, "<!-- BEGIN #{line} -->"
   append target_path, insert_line for { line: insert_line, } from walk_lines_with_positions insert_path
