@@ -5,6 +5,7 @@
   "main": "lib/main.js",
   "repository": "github:loveencounterflow/bricabrac-sfmodules",
   "scripts": {
+    "build-docs": "node lib/_cli-compile-readme.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
