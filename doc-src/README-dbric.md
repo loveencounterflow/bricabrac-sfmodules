@@ -85,3 +85,24 @@ class My_db extends Dbric_std
   @virtual_table_udf_your_name_here: ...
 ```
 
+```coffee
+class My_db extends Dbric_std
+  @build: -> [
+    SQL"create table words ( w text );",
+    SQL"insert into words ( w ) values ( #{LIT @cfg.first_word} );",
+    ]
+  @rts_$prefix_insert_word: ->
+    ...
+    return SQL"insert into words ( w ) values ( $w );"`
+  @rts_$prefix_select_word: SQL"select w as word from words where w regexp $pattern;"`
+  @scalar_udf_$prefix_square: ->
+    value = if whatever then ( ( n ) -> n * n ) else ( ( n ) -> n ** 2 )
+    return { value, }
+  @table_udf_$prefix_letters_of:
+    deterministic:      true
+    value:              ( word ) -> yield chr for chr in Array.from word
+  @aggregate_udf_your_name_here:     ...
+  @window_udf_your_name_here:        ...
+  @virtual_table_udf_your_name_here: ...
+```
+
