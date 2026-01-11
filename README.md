@@ -522,3 +522,11 @@ stream.push 'data', '#first', '#last', ( d ) ->
 * **`[—]`** integrate `jizura-sources-db/bin/_lxu-utils` as a Bric-A-Brac SFModule
 * **`[—]`** implement API for `loadExtension`
 
+
+<!--
+
+<insert src='./inputs/gaps-and-islands.icql'/>
+
+-->
+
+
