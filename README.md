@@ -227,7 +227,52 @@ A collection of (sometimes not-so) small-ish utilities
 
 * **`[—]`** reject floats
 * **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
+* **`[—]`** rename class properties:
+  * `build` -> `build_statements`
+  * `statements` -> `runtime_statements`
 
+<!--
+* **`[—]`** restructure class properties `functions`, `aggregate_functions`, `window_functions`,
+  `table_functions`, `virtual_tables`:
+  * replace with single class property, `udfs`
+  * add a new mandatory property `type` that must be set to one of:
+    * `'scalar'` (the default),
+    * `'aggregate'`,
+    * `'window'`,
+    * `'table'`, or
+    * `'virtual_table'`.
+* **`[—]`** allow for all three of the above class properties `build_statements`, `runtime_statements`,
+  `udfs` to be:
+  * in the case of `build_statements`: either an object or a list, or a function that returns an object or a list
+  * in the case of `runtime_statements`: either an object or a function that returns an object
+  * in the case of `udfs`: either an object or a function that returns an object
+-->
+
+  * allow functions for the entire `@build` property or any of its elements (but not both, functions may not
+    transitively return functions) as well as for the other class properties whose names start with one of
+    `scalar_udf_`, `table_udf_`, `aggregate_udf_`, `window_udf_`, `virtual_table_udf_`; these functions will
+    be called in the context of the instance and thus allow to use values that are only known at runtime
+
+Example for a class definition:
+
+```coffee
+class My_db extends Dbric_std
+  @build: [
+    SQL"create table words ( w text );",
+    SQL"insert into words ( w ) values ( 'first' );",
+    ]
+  @rts_$prefix_insert_word: SQL"insert into words ( w ) values ( $w );"`
+  @rts_$prefix_select_word: SQL"select w as word from words where w regexp $pattern;"`
+  @scalar_udf_$prefix_square:
+    deterministic:      true
+    value:              ( n ) -> n * n
+  @table_udf_$prefix_letters_of:
+    deterministic:      true
+    value:              ( word ) -> yield chr for chr in Array.from word
+  @aggregate_udf_your_name_here:     ...
+  @window_udf_your_name_here:        ...
+  @virtual_table_udf_your_name_here: ...
+```
 
 <!-- END <!insert src=./README-intermission.md> -->
 ------------------------------------------------------------------------------------------------------------
