@@ -3,22 +3,25 @@
 ############################################################################################################
 #
 #===========================================================================================================
-SFMODULES                       = require './main'
+{ debug,
+  warn                        } = console
+#...........................................................................................................
+SQLITE                          = require 'node:sqlite'
+#...........................................................................................................
+{ nfa,                        } = require 'normalize-function-arguments'
+#...........................................................................................................
 { hide,
-  set_getter,                 } = SFMODULES.require_managed_property_tools()
+  set_getter,                 } = ( require './various-brics' ).require_managed_property_tools()
 { type_of,                    } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
 { rpr,                        } = ( require './loupe-brics' ).require_loupe()
 { lets,
-  freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
-{ nfa,                        } = require 'normalize-function-arguments'
-SQLITE                          = require 'node:sqlite'
-{ debug,
-  warn                        } = console
-misfit                          = Symbol 'misfit'
-{ get_prototype_chain,
-  get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
-{ Undumper,                   } = SFMODULES.require_coarse_sqlite_statement_segmenter()
+  freeze,                     } = ( require './letsfreezethat-infra.brics' ).require_letsfreezethat_infra().simple
+{ get_all_in_prototype_chain, } = ( require './unstable-object-tools-brics' ).require_get_prototype_chain()
+# { Undumper,                   } = ( require './coarse-sqlite-statement-segmenter.brics' ).require_coarse_sqlite_statement_segmenter()
+#...........................................................................................................
 { E,                          } = require './dbric-errors'
+#...........................................................................................................
+misfit                          = Symbol 'misfit'
 #-----------------------------------------------------------------------------------------------------------
 { True,
   False,
@@ -209,7 +212,6 @@ class Dbric extends Dbric_classprop_absorber
     clasz                     = @constructor
     db_class                  = ( cfg?.db_class ) ? clasz.db_class
     hide @, 'db',               new db_class db_path
-    # @db                       = new SQLITE.DatabaseSync db_path
     @cfg                      = freeze { clasz.cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
     hide @, '_w',               null
