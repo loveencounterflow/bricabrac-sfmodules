@@ -84,7 +84,11 @@ for { line, } from walk_lines_with_positions main_path
   debug 'Ωcrmmd___4'
   debug 'Ωcrmmd___5', groups
   debug 'Ωcrmmd___6', insert_path
-  append target_path, "<!-- #{line} -->"
+  #.........................................................................................................
+  append target_path, "<!-- BEGIN #{line} -->"
+  append target_path, insert_line for { line: insert_line, } from walk_lines_with_positions insert_path
+  append target_path, "<!-- END #{line} -->"
+  #.........................................................................................................
 
 
 
