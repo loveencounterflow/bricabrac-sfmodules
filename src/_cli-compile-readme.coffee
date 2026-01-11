@@ -50,7 +50,14 @@ src_path            = resolve join base_path, 'doc-src'
 main_path           = resolve src_path, 'main.md'
 target_path         = resolve base_path, 'README.md'
 insertion_ref_path  = resolve dirname main_path
-insert_matcher      = /^(?<prefix>.*?)(?<command><!insert)\s+src=(?<path>[^>]+)\s*$/
+insert_matcher      = ///
+  ^
+  #(?<prefix>.*?)
+  (?<command> <!insert )
+  \s+ src= (?<path> [^>]+ ) >
+  \s*
+  $
+  ///
 
 #===========================================================================================================
 debug 'Ωcrmmd___2', { base_path, src_path, main_path, }
