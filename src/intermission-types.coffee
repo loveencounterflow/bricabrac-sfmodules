@@ -5,9 +5,9 @@
 
 #===========================================================================================================
 # { debug,                } = console
-{ rpr,                  } = ( require '../loupe-brics' ).require_loupe()
+{ rpr,                  } = ( require './loupe-brics' ).require_loupe()
 { Type,
-  Typespace,            } = ( require '../unstable-nanotypes-brics' ).require_nanotypes_v2()
+  Typespace,            } = ( require './unstable-nanotypes-brics' ).require_nanotypes_v2()
 
 
 #===========================================================================================================
