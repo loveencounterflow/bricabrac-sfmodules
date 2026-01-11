@@ -2,8 +2,8 @@
 
 # Bric-A-Brac Standard Brics
 
-------------------------------------------------------------------------------------------------------------
-<!insert src=./README-intro.md>
+A collection of (sometimes not-so) small-ish utilities
+
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->

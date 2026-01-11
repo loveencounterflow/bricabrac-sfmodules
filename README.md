@@ -2,15 +2,8 @@
 
 # Bric-A-Brac Standard Brics
 
-------------------------------------------------------------------------------------------------------------
-<!-- BEGIN <!insert src=./README-intro.md> -->
-
-
 A collection of (sometimes not-so) small-ish utilities
 
-
-
-<!-- END <!insert src=./README-intro.md> -->
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -32,6 +25,15 @@ A collection of (sometimes not-so) small-ish utilities
 
 
 # DBric Database Adapter
+
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [To Do](#to-do)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 * can use `node:sqlite` ('nSQL') or `better-sqlite3` ('bSQL') as implementation class for the `Dbric::db`
   property, but since there are subtle (and not so subtle) differences in behavior and capabilities, it will
@@ -73,8 +75,18 @@ A collection of (sometimes not-so) small-ish utilities
 ------------------------------------------------------------------------------------------------------------
 <!-- BEGIN <!insert src=./README-intermission.md> -->
 
+
 # InterMission: Tables and Methods to Handle Integer Intervals
 
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Ranges / Integer Intervals](#ranges--integer-intervals)
+- [To Do](#to-do)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ## Ranges / Integer Intervals
 
 <!--
