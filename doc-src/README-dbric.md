@@ -1,16 +1,6 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [DBric Database Adapter](#dbric-database-adapter)
-- [To Do](#to-do)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 
-
-
-### DBric Database Adapter
+# DBric Database Adapter
 
 * can use `node:sqlite` ('nSQL') or `better-sqlite3` ('bSQL') as implementation class for the `Dbric::db`
   property, but since there are subtle (and not so subtle) differences in behavior and capabilities, it will
@@ -39,7 +29,7 @@
   known name, such as `trigger_on_before_insert()`
 
 
-### To Do
+## To Do
 
 * **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo`
 * **`[—]`** adapter for recutils?
