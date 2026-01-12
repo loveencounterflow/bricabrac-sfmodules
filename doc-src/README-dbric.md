@@ -37,6 +37,8 @@
   * https://www.gnu.org/software/recutils/manual/recutils.html
   * https://news.ycombinator.com/item?id=46265811
 
+* check that setting `prefix` is valid both in JS and SQL contexts when used to form unescaped identifiers
+  as in (JS) `object.$prefix_property` and (SQL) `create table $prefix_name`
 
 * **`[—]`** rename class properties:
   * `build` -> `build_statements`
@@ -59,12 +61,16 @@
   * in the case of `udfs`: either an object or a function that returns an object
 -->
 
-  * allow functions for the entire `@build` property or any of its elements (but not both, functions may not
-    transitively return functions) as well as for the other class properties whose names start with one of
-    `scalar_udf_`, `table_udf_`, `aggregate_udf_`, `window_udf_`, `virtual_table_udf_`; these functions will
-    be called in the context of the instance and thus allow to use values that are only known at runtime
+* allow functions for the entire `@build` property or any of its elements (but not both, functions may not
+  transitively return functions) as well as for the other class properties whose names start with one of
+  `scalar_udf_`, `table_udf_`, `aggregate_udf_`, `window_udf_`, `virtual_table_udf_`; these functions will
+  be called in the context of the instance and thus allow to use values that are only known at runtime
 
-Example for a class definition:
+* allow single string for `build`, can be segmented
+
+Examples for class definitions; symbolic `/(?<=\P{L})$prefix(?=\P{L})/` will be replaced by the class's (and
+the instance's) `prefix` setting (observe that we rely on the prefix being known to be syntactically
+compatible with this use):
 
 ```coffee
 class My_db extends Dbric_std
@@ -84,6 +90,22 @@ class My_db extends Dbric_std
   @window_udf_your_name_here:        ...
   @virtual_table_udf_your_name_here: ...
 ```
+
+Alternatively, prefix UDF declaration names with `create_`:
+
+```coffee
+  @create_scalar_udf_$prefix_square:
+    deterministic:      true
+    value:              ( n ) -> n * n
+  @create_table_udf_$prefix_letters_of:
+    deterministic:      true
+    value:              ( word ) -> yield chr for chr in Array.from word
+  @create_aggregate_udf_your_name_here:     ...
+  @create_window_udf_your_name_here:        ...
+  @create_virtual_table_udf_your_name_here: ...
+```
+
+Values can be represented as functions:
 
 ```coffee
 class My_db extends Dbric_std
