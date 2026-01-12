@@ -6,6 +6,7 @@
   "repository": "github:loveencounterflow/bricabrac-sfmodules",
   "scripts": {
     "build-docs": "node lib/_cli-compile-readme.js",
+    "doctoc-all": "node lib/_cli-compile-readme.js ; doctoc *.md && git add *.md doc-src/*.md ; git commit -m'update docs' ; git push --force-with-lease",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
