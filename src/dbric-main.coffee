@@ -18,6 +18,7 @@ Db_adapter                      = require 'better-sqlite3'
 { lets,
   freeze,                     } = ( require './letsfreezethat-infra.brics' ).require_letsfreezethat_infra().simple
 { get_all_in_prototype_chain, } = ( require './unstable-object-tools-brics' ).require_get_prototype_chain()
+{ nfa,                        } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
 # { Undumper,                   } = ( require './coarse-sqlite-statement-segmenter.brics' ).require_coarse_sqlite_statement_segmenter()
 #...........................................................................................................
 { E,                          } = require './dbric-errors'
@@ -58,7 +59,7 @@ build_statement_re = ///
 
 #-----------------------------------------------------------------------------------------------------------
 templates =
-  dbay_cfg:
+  dbric_cfg:
     prefix:         null
     default_prefix: null
   #.........................................................................................................
@@ -204,9 +205,11 @@ class Dbric extends Dbric_classprop_absorber
   @build:           null
 
   #---------------------------------------------------------------------------------------------------------
-  ### TAINT use normalize-function-arguments ###
-  constructor: ( db_path, cfg ) ->
+  ### NOTE this unusual arrangement is solely there so we can call `super()` from an instance method ###
+  constructor: ( P... ) ->
     super()
+    return @_constructor P...
+  _constructor: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
     @_validate_is_property 'is_ready'
     @_validate_is_property 'prefix'
     #.......................................................................................................
@@ -214,7 +217,7 @@ class Dbric extends Dbric_classprop_absorber
     #.......................................................................................................
     clasz                     = @constructor
     hide @, 'db',               new Db_adapter db_path
-    @cfg                      = freeze { templates.dbay_cfg..., db_path, cfg..., }
+    @cfg                      = freeze { templates.dbric_cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
     hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
