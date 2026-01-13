@@ -58,6 +58,10 @@ build_statement_re = ///
 
 #-----------------------------------------------------------------------------------------------------------
 templates =
+  dbay_cfg:
+    prefix:         null
+    default_prefix: null
+  #.........................................................................................................
   create_function_cfg:
     deterministic:  true
     varargs:        false
@@ -193,11 +197,11 @@ class Dbric_classprop_absorber
 class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  @cfg: freeze
-    prefix: '(NOPREFIX)'
-  @functions:   {}
-  @statements:  {}
-  @build:       null
+  @prefix:          null
+  @default_prefix:  null
+  @functions:       {}
+  @statements:      {}
+  @build:           null
 
   #---------------------------------------------------------------------------------------------------------
   ### TAINT use normalize-function-arguments ###
@@ -205,17 +209,17 @@ class Dbric extends Dbric_classprop_absorber
     super()
     @_validate_is_property 'is_ready'
     @_validate_is_property 'prefix'
-    @_validate_is_property 'prefix_re'
     #.......................................................................................................
     db_path                  ?= ':memory:'
     #.......................................................................................................
     clasz                     = @constructor
     hide @, 'db',               new Db_adapter db_path
-    @cfg                      = freeze { clasz.cfg..., db_path, cfg..., }
+    @cfg                      = freeze { templates.dbay_cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
     hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
+    hide @, '_cache',           {}
     #.......................................................................................................
     @run_standard_pragmas()
     @initialize()
@@ -266,24 +270,11 @@ class Dbric extends Dbric_classprop_absorber
     return R
 
   #---------------------------------------------------------------------------------------------------------
-  teardown: ({ test = null, }={}) ->
-    count       = 0
-    #.......................................................................................................
-    switch true
-      when test is '*'
-        test = ( name ) -> true
-      when ( type_of test ) is 'function'
-        null
-      when not test?
-        prefix_re = @prefix_re
-        test = ( name ) -> prefix_re.test name
-      else
-        type = type_of test
-        throw new Error "Ωdbricm___6 expected `'*'`, a RegExp, a function, null or undefined, got a #{type}"
+  teardown: ->
+    count = 0
     #.......................................................................................................
     ( @prepare SQL"pragma foreign_keys = off;" ).run()
     for _, { name, type, } of @_get_db_objects()
-      continue unless test name
       count++
       try
         ( @prepare SQL"drop #{type} #{IDN name};" ).run()
@@ -311,7 +302,6 @@ class Dbric extends Dbric_classprop_absorber
   set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
   set_getter @::, 'is_ready',         -> @_get_is_ready()
   set_getter @::, 'prefix',           -> @_get_prefix()
-  set_getter @::, 'prefix_re',        -> @_get_prefix_re()
   set_getter @::, '_function_names',  -> @_get_function_names()
   set_getter @::, 'w',                -> @_get_w()
 
@@ -335,13 +325,30 @@ class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   _get_prefix: ->
-    return '' if ( not @cfg.prefix? ) or ( @cfg.prefix is '(NOPREFIX)' )
-    return @cfg.prefix
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_prefix_re: ->
-    return /|/ if @prefix is ''
-    return /// ^ _? #{RegExp.escape @prefix} _ .* $ ///
+    return R if ( R = @_cache.prefix )?
+    clasz = @constructor
+    #.......................................................................................................
+    ### try instance configuration ###
+    R = @cfg.prefix
+    #.......................................................................................................
+    ### try non-inheritable class property `prefix`: ###
+    unless R?
+      if ( Object.hasOwn clasz, 'prefix' ) and ( prefix = clasz.prefix )?
+        R = clasz.prefix
+    #.......................................................................................................
+    ### try inheritable class property `default_prefix`: ###
+    unless R?
+      R = clasz.default_prefix
+    #.......................................................................................................
+    unless R?
+      throw new E.Dbric_no_prefix_configured 'Ωdbricm__10', @
+    #.......................................................................................................
+    ### TAINT use proper validation ###
+    unless /^[a-zA-Z][a-zA-Z_0-9]*$/.test R
+      throw new E.Dbric_not_a_wellformed_prefix 'Ωdbricm__11', R
+    #.......................................................................................................
+    @_cache.prefix = R
+    return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_w: ->
@@ -365,11 +372,11 @@ class Dbric extends Dbric_classprop_absorber
   prepare: ( sql ) ->
     return sql if @isa_statement sql
     unless ( type = type_of sql ) is 'text'
-      throw new Error "Ωdbricm__10 expected a statement or a text, got a #{type}"
+      throw new Error "Ωdbricm__12 expected a statement or a text, got a #{type}"
     try
       R = @db.prepare sql
     catch cause
-      throw new Error "Ωdbricm__11 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
+      throw new Error "Ωdbricm__13 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
     @state.columns = ( try R?.columns?() catch error then null ) ? []
     return R
 
@@ -378,7 +385,7 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   create_function: ( cfg ) ->
     if ( type_of @db.function ) isnt 'function'
-      throw new Error "Ωdbricm__12 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
+      throw new Error "Ωdbricm__14 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
     { name,
       overwrite,
       value,
@@ -386,13 +393,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__13 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__15 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.function name, { deterministic, varargs, directOnly, }, value
 
   #---------------------------------------------------------------------------------------------------------
   create_aggregate_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__14 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
+      throw new Error "Ωdbricm__16 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
     { name,
       overwrite,
       start,
@@ -402,13 +409,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__15 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__17 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_window_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__16 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
+      throw new Error "Ωdbricm__18 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
     { name,
       overwrite,
       start,
@@ -419,13 +426,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_window_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__17 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__19 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_table_function: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__18 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
+      throw new Error "Ωdbricm__20 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
     { name,
       overwrite,
       parameters,
@@ -435,18 +442,18 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_table_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__19 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__21 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_virtual_table: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__20 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
+      throw new Error "Ωdbricm__22 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
     { name,
       overwrite,
       create,   } = { templates.create_virtual_table_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__21 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__23 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, create
 
 

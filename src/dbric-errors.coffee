@@ -15,23 +15,30 @@ class E.Dbric_error extends Error
     @ref      = ref
     return undefined ### always return `undefined` from constructor ###
 
+# create = ( name, constructor ) ->
+#   return
+
 #---------------------------------------------------------------------------------------------------------
-class E.Dbric_sql_value_error           extends E.Dbric_error
-  constructor: ( ref, type, value ) -> super ref, "unable to express a #{type} as SQL literal, got #{rpr value}"
-class E.Dbric_sql_not_a_list_error      extends E.Dbric_error
-  constructor: ( ref, type, value ) -> super ref, "expected a list, got a #{type}"
-class E.Dbric_expected_string extends E.Dbric_error
-  constructor: ( ref, type ) -> super ref, "expected a string, got a #{type}"
-class E.Dbric_expected_string_or_string_val_fn extends E.Dbric_error
-  constructor: ( ref, type ) -> super ref, "expected a string or a function that returns a string, got a #{type}"
-class E.Dbric_expected_json_object_string extends E.Dbric_error
-  constructor: ( ref, value ) -> super ref, "expected serialized JSON object, got #{rpr value}"
-class E.Dbric_unknown_sequence          extends E.Dbric_error
-  constructor: ( ref, name )        -> super ref, "unknown sequence #{rpr name}"
-class E.Dbric_internal_error            extends E.Dbric_error
-  constructor: ( ref, message )     -> super ref, message
-class E.Dbric_named_statement_exists extends E.Dbric_error
-  constructor: ( ref, name )      -> super ref, "statement #{rpr name} is already declared"
+class E.Dbric_sql_value_error                                                         extends E.Dbric_error
+  constructor: ( ref, type, value )   -> super ref, "unable to express a #{type} as SQL literal, got #{rpr value}"
+class E.Dbric_sql_not_a_list_error                                                    extends E.Dbric_error
+  constructor: ( ref, type, value )   -> super ref, "expected a list, got a #{type}"
+class E.Dbric_expected_string                                                         extends E.Dbric_error
+  constructor: ( ref, type )          -> super ref, "expected a string, got a #{type}"
+class E.Dbric_expected_string_or_string_val_fn                                        extends E.Dbric_error
+  constructor: ( ref, type )          -> super ref, "expected a string or a function that returns a string, got a #{type}"
+class E.Dbric_expected_json_object_string                                             extends E.Dbric_error
+  constructor: ( ref, value )         -> super ref, "expected serialized JSON object, got #{rpr value}"
+class E.Dbric_unknown_sequence                                                        extends E.Dbric_error
+  constructor: ( ref, name )          -> super ref, "unknown sequence #{rpr name}"
+class E.Dbric_internal_error                                                          extends E.Dbric_error
+  constructor: ( ref, message )       -> super ref, message
+class E.Dbric_named_statement_exists                                                  extends E.Dbric_error
+  constructor: ( ref, name )          -> super ref, "statement #{rpr name} is already declared"
+class E.Dbric_no_prefix_configured                                                    extends E.Dbric_error
+  constructor: ( ref, instance )      -> super ref, "no prefix configured for this instance of #{instance.constructor.name}"
+class E.Dbric_not_a_wellformed_prefix                                                 extends E.Dbric_error
+  constructor: ( ref, prefix )        -> super ref, "prefix not well-formed: #{rpr prefix}"
 # class E.Dbric_unknown_variable          extends E.Dbric_error
 #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
 
