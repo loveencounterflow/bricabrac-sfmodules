@@ -128,3 +128,30 @@ class My_db extends Dbric_std
   @virtual_table_udf_your_name_here: ...
 ```
 
+* **`[—]`** Prefix:
+  * `Dbric` and all its derived classes have a setting `prefix` which must be a non-empty string.
+  * The prefix is used
+  * For the sake of simplicity, we err on the safe side and restrict legal prefixes to
+    `/[a-zA-Z][a-zA-Z_0-9]*/`; this restriction may be relaxed later but the goal is to allow only such
+    prefixes that, when concatenated with a safe suffix such as `_my_table_name`, do not require quoting the
+    name in SQL statements; we disregard the unattainable task of aspiring to make name clashes impossible
+    but settle for syntactic safety. Settings like `''` (empty string), `'foo bar'` (contains spaces) or
+    `höh` (contains non-ASCII letters) are not acceptable.
+  * The default value for instances of a given derivative `C` of `Dbric` is the first match from these
+    sources:
+    * the `prefix` parameter given at instantiation;
+    * the class property `C.prefix` *but only if `( Object.hasOwn C ) and ( prefix = C.prefix )?` is true*
+      (i.e. property `prefix` is not treated as inheritable and is ignored when set to `null` or
+      `undefined`);
+    * the result of `@constructor.name.match /_[a-zA-Z][a-zA-Z_0-9]*$/`, if it matches;
+    * the value of `@constructor.name.toLowerCase()`, if it is a legal prefix;
+    * the value of setting `C.default_prefix` *which **is** treated as inheritable*.
+    * Since `Dbric.default_prefix: null`, a class that doesn't set `prefix` itself or sets `default_prefix`
+      itself or transitively can only make use of prefixes when instantiated with an explicit, valid
+      `prefix` setting.
+    * It's still possible to use `Dbric` or a derivative without setting `prefix` or `default_prefix`, but
+      in that case any attempt to access the computed instance property `Dbric::prefix` or the symbolic
+      `$prefix` in class property names and statement SQL will cause an error, so one can not use e.g.
+      `SQL"select * from %prefix%_table;"` or `My_class.create_scalar_udf_$prefix_frobulate`.
+
+
