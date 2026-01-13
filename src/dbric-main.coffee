@@ -6,7 +6,8 @@
 { debug,
   warn                        } = console
 #...........................................................................................................
-SQLITE                          = require 'node:sqlite'
+# Db_adapter                      = ( require 'node:sqlite' ).DatabaseSync
+Db_adapter                      = require 'better-sqlite3'
 #...........................................................................................................
 { nfa,                        } = require 'normalize-function-arguments'
 #...........................................................................................................
@@ -197,7 +198,6 @@ class Dbric extends Dbric_classprop_absorber
   @functions:   {}
   @statements:  {}
   @build:       null
-  @db_class:    SQLITE.DatabaseSync
 
   #---------------------------------------------------------------------------------------------------------
   ### TAINT use normalize-function-arguments ###
@@ -210,8 +210,7 @@ class Dbric extends Dbric_classprop_absorber
     db_path                  ?= ':memory:'
     #.......................................................................................................
     clasz                     = @constructor
-    db_class                  = ( cfg?.db_class ) ? clasz.db_class
-    hide @, 'db',               new db_class db_path
+    hide @, 'db',               new Db_adapter db_path
     @cfg                      = freeze { clasz.cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
     hide @, '_w',               null
@@ -347,7 +346,7 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   _get_w: ->
     return @_w if @_w?
-    @_w = new @constructor @cfg.db_path, { db_class: @db.constructor, state: @state, }
+    @_w = new @constructor @cfg.db_path, { state: @state, }
     return @_w
 
   #---------------------------------------------------------------------------------------------------------
