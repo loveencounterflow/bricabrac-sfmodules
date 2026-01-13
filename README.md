@@ -183,8 +183,6 @@ class My_db extends Dbric_std
       in that case any attempt to access the computed instance property `Dbric::prefix` or the symbolic
       `$PREFIX` in class property names and statement SQL will cause an error, so one can not use e.g.
       `SQL"select * from %prefix%_table;"` or `My_class.create_scalar_udf_$prefix_frobulate`.
-  * SQLite allows `?` for positional parameters and `@`, `:` and `$` as prefixes for named parameters; in order
-    not to clash with any of these, Dbric
   * `$PREFIX` in class properties:
     * in class properties like `create_statement_$PREFIX_whatever_name`,
       `create_scalar_udf_$PREFIX_whatever_name` as well as in SQL source strings like `select * from
