@@ -176,17 +176,17 @@ class Dbric_std_variables extends Dbric_std_base
 
   #=========================================================================================================
   @statements:
-    set_variable:     SQL"""
+    std_set_variable:     SQL"""
       insert into std_variables ( name, value, delta ) values ( $name, $value, $delta )
         on conflict ( name ) do update
           set value = $value, delta = $delta;"""
-    get_variables:    SQL"select name, value, delta from std_variables order by name;"
+    std_get_variables:    SQL"select name, value, delta from std_variables order by name;"
 
   #=========================================================================================================
   _std_acquire_state: ( transients = {} ) ->
     #.......................................................................................................
     @state.std_variables = lets @state.std_variables, ( v ) =>
-      for { name, value, delta, } from @statements.get_variables.iterate()
+      for { name, value, delta, } from @statements.std_get_variables.iterate()
         value     = JSON.parse value
         v[ name ] = { name, value, delta, }
       ;null
@@ -207,7 +207,7 @@ class Dbric_std_variables extends Dbric_std_base
       # whisper 'Ωdbrics___6', { name, value, delta, }
       delta  ?= null
       value   = JSON.stringify value
-      @statements.set_variable.run { name, value, delta, }
+      @statements.std_set_variable.run { name, value, delta, }
     #.......................................................................................................
     @state.std_transients = lets @state.std_transients, ( t ) ->
       delete t[ name ] for name of t
@@ -272,7 +272,7 @@ class Dbric_std_variables extends Dbric_std_base
     store       = Object.fromEntries ( \
       [ name, { value, delta, }, ] \
         for { name, value, delta, } from \
-          @statements.get_variables.iterate() )
+          @statements.std_get_variables.iterate() )
     cache_names = new Set Object.keys @state.std_variables
     trans_names = new Set Object.keys @state.std_transients
     store_names = new Set Object.keys store
