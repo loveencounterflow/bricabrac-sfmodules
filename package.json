@@ -14,6 +14,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "dependencies": {
+    "better-sqlite3": "^12.6.0",
     "cli-table3": "github:loveencounterflow/cli-table3#82fc220",
     "env-paths": "^3.0.0",
     "normalize-function-arguments": "github:loveencounterflow/normalize-function-arguments#v0.2.1"
