@@ -114,9 +114,7 @@ A collection of (sometimes not-so) small-ish utilities
 
 * allow single string for `build`, can be segmented
 
-Examples for class definitions; symbolic `/(?<=\P{L})$prefix(?=\P{L})/` will be replaced by the class's (and
-the instance's) `prefix` setting (observe that we rely on the prefix being known to be syntactically
-compatible with this use):
+Examples for class definitions; notice use of symbolic `$PREFIX`
 
 ```coffee
 class My_db extends Dbric_std
@@ -124,26 +122,12 @@ class My_db extends Dbric_std
     SQL"create table words ( w text );",
     SQL"insert into words ( w ) values ( 'first' );",
     ]
-  @rts_$prefix_insert_word: SQL"insert into words ( w ) values ( $w );"`
-  @rts_$prefix_select_word: SQL"select w as word from words where w regexp $pattern;"`
-  @scalar_udf_$prefix_square:
+  @create_statement_$PREFIX_insert_word: SQL"insert into words ( w ) values ( $w );"`
+  @create_statement_$PREFIX_select_word: SQL"select w as word from words where w regexp $pattern;"`
+  @create_scalar_udf_$PREFIX_square:
     deterministic:      true
     value:              ( n ) -> n * n
-  @table_udf_$prefix_letters_of:
-    deterministic:      true
-    value:              ( word ) -> yield chr for chr in Array.from word
-  @aggregate_udf_your_name_here:     ...
-  @window_udf_your_name_here:        ...
-  @virtual_table_udf_your_name_here: ...
-```
-
-Alternatively, prefix UDF declaration names with `create_`:
-
-```coffee
-  @create_scalar_udf_$prefix_square:
-    deterministic:      true
-    value:              ( n ) -> n * n
-  @create_table_udf_$prefix_letters_of:
+  @create_table_udf_$PREFIX_letters_of:
     deterministic:      true
     value:              ( word ) -> yield chr for chr in Array.from word
   @create_aggregate_udf_your_name_here:     ...
@@ -159,19 +143,19 @@ class My_db extends Dbric_std
     SQL"create table words ( w text );",
     SQL"insert into words ( w ) values ( #{LIT @cfg.first_word} );",
     ]
-  @rts_$prefix_insert_word: ->
+  @create_statement_$PREFIX_insert_word: ->
     ...
     return SQL"insert into words ( w ) values ( $w );"`
-  @rts_$prefix_select_word: SQL"select w as word from words where w regexp $pattern;"`
-  @scalar_udf_$prefix_square: ->
+  @create_statement_$PREFIX_select_word: SQL"select w as word from words where w regexp $pattern;"`
+  @create_scalar_udf_$PREFIX_square: ->
     value = if whatever then ( ( n ) -> n * n ) else ( ( n ) -> n ** 2 )
     return { value, }
-  @table_udf_$prefix_letters_of:
+  @create_table_udf_$PREFIX_letters_of:
     deterministic:      true
     value:              ( word ) -> yield chr for chr in Array.from word
-  @aggregate_udf_your_name_here:     ...
-  @window_udf_your_name_here:        ...
-  @virtual_table_udf_your_name_here: ...
+  @create_aggregate_udf_your_name_here:     ...
+  @create_window_udf_your_name_here:        ...
+  @create_virtual_table_udf_your_name_here: ...
 ```
 
 * **`[—]`** Prefix:
@@ -197,10 +181,27 @@ class My_db extends Dbric_std
       `prefix` setting.
     * It's still possible to use `Dbric` or a derivative without setting `prefix` or `default_prefix`, but
       in that case any attempt to access the computed instance property `Dbric::prefix` or the symbolic
-      `$prefix` in class property names and statement SQL will cause an error, so one can not use e.g.
+      `$PREFIX` in class property names and statement SQL will cause an error, so one can not use e.g.
       `SQL"select * from %prefix%_table;"` or `My_class.create_scalar_udf_$prefix_frobulate`.
-
-
+  * SQLite allows `?` for positional parameters and `@`, `:` and `$` as prefixes for named parameters; in order
+    not to clash with any of these, Dbric
+  * `$PREFIX` in class properties:
+    * in class properties like `create_statement_$PREFIX_whatever_name`,
+      `create_scalar_udf_$PREFIX_whatever_name` as well as in SQL source strings like `select * from
+      $PREFIX_whatever_name`, `$PREFIX` will be recognized and replaced by the configured prefix (derived by
+      the rules as above).
+    * In SQL statements, this works by replacing all matches of `/(?<=[^\\])\$PREFIX/` (i.e. literal
+      `'$PREFIX'` that is not preceded by a backslash) with the instance's prefix as configured (or fail
+      with error in case no prefix is configured).
+    * No syntax analysis of any kind will be performed and the replacement will be interpolated no matter
+      whether it appears in a quoted or an unquoted name, a string literal, a comment or, indeed, a
+      parameter name.
+    * The capitalization of `$PREFIX` (and possibly other symbolic placeholders in the future) has been
+      chosen so as to minimize opportunities of clashes between these compile-time placeholders and the
+      usual run-time parameters; as long as run-time parameters are spelled without writing them in all-caps
+      (probably a reasonable choice regardless), no clashes are possible.
+    * Placing a backslash immediately before `$PREFIX` will inhibit interpolation; also, all appearances of
+      a backslash within sequences of `\\$PREFIX` (backslash, dollar sign, letters `PREFIX`) will be elided.
 
 <!-- END <!insert src=./README-dbric.md> -->
 ------------------------------------------------------------------------------------------------------------
