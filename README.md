@@ -11,6 +11,7 @@ A collection of (sometimes not-so) small-ish utilities
 
 - [DBric Database Adapter](#dbric-database-adapter)
   - [To Do](#to-do)
+  - [Won't Do](#wont-do)
 - [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
   - [Ranges / Integer Intervals](#ranges--integer-intervals)
   - [To Do](#to-do-1)
@@ -158,46 +159,51 @@ class My_db extends Dbric_std
   @create_virtual_table_udf_your_name_here: ...
 ```
 
-* **`[—]`** Prefix:
-  * `Dbric` and all its derived classes have a setting `prefix` which must be a non-empty string.
-  * The prefix is used
-  * For the sake of simplicity, we err on the safe side and restrict legal prefixes to
-    `/^[a-zA-Z][a-zA-Z_0-9]*$/`; this restriction may be relaxed later but the goal is to allow only such
-    prefixes that, when concatenated with a safe suffix such as `_my_table_name`, do not require quoting the
-    name in SQL statements; we disregard the unattainable task of aspiring to make name clashes impossible
-    but settle for syntactic safety. Settings like `''` (empty string), `'foo bar'` (contains spaces) or
-    `höh` (contains non-ASCII letters) are not acceptable.
-  * The default value for instances of a given clasz `clasz` that is an extension of base class `Dbric` is
-    the first match from these sources:
-    * the `prefix` parameter given at instantiation;
-    * the class property `clasz.prefix` *but only if `( Object.hasOwn clasz, 'prefix' ) and ( prefix =
-      clasz.prefix )?` is true* (i.e. property `prefix` is not treated as inheritable and is ignored when
-      set to `null` or `undefined`);
-    * the value of setting `clasz.default_prefix` *which **is** treated as inheritable*.
-    * Since `Dbric.default_prefix: null`, a class that doesn't set `prefix` itself or sets `default_prefix`
-      itself or transitively can only make use of prefixes when instantiated with an explicit, valid
-      `prefix` setting.
-    * It's still possible to use `Dbric` or a derivative without setting `prefix` or `default_prefix`, but
-      in that case any attempt to access the computed instance property `Dbric::prefix` or the symbolic
-      `$PREFIX` in class property names and statement SQL will cause an error, so one can not use e.g.
-      `SQL"select * from %prefix%_table;"` or `My_class.create_scalar_udf_$prefix_frobulate`.
-  * `$PREFIX` in class properties:
-    * in class properties like `create_statement_$PREFIX_whatever_name`,
-      `create_scalar_udf_$PREFIX_whatever_name` as well as in SQL source strings like `select * from
-      $PREFIX_whatever_name`, `$PREFIX` will be recognized and replaced by the configured prefix (derived by
-      the rules as above).
-    * In SQL statements, this works by replacing all matches of `/(?<=[^\\])\$PREFIX/` (i.e. literal
-      `'$PREFIX'` that is not preceded by a backslash) with the instance's prefix as configured (or fail
-      with error in case no prefix is configured).
-    * No syntax analysis of any kind will be performed and the replacement will be interpolated no matter
-      whether it appears in a quoted or an unquoted name, a string literal, a comment or, indeed, a
-      parameter name.
-    * The capitalization of `$PREFIX` (and possibly other symbolic placeholders in the future) has been
-      chosen so as to minimize opportunities of clashes between these compile-time placeholders and the
-      usual run-time parameters; as long as run-time parameters are spelled without writing them in all-caps
-      (probably a reasonable choice regardless), no clashes are possible.
-    * Placing a backslash immediately before `$PREFIX` will inhibit interpolation; also, all appearances of
-      a backslash within sequences of `\\$PREFIX` (backslash, dollar sign, letters `PREFIX`) will be elided.
+## Won't Do
+
+
+* **`[+]`** abandoned prefix schema altogether because implementation effort appears to be unbalanced with
+  realistically assumed benefits; implemented parts remain in code for the time being.
+  * **`[—]`** <del>Prefix:</del>
+    * `Dbric` and all its derived classes have a setting `prefix` which must be a non-empty string.
+    * The prefix is used
+    * For the sake of simplicity, we err on the safe side and restrict legal prefixes to
+      `/^[a-zA-Z][a-zA-Z_0-9]*$/`; this restriction may be relaxed later but the goal is to allow only such
+      prefixes that, when concatenated with a safe suffix such as `_my_table_name`, do not require quoting the
+      name in SQL statements; we disregard the unattainable task of aspiring to make name clashes impossible
+      but settle for syntactic safety. Settings like `''` (empty string), `'foo bar'` (contains spaces) or
+      `höh` (contains non-ASCII letters) are not acceptable.
+    * The default value for instances of a given clasz `clasz` that is an extension of base class `Dbric` is
+      the first match from these sources:
+      * the `prefix` parameter given at instantiation;
+      * the class property `clasz.prefix` *but only if `( Object.hasOwn clasz, 'prefix' ) and ( prefix =
+        clasz.prefix )?` is true* (i.e. property `prefix` is not treated as inheritable and is ignored when
+        set to `null` or `undefined`);
+      * the value of setting `clasz.default_prefix` *which **is** treated as inheritable*.
+      * Since `Dbric.default_prefix: null`, a class that doesn't set `prefix` itself or sets `default_prefix`
+        itself or transitively can only make use of prefixes when instantiated with an explicit, valid
+        `prefix` setting.
+      * It's still possible to use `Dbric` or a derivative without setting `prefix` or `default_prefix`, but
+        in that case any attempt to access the computed instance property `Dbric::prefix` or the symbolic
+        `$PREFIX` in class property names and statement SQL will cause an error, so one can not use e.g.
+        `SQL"select * from %prefix%_table;"` or `My_class.create_scalar_udf_$prefix_frobulate`.
+    * `$PREFIX` in class properties:
+      * in class properties like `create_statement_$PREFIX_whatever_name`,
+        `create_scalar_udf_$PREFIX_whatever_name` as well as in SQL source strings like `select * from
+        $PREFIX_whatever_name`, `$PREFIX` will be recognized and replaced by the configured prefix (derived by
+        the rules as above).
+      * In SQL statements, this works by replacing all matches of `/(?<=[^\\])\$PREFIX/` (i.e. literal
+        `'$PREFIX'` that is not preceded by a backslash) with the instance's prefix as configured (or fail
+        with error in case no prefix is configured).
+      * No syntax analysis of any kind will be performed and the replacement will be interpolated no matter
+        whether it appears in a quoted or an unquoted name, a string literal, a comment or, indeed, a
+        parameter name.
+      * The capitalization of `$PREFIX` (and possibly other symbolic placeholders in the future) has been
+        chosen so as to minimize opportunities of clashes between these compile-time placeholders and the
+        usual run-time parameters; as long as run-time parameters are spelled without writing them in all-caps
+        (probably a reasonable choice regardless), no clashes are possible.
+      * Placing a backslash immediately before `$PREFIX` will inhibit interpolation; also, all appearances of
+        a backslash within sequences of `\\$PREFIX` (backslash, dollar sign, letters `PREFIX`) will be elided.
 
 <!-- END <!insert src=./README-dbric.md> -->
 ------------------------------------------------------------------------------------------------------------
