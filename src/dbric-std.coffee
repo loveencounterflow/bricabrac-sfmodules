@@ -176,6 +176,7 @@ class Dbric_std_variables extends Dbric_std_base
 
   #=========================================================================================================
   @statements:
+    # $PREFIX_set_variable:     SQL"""
     std_set_variable:     SQL"""
       insert into std_variables ( name, value, delta ) values ( $name, $value, $delta )
         on conflict ( name ) do update

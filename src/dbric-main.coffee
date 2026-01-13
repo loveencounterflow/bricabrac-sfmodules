@@ -60,8 +60,9 @@ build_statement_re = ///
 #-----------------------------------------------------------------------------------------------------------
 templates =
   dbric_cfg:
-    prefix:         null
-    default_prefix: null
+    db_path:        ':memory:'
+    # prefix:         null
+    # default_prefix: null
   #.........................................................................................................
   create_function_cfg:
     deterministic:  true
@@ -98,6 +99,7 @@ class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   _get_statements_in_prototype_chain: ( property_name, property_type ) ->
+    # debug 'Ωdbricm___1', { prefix: ( @get_prefix null ), property_name, property_type, }
     clasz           = @constructor
     candidates_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
     #.......................................................................................................
@@ -108,7 +110,7 @@ class Dbric_classprop_absorber
         throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___2', type
       return R
     #.......................................................................................................
-    R               = switch property_type
+    R = switch property_type
       when 'list' then []
       when 'pod'  then {}
       else throw new E.Dbric_internal_error 'Ωdbricm___3', "unknown property_type #{rpr property_type}"
@@ -123,6 +125,10 @@ class Dbric_classprop_absorber
           R.push statement_from_candidate candidate
       else
         for statement_name, candidate of candidates
+          # debug 'Ωdbricm___5', { statement_name, }
+          ### NOTE using replacement function to prevent accessing @prefix unless triggered by match ###
+          ### TAINT put regex into collection of constants ###
+          # statement_name = statement_name.replace /\$PREFIX/g, => @prefix
           if Reflect.has R, statement_name
             throw new E.Dbric_named_statement_exists 'Ωdbricm___6', statement_name
           R[ statement_name ] = statement_from_candidate candidate
@@ -198,8 +204,8 @@ class Dbric_classprop_absorber
 class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  @prefix:          null
-  @default_prefix:  null
+  # @prefix:          null
+  # @default_prefix:  null
   @functions:       {}
   @statements:      {}
   @build:           null
@@ -211,7 +217,7 @@ class Dbric extends Dbric_classprop_absorber
     return @_constructor P...
   _constructor: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
     @_validate_is_property 'is_ready'
-    @_validate_is_property 'prefix'
+    # @_validate_is_property 'prefix'
     #.......................................................................................................
     db_path                  ?= ':memory:'
     #.......................................................................................................
@@ -222,7 +228,7 @@ class Dbric extends Dbric_classprop_absorber
     hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
-    hide @, '_cache',           {}
+    # hide @, '_cache',           {}
     #.......................................................................................................
     @run_standard_pragmas()
     @initialize()
@@ -326,32 +332,33 @@ class Dbric extends Dbric_classprop_absorber
       return false unless present_db_objects[ name ]?.type is expected_type
     return true
 
-  #---------------------------------------------------------------------------------------------------------
-  _get_prefix: ->
-    return R if ( R = @_cache.prefix )?
-    clasz = @constructor
-    #.......................................................................................................
-    ### try instance configuration ###
-    R = @cfg.prefix
-    #.......................................................................................................
-    ### try non-inheritable class property `prefix`: ###
-    unless R?
-      if ( Object.hasOwn clasz, 'prefix' ) and ( prefix = clasz.prefix )?
-        R = clasz.prefix
-    #.......................................................................................................
-    ### try inheritable class property `default_prefix`: ###
-    unless R?
-      R = clasz.default_prefix
-    #.......................................................................................................
-    unless R?
-      throw new E.Dbric_no_prefix_configured 'Ωdbricm__10', @
-    #.......................................................................................................
-    ### TAINT use proper validation ###
-    unless /^[a-zA-Z][a-zA-Z_0-9]*$/.test R
-      throw new E.Dbric_not_a_wellformed_prefix 'Ωdbricm__11', R
-    #.......................................................................................................
-    @_cache.prefix = R
-    return R
+  # #---------------------------------------------------------------------------------------------------------
+  # get_prefix: ( fallback = misfit ) ->
+  #   return R if ( R = @_cache.prefix )?
+  #   clasz = @constructor
+  #   #.......................................................................................................
+  #   ### try instance configuration ###
+  #   R = @cfg.prefix
+  #   #.......................................................................................................
+  #   ### try non-inheritable class property `prefix`: ###
+  #   unless R?
+  #     if ( Object.hasOwn clasz, 'prefix' ) and ( prefix = clasz.prefix )?
+  #       R = clasz.prefix
+  #   #.......................................................................................................
+  #   ### try inheritable class property `default_prefix`: ###
+  #   unless R?
+  #     R = clasz.default_prefix
+  #   #.......................................................................................................
+  #   unless R?
+  #     return fallback unless fallback is misfit
+  #     throw new E.Dbric_no_prefix_configured 'Ωdbricm__11', @
+  #   #.......................................................................................................
+  #   ### TAINT use proper validation ###
+  #   unless /^[a-zA-Z][a-zA-Z_0-9]*$/.test R
+  #     throw new E.Dbric_not_a_wellformed_prefix 'Ωdbricm__12', R
+  #   #.......................................................................................................
+  #   @_cache.prefix = R
+  #   return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_w: ->
