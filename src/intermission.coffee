@@ -51,18 +51,15 @@ templates =
     hi:         null
   #.........................................................................................................
   get_build_statements:
-    prefix:                   'hrd'
     runs_rowid_regexp:        '0x00_0000'
     first_point:              0x00_0000
     last_point:               0x10_ffff
   #.........................................................................................................
   get_insert_statements:
-    prefix:                   'hrd'
     scatters_rowid_template:  'scatter-%d'
     runs_rowid_template:      'run-%d'
   #.........................................................................................................
-  get_udfs:
-    prefix:                   'hrd'
+  get_udfs: {}
 
 #===========================================================================================================
 as_hex = ( n ) ->
@@ -314,8 +311,8 @@ class Hoard
     R = {}
 
     #-------------------------------------------------------------------------------------------------------
-    ["#{@cfg.prefix}_as_lohi_hex"]:
-      name: "#{prefix}_as_lohi_hex"
+    hrd_as_lohi_hex:
+      name: 'hrd_as_lohi_hex'
       value: ( lo, hi ) -> "(#{lo.toString 16},#{hi.toString 16})"
 
     #-------------------------------------------------------------------------------------------------------
@@ -327,21 +324,21 @@ class Hoard
 
     #-------------------------------------------------------------------------------------------------------
     R.push SQL"""
-      create table #{IDN "#{@cfg.prefix}_hoard_scatters"} (
-          rowid     text    unique  not null, -- generated always as ( 't:hrd:s:S=' || #{IDN "#{@cfg.prefix}_get_sha1sum7d"}( is_hit, data ) ),
+      create table hrd_hoard_scatters (
+          rowid     text    unique  not null,
           is_hit    boolean         not null default false,
           data      json            not null default 'null'
           );"""
 
     #-------------------------------------------------------------------------------------------------------
     R.push SQL"""
-      create table #{IDN "#{@cfg.prefix}_hoard_runs"} (
+      create table hrd_hoard_runs (
           rowid     text    unique  not null,
           lo        integer         not null,
           hi        integer         not null,
           scatter   text            not null,
         -- primary key ( rowid ),
-        foreign key ( scatter ) references #{IDN "#{@cfg.prefix}_hoard_scatters"} ( rowid ),
+        foreign key ( scatter ) references hrd_hoard_scatters ( rowid ),
         constraint "Ωconstraint__11" check ( rowid regexp #{LIT cfg.runs_rowid_regexp } ),
         constraint "Ωconstraint__10" check ( lo between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
         constraint "Ωconstraint__11" check ( hi between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
@@ -356,17 +353,17 @@ class Hoard
     R = {}
 
     #-------------------------------------------------------------------------------------------------------
-    R[ "insert_#{@cfg.prefix}_hoard_scatter_v" ] = SQL"""
-      insert into #{IDN "#{@cfg.prefix}_hoard_scatters"} ( rowid, is_hit, data ) values (
-          printf( #{LIT cfg.scatters_rowid_template}, std_get_next_in_sequence( #{LIT '#{@cfg.prefix}_seq_hoard_scatters'} ) ),
+    R.insert_hrd_hoard_scatter_v = SQL"""
+      insert into hrd_hoard_scatters ( rowid, is_hit, data ) values (
+          printf( #{LIT cfg.scatters_rowid_template}, std_get_next_in_sequence( 'hrd_seq_hoard_scatters' ) ),
           $is_hit,
           $data )
         returning *;"""
 
     #-------------------------------------------------------------------------------------------------------
-    R[ "insert_#{@cfg.prefix}_hoard_run_v" ] = SQL"""
-      insert into #{IDN "#{@cfg.prefix}_hoard_runs"} ( rowid, lo, hi, scatter ) values (
-          printf( #{LIT cfg.runs_rowid_template}, std_get_next_in_sequence( #{LIT '#{@cfg.prefix}_seq_hoard_runs'} ) ),
+    R.insert_hrd_hoard_run_v = SQL"""
+      insert into hrd_hoard_runs ( rowid, lo, hi, scatter ) values (
+          printf( #{LIT cfg.runs_rowid_template}, std_get_next_in_sequence( 'hrd_seq_hoard_runs' ) ),
           $lo,
           $hi,
           $scatter );"""

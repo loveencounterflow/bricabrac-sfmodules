@@ -35,10 +35,6 @@ class E.Dbric_internal_error                                                    
   constructor: ( ref, message )       -> super ref, message
 class E.Dbric_named_statement_exists                                                  extends E.Dbric_error
   constructor: ( ref, name )          -> super ref, "statement #{rpr name} is already declared"
-class E.Dbric_no_prefix_configured                                                    extends E.Dbric_error
-  constructor: ( ref, instance )      -> super ref, "no prefix configured for this instance of #{instance.constructor.name}"
-class E.Dbric_not_a_wellformed_prefix                                                 extends E.Dbric_error
-  constructor: ( ref, prefix )        -> super ref, "prefix not well-formed: #{rpr prefix}"
 # class E.Dbric_unknown_variable          extends E.Dbric_error
 #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
 

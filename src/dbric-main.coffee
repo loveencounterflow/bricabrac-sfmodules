@@ -61,8 +61,6 @@ build_statement_re = ///
 templates =
   dbric_cfg:
     db_path:        ':memory:'
-    # prefix:         null
-    # default_prefix: null
   #.........................................................................................................
   create_function_cfg:
     deterministic:  true
@@ -99,7 +97,6 @@ class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   _get_statements_in_prototype_chain: ( property_name, property_type ) ->
-    # debug 'Ωdbricm___1', { prefix: ( @get_prefix null ), property_name, property_type, }
     clasz           = @constructor
     candidates_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
     #.......................................................................................................
@@ -125,10 +122,6 @@ class Dbric_classprop_absorber
           R.push statement_from_candidate candidate
       else
         for statement_name, candidate of candidates
-          # debug 'Ωdbricm___5', { statement_name, }
-          ### NOTE using replacement function to prevent accessing @prefix unless triggered by match ###
-          ### TAINT put regex into collection of constants ###
-          # statement_name = statement_name.replace /\$PREFIX/g, => @prefix
           if Reflect.has R, statement_name
             throw new E.Dbric_named_statement_exists 'Ωdbricm___6', statement_name
           R[ statement_name ] = statement_from_candidate candidate

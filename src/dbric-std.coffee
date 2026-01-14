@@ -31,9 +31,6 @@ SFMODULES                       = require './main'
 #===========================================================================================================
 class Dbric_std_base extends Dbric
 
-  #---------------------------------------------------------------------------------------------------------
-  @prefix: 'std'
-
   #=========================================================================================================
   @functions:
 
@@ -115,14 +112,14 @@ class Dbric_std_base extends Dbric
     return @std_normalize_text R, form
 
       # #---------------------------------------------------------------------------------------------------
-      # ["#{prefix}_get_sha1sum7d"]:
+      # get_sha1sum7d:
       #   ### NOTE assumes that `data` is in its normalized string form ###
-      #   name: "#{prefix}_get_sha1sum7d"
+      #   name: "get_sha1sum7d"
       #   value: ( is_hit, data ) -> get_sha1sum7d "#{if is_hit then 'H' else 'G'}#{data}"
 
       # #---------------------------------------------------------------------------------------------------
-      # ["#{prefix}_normalize_data"]:
-      #   name: "#{prefix}_normalize_data"
+      # normalize_data:
+      #   name: "normalize_data"
       #   value: ( data ) ->
       #     return data if data is 'null'
       #     # debug 'Ωim___3', rpr data
@@ -133,9 +130,6 @@ class Dbric_std_base extends Dbric
 
 #===========================================================================================================
 class Dbric_std_variables extends Dbric_std_base
-
-  #---------------------------------------------------------------------------------------------------------
-  @prefix: 'std'
 
   #---------------------------------------------------------------------------------------------------------
   constructor: ( P... ) ->
@@ -176,7 +170,6 @@ class Dbric_std_variables extends Dbric_std_base
 
   #=========================================================================================================
   @statements:
-    # $PREFIX_set_variable:     SQL"""
     std_set_variable:     SQL"""
       insert into std_variables ( name, value, delta ) values ( $name, $value, $delta )
         on conflict ( name ) do update
@@ -291,9 +284,6 @@ class Dbric_std_variables extends Dbric_std_base
 
 #===========================================================================================================
 class Dbric_std extends Dbric_std_variables
-
-  #---------------------------------------------------------------------------------------------------------
-  @prefix: 'std'
 
 
 #===========================================================================================================
