@@ -204,8 +204,6 @@ class Dbric_classprop_absorber
 class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  # @prefix:          null
-  # @default_prefix:  null
   @functions:       {}
   @statements:      {}
   @build:           null
@@ -217,7 +215,6 @@ class Dbric extends Dbric_classprop_absorber
     return @_constructor P...
   _constructor: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
     @_validate_is_property 'is_ready'
-    # @_validate_is_property 'prefix'
     #.......................................................................................................
     db_path                  ?= ':memory:'
     #.......................................................................................................
@@ -228,7 +225,6 @@ class Dbric extends Dbric_classprop_absorber
     hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
-    # hide @, '_cache',           {}
     #.......................................................................................................
     @run_standard_pragmas()
     @initialize()
@@ -310,7 +306,6 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
   set_getter @::, 'is_ready',         -> @_get_is_ready()
-  # set_getter @::, 'prefix',           -> @get_prefix()
   set_getter @::, '_function_names',  -> @_get_function_names()
   set_getter @::, 'w',                -> @_get_w()
 
@@ -331,34 +326,6 @@ class Dbric extends Dbric_classprop_absorber
     for name, { type: expected_type, } of expected_db_objects
       return false unless present_db_objects[ name ]?.type is expected_type
     return true
-
-  # #---------------------------------------------------------------------------------------------------------
-  # get_prefix: ( fallback = misfit ) ->
-  #   return R if ( R = @_cache.prefix )?
-  #   clasz = @constructor
-  #   #.......................................................................................................
-  #   ### try instance configuration ###
-  #   R = @cfg.prefix
-  #   #.......................................................................................................
-  #   ### try non-inheritable class property `prefix`: ###
-  #   unless R?
-  #     if ( Object.hasOwn clasz, 'prefix' ) and ( prefix = clasz.prefix )?
-  #       R = clasz.prefix
-  #   #.......................................................................................................
-  #   ### try inheritable class property `default_prefix`: ###
-  #   unless R?
-  #     R = clasz.default_prefix
-  #   #.......................................................................................................
-  #   unless R?
-  #     return fallback unless fallback is misfit
-  #     throw new E.Dbric_no_prefix_configured 'Ωdbricm__11', @
-  #   #.......................................................................................................
-  #   ### TAINT use proper validation ###
-  #   unless /^[a-zA-Z][a-zA-Z_0-9]*$/.test R
-  #     throw new E.Dbric_not_a_wellformed_prefix 'Ωdbricm__12', R
-  #   #.......................................................................................................
-  #   @_cache.prefix = R
-  #   return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_w: ->
