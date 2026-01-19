@@ -29,10 +29,15 @@ unquote_name = ( name ) ->
   ### TAINT use proper validation ###
   unless ( type = type_of name ) is 'text'
     throw new Error "Ωdbricu___3 expected a text, got a #{type}"
-  switch true
-    when /^[^"](.*)[^"]$/.test  name then return name
-    when /^"(.+)"$/.test        name then return name[ 1 ... name.length - 1 ].replace /""/g, '"'
-  throw new Error "Ωdbricu___4 expected a name, got #{rpr name}"
+  if name is ''
+    throw new Error "Ωdbricu___4 expected a non-empty text, got an empty text"
+  if ( ( name.startsWith '"' ) and ( name.endsWith '"' ) )
+    if name.length < 2
+      throw new Error "Ωdbricu___5 expected a quoted non-empty text, got a quote"
+    return name[ 1 ... name.length - 1 ].replace /""/g, '"'
+  if ( ( name.startsWith "'" ) and ( name.endsWith "'" ) )
+    return name[ 1 ... name.length - 1 ]
+  return name
 
 #-----------------------------------------------------------------------------------------------------------
 IDN = ( name ) -> '"' + ( name.replace /"/g, '""' ) + '"'
