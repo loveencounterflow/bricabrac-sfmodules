@@ -23,6 +23,16 @@ class E.Dbric_sql_value_error                                                   
   constructor: ( ref, type, value )   -> super ref, "unable to express a #{type} as SQL literal, got #{rpr value}"
 class E.Dbric_sql_not_a_list_error                                                    extends E.Dbric_error
   constructor: ( ref, type, value )   -> super ref, "expected a list, got a #{type}"
+class E.Dbric_expected_list_for_plugins                                               extends E.Dbric_error
+  constructor: ( ref, type )          -> super ref, "expected a list of plugins, got a #{type}"
+class E.Dbric_expected_unique_list_for_plugins                                        extends E.Dbric_error
+  constructor: ( ref, delta )         -> super ref, "expected a unique list of plugins, got one with #{delta} duplicates"
+class E.Dbric_expected_object_or_placeholder_for_plugin                               extends E.Dbric_error
+  constructor: ( ref, idx )           -> super ref, "expected an object or a placeholder for plugin index #{idx}, got null or undefined"
+class E.Dbric_expected_object_with_exports_for_plugin                                 extends E.Dbric_error
+  constructor: ( ref, idx )           -> super ref, "expected an object with property 'exports' for plugin index #{idx}, got one without 'exports'"
+class E.Dbric_expected_me_before_prototypes_for_plugins                               extends E.Dbric_error
+  constructor: ( ref, idx_of_me, idx_of_prototypes ) -> super ref, "in plugins property, found 'me' at index #{idx_of_me} but 'prototypes' at #{idx_of_prototypes}, expected 'me' before 'prototypes'"
 class E.Dbric_expected_string                                                         extends E.Dbric_error
   constructor: ( ref, type )          -> super ref, "expected a string, got a #{type}"
 class E.Dbric_expected_string_or_string_val_fn                                        extends E.Dbric_error

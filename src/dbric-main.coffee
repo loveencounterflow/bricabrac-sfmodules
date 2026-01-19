@@ -17,7 +17,8 @@ Db_adapter                      = require 'better-sqlite3'
 { rpr,                        } = ( require './loupe-brics' ).require_loupe()
 { lets,
   freeze,                     } = ( require './letsfreezethat-infra.brics' ).require_letsfreezethat_infra().simple
-{ get_all_in_prototype_chain, } = ( require './unstable-object-tools-brics' ).require_get_prototype_chain()
+{ get_all_in_prototype_chain,
+  get_prototype_chain,        } = ( require './unstable-object-tools-brics' ).require_get_prototype_chain()
 { nfa,                        } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
 # { Undumper,                   } = ( require './coarse-sqlite-statement-segmenter.brics' ).require_coarse_sqlite_statement_segmenter()
 #...........................................................................................................
@@ -34,7 +35,8 @@ misfit                          = Symbol 'misfit'
   LIT,
   VEC,
   SQL,                        } = require './dbric-utilities'
-
+#-----------------------------------------------------------------------------------------------------------
+ignored_prototypes              = null
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT put into separate module ###
@@ -94,6 +96,51 @@ templates =
 
 #===========================================================================================================
 class Dbric_classprop_absorber
+
+  ### TAINT use proper typing ###
+  _validate_plugins_property: ( x ) ->
+    unless ( type = type_of x ) is 'list'
+      throw new E.Dbric_expected_list_for_plugins 'Ωdbricm___1', type
+    #.......................................................................................................
+    unless ( delta = x.length - ( new Set x ).size ) is 0
+      throw new E.Dbric_expected_unique_list_for_plugins 'Ωdbricm___2', delta
+    #.......................................................................................................
+    unless ( idx_of_me = x.indexOf 'me' ) > ( idx_of_prototypes = x.indexOf 'prototypes' )
+      throw new E.Dbric_expected_me_before_prototypes_for_plugins 'Ωdbricm___3', idx_of_me, idx_of_prototypes
+    #.......................................................................................................
+    for element, element_idx in x
+      continue if element is 'me'
+      continue if element is 'prototypes'
+      unless element?
+        throw new E.Dbric_expected_object_or_placeholder_for_plugin 'Ωdbricm___4', element_idx
+      unless Reflect.has element, 'exports'
+        throw new E.Dbric_expected_object_with_exports_for_plugin 'Ωdbricm___5', element_idx
+    #.......................................................................................................
+    return x
+
+  #---------------------------------------------------------------------------------------------------------
+  _get_acquisition_chain: ->
+    #.......................................................................................................
+    R           = []
+    clasz       = @constructor
+    prototypes  = get_prototype_chain clasz
+    prototypes  = ( p for p in prototypes when ( p isnt clasz ) and p not in ignored_prototypes ).reverse()
+    plugins     = clasz.plugins ? []
+    plugins.unshift 'prototypes'  unless 'prototypes' in plugins
+    plugins.push    'me'          unless 'me'         in plugins
+    @_validate_plugins_property plugins
+    #.......................................................................................................
+    for entry in plugins
+      switch entry
+        when 'me'
+          R.push { type: 'prototype', value: clasz, }
+        when 'prototypes'
+          for prototype in prototypes
+            R.push { type: 'prototype', value: prototype, }
+        else
+          R.push { type: 'plugin', value: entry, }
+    #.......................................................................................................
+    return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_statements_in_prototype_chain: ( property_name, property_type ) ->
@@ -200,6 +247,7 @@ class Dbric extends Dbric_classprop_absorber
   @functions:       {}
   @statements:      {}
   @build:           null
+  @plugins:         null
 
   #---------------------------------------------------------------------------------------------------------
   ### NOTE this unusual arrangement is solely there so we can call `super()` from an instance method ###
@@ -427,6 +475,13 @@ class Dbric extends Dbric_classprop_absorber
     return @db.table name, create
 
 
+#===========================================================================================================
+ignored_prototypes = Object.freeze [
+  ( Object.getPrototypeOf {} ),
+  ( Object.getPrototypeOf Object ),
+  Dbric_classprop_absorber,
+  Dbric,
+  ]
 
 
 #===========================================================================================================
@@ -444,6 +499,7 @@ module.exports = {
   unquote_name,
   internals: freeze {
     E,
+    ignored_prototypes,
     type_of,
     build_statement_re,
     templates, }
