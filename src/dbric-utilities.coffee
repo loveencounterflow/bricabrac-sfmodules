@@ -51,11 +51,11 @@ LIT = ( x ) ->
     when 'float'      then return x.toString()
     when 'boolean'    then return ( if x then '1' else '0' )
     # when 'list'       then throw new Error "^dba@23^ use `X()` for lists"
-  throw new E.Dbric_sql_value_error 'Ωdbricu___5^', type, x
+  throw new E.Dbric_sql_value_error 'Ωdbricu___6^', type, x
 
 #-----------------------------------------------------------------------------------------------------------
 VEC = ( x ) ->
-  throw new E.Dbric_sql_not_a_list_error 'Ωdbricu___6^', type, x unless ( type = type_of x ) is 'list'
+  throw new E.Dbric_sql_not_a_list_error 'Ωdbricu___7^', type, x unless ( type = type_of x ) is 'list'
   return '( ' + ( ( LIT e for e in x ).join ', ' ) + ' )'
 
 #-----------------------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ SQL = ( parts, expressions... ) ->
 #       when '', 'I'  then return @I value
 #       when 'L'      then return @L value
 #       when 'V'      then return @V value
-#     throw new E.Dbric_interpolation_format_unknown 'Ωdbricu___7^', format
+#     throw new E.Dbric_interpolation_format_unknown 'Ωdbricu___8^', format
 # _interpolation_pattern: /(?<opener>[$?])(?<format>.?):(?<name>\w*)/g
 
 
