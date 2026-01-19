@@ -27,7 +27,7 @@ wrap_methods_of_prototypes = ( clasz, handler = -> ) ->
   ;null
 
 #-----------------------------------------------------------------------------------------------------------
-module.exports = { enumerate_prototypes_and_method, wrap_methods_of_prototype, }
+module.exports = { enumerate_prototypes_and_methods, wrap_methods_of_prototypes, }
 
 
 
