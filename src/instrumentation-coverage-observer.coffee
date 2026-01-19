@@ -30,3 +30,5 @@ wrap_methods_of_prototypes = ( clasz, handler = -> ) ->
 module.exports = { enumerate_prototypes_and_method, wrap_methods_of_prototype, }
 
 
+
+
