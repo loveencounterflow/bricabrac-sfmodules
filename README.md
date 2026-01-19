@@ -15,6 +15,8 @@ A collection of (sometimes not-so) small-ish utilities
 - [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
   - [Ranges / Integer Intervals](#ranges--integer-intervals)
   - [To Do](#to-do-1)
+- [Instrumentation: Coverage Observer](#instrumentation-coverage-observer)
+  - [Usage Example](#usage-example)
 - [Unsorted](#unsorted)
   - [To Do](#to-do-2)
     - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
@@ -309,6 +311,47 @@ class My_db extends Dbric_std
 * **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
 
 <!-- END <!insert src=./README-intermission.md> -->
+------------------------------------------------------------------------------------------------------------
+<!-- BEGIN <!insert src=./README-instrumentation-coverage-observer.md> -->
+
+
+# Instrumentation: Coverage Observer
+
+
+## Usage Example
+
+```coffee
+{ enumerate_prototypes_and_method,
+  wrap_methods_of_prototype, } = require 'bricabrac-sfmodules/lib/instrumentation-coverage-observer'
+catalog       = enumerate_prototypes_and_methods Dbric_std
+known_names   = new Set Object.keys catalog
+unused_names  = new Set known_names
+used_names    = new Set()
+handler       = ({ key, }) ->
+  info 'Ωbbdbr_318', key
+  unused_names.delete key
+  used_names.add key
+wrap_methods Dbric_std, handler
+db = new Dbric_std()
+warn 'Ωbbdbr_319', unused_names
+help 'Ωbbdbr_320', used_names
+db._get_acquisition_chain()
+warn 'Ωbbdbr_321', unused_names
+help 'Ωbbdbr_322', used_names
+```
+
+
+
+<!-- ## To Do -->
+
+<!-- * **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo` -->
+
+<!-- ## Won't Do -->
+
+
+<!-- * **`[+]`** abandoned prefix schema altogether because implementation effort appears to be unbalanced with -->
+
+<!-- END <!insert src=./README-instrumentation-coverage-observer.md> -->
 ------------------------------------------------------------------------------------------------------------
 <!-- BEGIN <!insert src=./README-unsorted.md> -->
 
