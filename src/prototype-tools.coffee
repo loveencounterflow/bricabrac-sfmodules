@@ -44,11 +44,11 @@ wrap_methods_of_prototypes = ( clasz, handler ) ->
   for name, { prototype, descriptor, } of enumerate_prototypes_and_methods clasz
     do ( name, prototype, descriptor ) ->
       method = descriptor.value
-      # descriptor.value = nameit "$wrapped_#{name}", ( P... ) ->
-      #   return handler { name, prototype, context: @, P, }
-      #   # return handler { name, prototype, P, }
-      #   # return method.call @, P...
-      # Object.defineProperty prototype, name, descriptor
+      descriptor.value = nameit "$wrapped_#{name}", ( P... ) ->
+        context = @
+        callme  = ( -> method.call @, P... ).bind @
+        return handler { name, prototype, method, context, P, callme, }
+      Object.defineProperty prototype, name, descriptor
   ;null
 
 
