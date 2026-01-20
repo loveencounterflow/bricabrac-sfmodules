@@ -19,7 +19,7 @@ A collection of (sometimes not-so) small-ish utilities
   - [Usage Example](#usage-example)
   - [To Do](#to-do-2)
   - [Is Done](#is-done)
-- [Instrumentation: Coverage Observer](#instrumentation-coverage-observer)
+- [Coverage Analyzer](#coverage-analyzer)
   - [Usage Example](#usage-example-1)
   - [To Do](#to-do-3)
   - [Is Done](#is-done-1)
@@ -343,20 +343,26 @@ class My_db extends Dbric_std
 
 * **`wrap_methods_of_prototypes = ( clasz, handler = -> ) ->`**: given an ES class object and a `handler`
   function, re-define all `function`s defined on `clasz::` (i.e. `clasz.prototype`) and its prototypes to
-  call the handler instead of the original method. The handler will be passed an object `{ name, prototype,
-  method, context, P, callme, }` where `name` is the method's name, `prototype` is the object is was found
-  on, `context` represents the instance (what [the docs]() call `thisArg`, i.e. the first argument to
-  `Function::apply()` and `Function::call()`), `P` is an array with the arguments, and `callme` is a
-  ready-made convenience function defined as `callme = ( -> method.call @, P... ).bind @` that can be called
-  by the handler to execute the original method and obtain its return value. This setup gives handlers a
-  maximum of flexibility to intercept and change arguments, to measure the execution time of methods and to
-  look at and change their return values. A conservative wrapper that only takes notes on which methods have
-  been called would not need to make use of `prototype`, `method`, `context`,  or `P` and could look like
-  this:
+  call the handler instead of the original method. The handler will be passed an object `{ name, fqname,
+  prototype, method, context, P, callme, }` where
+
+  * `name` is the method's name,
+  * `fqname` is the concatenation of the prototype's constructor's name, a dot, and the method's name,
+  * `prototype` is the object is was found on,
+  * `context` represents the instance (what [the docs]() call `thisArg`, i.e. the first argument to
+    `Function::apply()` and `Function::call()`),
+  * `P` is an array with the arguments, and
+  * `callme` is a ready-made convenience function defined as `callme = ( -> method.call @, P... ).bind @`
+    that can be called by the handler to execute the original method and obtain its return value.
+
+  This setup gives handlers a maximum of flexibility to intercept and change arguments, to measure the
+  execution time of methods and to look at and change their return values. A conservative wrapper that only
+  takes notes on which methods have been called would not need to make use of `prototype`, `method`,
+  `context`,  or `P` and could look like this:
 
   ```coffee
   counts = {}
-  handler = ({ name, prototype, method, context, P, callme, }) ->
+  handler = ({ name, fqname, prototype, method, context, P, callme, }) ->
     counts[ name ] = ( counts[ name ] ? 0 ) + 1
     return callme()
   ```
@@ -388,32 +394,23 @@ class My_db extends Dbric_std
 
 <!-- END <!insert src=./README-prototype-tools.md> -->
 ------------------------------------------------------------------------------------------------------------
-<!-- BEGIN <!insert src=./README-instrumentation-coverage-observer.md> -->
+<!-- BEGIN <!insert src=./README-coverage-analyzer.md> -->
 
 
-# Instrumentation: Coverage Observer
+# Coverage Analyzer
 
 
 ## Usage Example
 
 ```coffee
-{ enumerate_prototypes_and_method,
-  wrap_methods_of_prototype, } = require 'bricabrac-sfmodules/lib/instrumentation-coverage-observer'
-catalog       = enumerate_prototypes_and_methods Dbric_std
-known_names   = new Set Object.keys catalog
-unused_names  = new Set known_names
-used_names    = new Set()
-handler       = ({ key, }) ->
-  info 'Ωbbdbr_318', key
-  unused_names.delete key
-  used_names.add key
-wrap_methods Dbric_std, handler
-db = new Dbric_std()
-warn 'Ωbbdbr_319', unused_names
-help 'Ωbbdbr_320', used_names
-db._get_acquisition_chain()
-warn 'Ωbbdbr_321', unused_names
-help 'Ωbbdbr_322', used_names
+{ Coverage_analyzer, } = require '../../../apps/bricabrac-sfmodules/lib/coverage-analyzer'
+ca = new Coverage_analyzer()
+ca.wrap_class My_class
+db = new My_class()
+debug 'Ωbbdbr_320', ca
+warn 'Ωbbdbr_320', ca.unused_names
+help 'Ωbbdbr_320', ca.used_names
+help 'Ωbbdbr_320', ca.counts
 ```
 
 
@@ -432,7 +429,7 @@ help 'Ωbbdbr_322', used_names
 
 <!-- * **`[+]`** abandoned prefix schema altogether because implementation effort appears to be unbalanced with -->
 
-<!-- END <!insert src=./README-instrumentation-coverage-observer.md> -->
+<!-- END <!insert src=./README-coverage-analyzer.md> -->
 ------------------------------------------------------------------------------------------------------------
 <!-- BEGIN <!insert src=./README-unsorted.md> -->
 

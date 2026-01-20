@@ -22,20 +22,26 @@
 
 * **`wrap_methods_of_prototypes = ( clasz, handler = -> ) ->`**: given an ES class object and a `handler`
   function, re-define all `function`s defined on `clasz::` (i.e. `clasz.prototype`) and its prototypes to
-  call the handler instead of the original method. The handler will be passed an object `{ name, prototype,
-  method, context, P, callme, }` where `name` is the method's name, `prototype` is the object is was found
-  on, `context` represents the instance (what [the docs]() call `thisArg`, i.e. the first argument to
-  `Function::apply()` and `Function::call()`), `P` is an array with the arguments, and `callme` is a
-  ready-made convenience function defined as `callme = ( -> method.call @, P... ).bind @` that can be called
-  by the handler to execute the original method and obtain its return value. This setup gives handlers a
-  maximum of flexibility to intercept and change arguments, to measure the execution time of methods and to
-  look at and change their return values. A conservative wrapper that only takes notes on which methods have
-  been called would not need to make use of `prototype`, `method`, `context`,  or `P` and could look like
-  this:
+  call the handler instead of the original method. The handler will be passed an object `{ name, fqname,
+  prototype, method, context, P, callme, }` where
+
+  * `name` is the method's name,
+  * `fqname` is the concatenation of the prototype's constructor's name, a dot, and the method's name,
+  * `prototype` is the object is was found on,
+  * `context` represents the instance (what [the docs]() call `thisArg`, i.e. the first argument to
+    `Function::apply()` and `Function::call()`),
+  * `P` is an array with the arguments, and
+  * `callme` is a ready-made convenience function defined as `callme = ( -> method.call @, P... ).bind @`
+    that can be called by the handler to execute the original method and obtain its return value.
+
+  This setup gives handlers a maximum of flexibility to intercept and change arguments, to measure the
+  execution time of methods and to look at and change their return values. A conservative wrapper that only
+  takes notes on which methods have been called would not need to make use of `prototype`, `method`,
+  `context`,  or `P` and could look like this:
 
   ```coffee
   counts = {}
-  handler = ({ name, prototype, method, context, P, callme, }) ->
+  handler = ({ name, fqname, prototype, method, context, P, callme, }) ->
     counts[ name ] = ( counts[ name ] ? 0 ) + 1
     return callme()
   ```
