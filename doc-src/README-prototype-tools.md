@@ -22,10 +22,33 @@
 
 * **`wrap_methods_of_prototypes = ( clasz, handler = -> ) ->`**: given an ES class object and a `handler`
   function, re-define all `function`s defined on `clasz::` (i.e. `clasz.prototype`) and its prototypes to
-  first call the handler as `handler { name, prototype, }, P...` (where `name` is the method's name,
-  `prototype` the object it was found on, and `P...` represents the arguments of the method call), and only
-  then the original method in its original context as `method.call @, P...`.
+  call the handler instead of the original method. The handler will be passed an object `{ name, prototype,
+  method, context, P, callme, }` where `name` is the method's name, `prototype` is the object is was found
+  on, `context` represents the instance (what [the docs]() call `thisArg`, i.e. the first argument to
+  `Function::apply()` and `Function::call()`), `P` is an array with the arguments, and `callme` is a
+  ready-made convenience function defined as `callme = ( -> method.call @, P... ).bind @` that can be called
+  by the handler to execute the original method and obtain its return value. This setup gives handlers a
+  maximum of flexibility to intercept and change arguments, to measure the execution time of methods and to
+  look at and change their return values. A conservative wrapper that only takes notes on which methods have
+  been called would not need to make use of `prototype`, `method`, `context`,  or `P` and could look like
+  this:
 
+  ```coffee
+  counts = {}
+  handler = ({ name, prototype, method, context, P, callme, }) ->
+    counts[ name ] = ( counts[ name ] ? 0 ) + 1
+    return callme()
+  ```
+
+  A more invasive handler could record the return value as `R = method.call context, [ P..., extra_argument,
+  ]` and access `R` before returning it as a proxy for the original method.
+
+  An important characteristic of `wrap_methods_of_prototypes()` is that the class you pass in and all the
+  classes it extends directly or transitively will get their methods wrapped, which will affect the entirety
+  of the current execution context (the process). This is different from instrumenting instances where it is
+  easier to restrict the effects of instrumentation to the scope of, say, a single unit test case—typically
+  each# case in your entire test suite will get to use a wrapped version of the instrumented class once you
+  have instrumented it with `wrap_methods_of_prototypes()`.
 
 ## To Do
 
