@@ -7,6 +7,9 @@
 
 
 #-----------------------------------------------------------------------------------------------------------
+get_fqname = ( prototype, name ) -> "#{prototype?.constructor?.name ? '???'}.#{name}"
+
+#-----------------------------------------------------------------------------------------------------------
 get_prototype_chain = ( x ) ->
   return [] unless x?
   R = [ x, ]
@@ -35,19 +38,20 @@ enumerate_prototypes_and_methods = ( clasz ) ->
       continue if name is 'constructor'
       continue if seen.has name
       continue unless ( typeof descriptor.value ) is 'function'
-      R[ name ] = { prototype, descriptor, }
+      fqname    = get_fqname prototype, name
+      R[ name ] = { fqname, prototype, descriptor, }
     prototype = Object.getPrototypeOf prototype
   return R
 
 #-----------------------------------------------------------------------------------------------------------
 wrap_methods_of_prototypes = ( clasz, handler ) ->
-  for name, { prototype, descriptor, } of enumerate_prototypes_and_methods clasz
-    do ( name, prototype, descriptor ) ->
-      method = descriptor.value
-      descriptor.value = nameit "$wrapped_#{name}", ( P... ) ->
+  for name, { fqname, prototype, descriptor, } of enumerate_prototypes_and_methods clasz
+    do ( name, fqname, prototype, descriptor ) ->
+      method  = descriptor.value
+      descriptor.value = nameit "wrapped$#{name}", ( P... ) ->
         context = @
         callme  = ( -> method.call @, P... ).bind @
-        return handler { name, prototype, method, context, P, callme, }
+        return handler { name, fqname, prototype, method, context, P, callme, }
       Object.defineProperty prototype, name, descriptor
   ;null
 
@@ -57,4 +61,5 @@ module.exports = {
   get_prototype_chain,
   get_all_in_prototype_chain,
   enumerate_prototypes_and_methods,
-  wrap_methods_of_prototypes, }
+  wrap_methods_of_prototypes,
+  internals: { get_fqname, }, }
