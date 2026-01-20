@@ -18,7 +18,7 @@ Db_adapter                      = require 'better-sqlite3'
 { lets,
   freeze,                     } = ( require './letsfreezethat-infra.brics' ).require_letsfreezethat_infra().simple
 { get_all_in_prototype_chain,
-  get_prototype_chain,        } = ( require './unstable-object-tools-brics' ).require_get_prototype_chain()
+  get_prototype_chain,        } = require './prototype-tools'
 { nfa,                        } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
 # { Undumper,                   } = ( require './coarse-sqlite-statement-segmenter.brics' ).require_coarse_sqlite_statement_segmenter()
 #...........................................................................................................

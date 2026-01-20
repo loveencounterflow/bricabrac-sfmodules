@@ -87,8 +87,6 @@ require_coarse_sqlite_statement_segmenter = ->
   #   freeze,                     } = SFMODULES.require_letsfreezethat_infra().simple
   # SQLITE                          = require 'node:sqlite'
   # misfit                          = Symbol 'misfit'
-  # { get_prototype_chain,
-  #   get_all_in_prototype_chain, } = SFMODULES.unstable.require_get_prototype_chain()
   #.........................................................................................................
   ### TAINT move to bric ###
   bind                            = ( ctx, fn ) -> fn.bind ctx

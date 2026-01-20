@@ -27,9 +27,14 @@ help 'Ωbbdbr_322', used_names
 
 
 
-<!-- ## To Do -->
+## To Do
 
-<!-- * **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo` -->
+<!-- * **`[—]`** Move `enumerate_prototypes_and_methods()` and `wrap_methods_of_prototypes()` to `object-tools` -->
+
+## Is Done
+
+* **`[+]`** Move `enumerate_prototypes_and_methods()` and `wrap_methods_of_prototypes()` to `object-tools`
+
 
 <!-- ## Won't Do -->
 
