@@ -75,14 +75,11 @@ class Dbric_std_base extends Dbric
 
   #=========================================================================================================
   @statements:
-    std_get_schema: SQL"""
-      select * from sqlite_schema;"""
-    std_get_tables: SQL"""
-      select * from sqlite_schema where type is 'table';"""
-    std_get_views: SQL"""
-      select * from sqlite_schema where type is 'view';"""
-    std_get_relations: SQL"""
-      select * from sqlite_schema where type in ( 'table', 'view' );"""
+    std_get_schema:     SQL"""select * from sqlite_schema;"""
+    std_get_tables:     SQL"""select * from sqlite_schema where type is 'table';"""
+    std_get_views:      SQL"""select * from sqlite_schema where type is 'view';"""
+    std_get_relations:  SQL"""select * from sqlite_schema where type in ( 'table', 'view' );"""
+    std_get_functions:  SQL"""select * from pragma_function_list();"""
 
   #---------------------------------------------------------------------------------------------------------
   ### select name, builtin, type from pragma_function_list() ###
@@ -92,6 +89,7 @@ class Dbric_std_base extends Dbric
     SQL"""create view std_tables    as select * from sqlite_schema where type is 'table';"""
     SQL"""create view std_views     as select * from sqlite_schema where type is 'view';"""
     SQL"""create view std_relations as select * from sqlite_schema where type in ( 'table', 'view' );"""
+    SQL"""create view std_functions as select * from pragma_function_list();"""
     ]
 
   #=========================================================================================================
