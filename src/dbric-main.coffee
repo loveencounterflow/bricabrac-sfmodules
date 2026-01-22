@@ -20,6 +20,7 @@ Db_adapter                      = require 'better-sqlite3'
 { get_all_in_prototype_chain,
   get_prototype_chain,        } = require './prototype-tools'
 { nfa,                        } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
+# { nameit,                     } = ( require './various-brics' ).require_nameit()
 # { Undumper,                   } = ( require './coarse-sqlite-statement-segmenter.brics' ).require_coarse_sqlite_statement_segmenter()
 #...........................................................................................................
 { E,                          } = require './dbric-errors'
@@ -37,6 +38,7 @@ misfit                          = Symbol 'misfit'
   SQL,                        } = require './dbric-utilities'
 #-----------------------------------------------------------------------------------------------------------
 ignored_prototypes              = null
+
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT put into separate module ###
@@ -96,51 +98,6 @@ templates =
 
 #===========================================================================================================
 class Dbric_classprop_absorber
-
-  ### TAINT use proper typing ###
-  _validate_plugins_property: ( x ) ->
-    unless ( type = type_of x ) is 'list'
-      throw new E.Dbric_expected_list_for_plugins 'Ωdbricm___1', type
-    #.......................................................................................................
-    unless ( delta = x.length - ( new Set x ).size ) is 0
-      throw new E.Dbric_expected_unique_list_for_plugins 'Ωdbricm___2', delta
-    #.......................................................................................................
-    unless ( idx_of_me = x.indexOf 'me' ) > ( idx_of_prototypes = x.indexOf 'prototypes' )
-      throw new E.Dbric_expected_me_before_prototypes_for_plugins 'Ωdbricm___3', idx_of_me, idx_of_prototypes
-    #.......................................................................................................
-    for element, element_idx in x
-      continue if element is 'me'
-      continue if element is 'prototypes'
-      unless element?
-        throw new E.Dbric_expected_object_or_placeholder_for_plugin 'Ωdbricm___4', element_idx
-      unless Reflect.has element, 'exports'
-        throw new E.Dbric_expected_object_with_exports_for_plugin 'Ωdbricm___5', element_idx
-    #.......................................................................................................
-    return x
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_acquisition_chain: ->
-    #.......................................................................................................
-    R           = []
-    clasz       = @constructor
-    prototypes  = get_prototype_chain clasz
-    prototypes  = ( p for p in prototypes when ( p isnt clasz ) and p not in ignored_prototypes ).reverse()
-    plugins     = clasz.plugins ? []
-    plugins.unshift 'prototypes'  unless 'prototypes' in plugins
-    plugins.push    'me'          unless 'me'         in plugins
-    @_validate_plugins_property plugins
-    #.......................................................................................................
-    for entry in plugins
-      switch entry
-        when 'me'
-          R.push { type: 'prototype', value: clasz, }
-        when 'prototypes'
-          for prototype in prototypes
-            R.push { type: 'prototype', value: prototype, }
-        else
-          R.push { type: 'plugin', value: entry, }
-    #.......................................................................................................
-    return R
 
   #---------------------------------------------------------------------------------------------------------
   _get_statements_in_prototype_chain: ( property_name, property_type ) ->
@@ -239,6 +196,99 @@ class Dbric_classprop_absorber
     #.......................................................................................................
     return null
 
+  ###
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
+  ###
+  #---------------------------------------------------------------------------------------------------------
+  ### TAINT use proper typing ###
+  _validate_plugins_property: ( x ) ->
+    unless ( type = type_of x ) is 'list'
+      throw new E.Dbric_expected_list_for_plugins 'Ωdbricm___1', type
+    #.......................................................................................................
+    unless ( delta = x.length - ( new Set x ).size ) is 0
+      throw new E.Dbric_expected_unique_list_for_plugins 'Ωdbricm___2', delta
+    #.......................................................................................................
+    unless ( idx_of_me = x.indexOf 'me' ) > ( idx_of_prototypes = x.indexOf 'prototypes' )
+      throw new E.Dbric_expected_me_before_prototypes_for_plugins 'Ωdbricm___3', idx_of_me, idx_of_prototypes
+    #.......................................................................................................
+    for element, element_idx in x
+      continue if element is 'me'
+      continue if element is 'prototypes'
+      unless element?
+        throw new E.Dbric_expected_object_or_placeholder_for_plugin 'Ωdbricm___4', element_idx
+      unless Reflect.has element, 'exports'
+        throw new E.Dbric_expected_object_with_exports_for_plugin 'Ωdbricm___5', element_idx
+    #.......................................................................................................
+    return x
+
+  #---------------------------------------------------------------------------------------------------------
+  _get_acquisition_chain: ->
+    #.......................................................................................................
+    R           = []
+    clasz       = @constructor
+    prototypes  = get_prototype_chain clasz
+    prototypes  = ( p for p in prototypes when ( p isnt clasz ) and p not in ignored_prototypes ).reverse()
+    plugins     = clasz.plugins ? []
+    plugins.unshift 'prototypes'  unless 'prototypes' in plugins
+    plugins.push    'me'          unless 'me'         in plugins
+    @_validate_plugins_property plugins
+    #.......................................................................................................
+    for entry in plugins
+      switch entry
+        when 'me'
+          R.push { type: 'prototype', contributor: clasz, }
+        when 'prototypes'
+          for prototype in prototypes
+            R.push { type: 'prototype', contributor: prototype, }
+        else
+          R.push { type: 'plugin', contributor: entry, }
+    #.......................................................................................................
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  _collect_contributor_properties: ->
+    clasz             = @constructor
+    acquisition_chain = @_get_acquisition_chain()
+    #.......................................................................................................
+    R                 =
+      build:                []
+      statements:           {}
+      functions:            {}
+      aggregate_functions:  {}
+      window_functions:     {}
+      table_functions:      {}
+      virtual_tables:       {}
+      methods:              {}
+    #.......................................................................................................
+    for { type, contributor, } in acquisition_chain
+      R.build.push item for item in ( contributor.build ? [] )
+      source = if type is 'plugin' then contributor.exports else contributor
+      for property_name, target of R
+        continue if ( type isnt 'plugin' ) and ( property_name is 'methods' )
+        ### TAINT make overwriting behavior configurable ###
+        target[ key ] = value for key, value of ( source[ property_name ] ? {} )
+        # R.statements[          key ] = value for key, value  of ( contributor.statements          ? {} )
+        # R.functions[           key ] = value for key, value  of ( contributor.functions           ? {} )
+        # R.aggregate_functions[ key ] = value for key, value  of ( contributor.aggregate_functions ? {} )
+        # R.window_functions[    key ] = value for key, value  of ( contributor.window_functions    ? {} )
+        # R.table_functions[     key ] = value for key, value  of ( contributor.table_functions     ? {} )
+        # R.virtual_tables[      key ] = value for key, value  of ( contributor.virtual_tables      ? {} )
+        # R.exports[             key ] = value for key, value  of ( contributor.exports             ? {} )
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  _apply_contributions: ->
+    clasz         = @constructor
+    contributions = @_collect_contributor_properties()
+    # debug 'Ωdbricm___1', clasz.name, clasz.build
+    # for statement in contributions.build
+    null
 
 #===========================================================================================================
 class Dbric extends Dbric_classprop_absorber
@@ -260,25 +310,31 @@ class Dbric extends Dbric_classprop_absorber
     db_path                  ?= ':memory:'
     #.......................................................................................................
     clasz                     = @constructor
-    hide @, 'db',               new Db_adapter db_path
+    hide @, 'db',               if cfg.host? then cfg.host.db else new Db_adapter db_path
+    # #.......................................................................................................
+    # for plugin_name, plugin_class of clasz.plugins ? {}
+    #   debug 'Ωdbricm__11', plugin_name, plugin_class
+    #   @[ plugin_name ] = new plugin_class { cfg..., host: @, }
+    #.......................................................................................................
     @cfg                      = freeze { templates.dbric_cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
     hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
     #.......................................................................................................
-    @run_standard_pragmas()
-    @initialize()
-    #.......................................................................................................
-    fn_cfg_template = { deterministic: true, varargs: false, }
-    @_create_udfs()
-    #.......................................................................................................
-    ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
-    contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
-    the instance. ###
-    @is_fresh = not @is_ready
-    @build()
-    @_prepare_statements()
+    unless cfg.host?
+      @run_standard_pragmas()
+      @initialize()
+      #.......................................................................................................
+      fn_cfg_template = { deterministic: true, varargs: false, }
+      @_create_udfs()
+      #.......................................................................................................
+      ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
+      contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
+      the instance. ###
+      @is_fresh = not @is_ready
+      @build()
+      @_prepare_statements()
     return undefined
 
   #---------------------------------------------------------------------------------------------------------
