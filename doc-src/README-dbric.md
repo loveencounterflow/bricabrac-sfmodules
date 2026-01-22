@@ -29,18 +29,21 @@
   messages that quote the offending row; this could be enabled by registering a function with a suitable
   known name, such as `trigger_on_before_insert()`
 
-### API
+## API
 
-#### Class property `plugins`
+### Class property `plugins`
 
+* the class property `plugins` defines the so-called 'acquisition chain', which is the sequence of objects
+  that are visited during the construction of a `Dbric` instance
 * neutral values are `null`, an empty list, `[ 'prototypes', ]`, `[ 'me', ]` and `[ 'prototypes', 'me', ]`
 * in addition to the optional entries `prototypes` and `me`, which indicate the relative positioning of the
-  instance's prototype chain and the instance itself, suitable objects that function as Dbric plugins may be
-  placed
+  instance's prototype chain and the instance itself, suitable objects that act as Dbric plugins may be
+  placed into the
 
-#### `Dbric_classprop_absorber::_get_acquisition_chain()` (private)
+### `Dbric_classprop_absorber::_get_acquisition_chain()` (private)
 
-* returns a list of objects that the capabilities of the `Dbric` instance will be based on
+* returns a list of objects `{ type, contributor, }` that the capabilities of the `Dbric` instance will be
+  based on
 * uses class property `plugins`, q.v.
 * order in list follows logic of `Object.assign()` (i.e. later entries shadow earlier ones)
 * always omitted from the list are `Object.getPrototypeOf {}`, `Object.getPrototypeOf Object`,
