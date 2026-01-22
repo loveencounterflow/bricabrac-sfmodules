@@ -109,18 +109,18 @@ class Dbric_classprop_absorber
       if ( type_of candidate ) is 'function' then R = candidate.call @
       else                                        R = candidate
       unless ( type = type_of R ) is 'text'
-        throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___6', type
+        throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___1', type
       return R
     #.......................................................................................................
     R = switch property_type
       when 'list' then []
       when 'pod'  then {}
-      else throw new E.Dbric_internal_error 'Ωdbricm___7', "unknown property_type #{rpr property_type}"
+      else throw new E.Dbric_internal_error 'Ωdbricm___2', "unknown property_type #{rpr property_type}"
     #.......................................................................................................
     for candidates in candidates_list
       ### TAINT use proper validation ###
       unless ( type = type_of candidates ) is property_type
-        throw new Error "Ωdbricm___8 expected an optional #{property_type} for #{clasz.name}.#{property_name}, got a #{type}"
+        throw new Error "Ωdbricm___3 expected an optional #{property_type} for #{clasz.name}.#{property_name}, got a #{type}"
       #.....................................................................................................
       if property_type is 'list'
         for candidate in candidates
@@ -128,7 +128,7 @@ class Dbric_classprop_absorber
       else
         for statement_name, candidate of candidates
           if Reflect.has R, statement_name
-            throw new E.Dbric_named_statement_exists 'Ωdbricm___9', statement_name
+            throw new E.Dbric_named_statement_exists 'Ωdbricm___4', statement_name
           R[ statement_name ] = statement_from_candidate candidate
     return R
 
@@ -182,25 +182,26 @@ class Dbric_classprop_absorber
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
   ###
+
   #---------------------------------------------------------------------------------------------------------
   ### TAINT use proper typing ###
   _validate_plugins_property: ( x ) ->
     unless ( type = type_of x ) is 'list'
-      throw new E.Dbric_expected_list_for_plugins 'Ωdbricm___1', type
+      throw new E.Dbric_expected_list_for_plugins 'Ωdbricm___5', type
     #.......................................................................................................
     unless ( delta = x.length - ( new Set x ).size ) is 0
-      throw new E.Dbric_expected_unique_list_for_plugins 'Ωdbricm___2', delta
+      throw new E.Dbric_expected_unique_list_for_plugins 'Ωdbricm___6', delta
     #.......................................................................................................
     unless ( idx_of_me = x.indexOf 'me' ) > ( idx_of_prototypes = x.indexOf 'prototypes' )
-      throw new E.Dbric_expected_me_before_prototypes_for_plugins 'Ωdbricm___3', idx_of_me, idx_of_prototypes
+      throw new E.Dbric_expected_me_before_prototypes_for_plugins 'Ωdbricm___7', idx_of_me, idx_of_prototypes
     #.......................................................................................................
     for element, element_idx in x
       continue if element is 'me'
       continue if element is 'prototypes'
       unless element?
-        throw new E.Dbric_expected_object_or_placeholder_for_plugin 'Ωdbricm___4', element_idx
+        throw new E.Dbric_expected_object_or_placeholder_for_plugin 'Ωdbricm___8', element_idx
       unless Reflect.has element, 'exports'
-        throw new E.Dbric_expected_object_with_exports_for_plugin 'Ωdbricm___5', element_idx
+        throw new E.Dbric_expected_object_with_exports_for_plugin 'Ωdbricm___9', element_idx
     #.......................................................................................................
     return x
 
@@ -338,7 +339,7 @@ class Dbric extends Dbric_classprop_absorber
       try
         ( @prepare SQL"drop #{type} #{IDN name};" ).run()
       catch error
-        warn "Ωdbricm__14 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+        warn "Ωdbricm__11 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
     ( @prepare SQL"pragma foreign_keys = on;" ).run()
     return count
 
@@ -352,7 +353,7 @@ class Dbric extends Dbric_classprop_absorber
     @teardown()
     #.......................................................................................................
     for build_statement in build_statements
-      # debug 'Ωdbricm__15', rpr build_statement
+      # debug 'Ωdbricm__12', rpr build_statement
       ( @prepare build_statement ).run()
     #.......................................................................................................
     return build_statements.length
@@ -377,11 +378,11 @@ class Dbric extends Dbric_classprop_absorber
   prepare: ( sql ) ->
     return sql if @isa_statement sql
     unless ( type = type_of sql ) is 'text'
-      throw new Error "Ωdbricm__17 expected a statement or a text, got a #{type}"
+      throw new Error "Ωdbricm__13 expected a statement or a text, got a #{type}"
     try
       R = @db.prepare sql
     catch cause
-      throw new Error "Ωdbricm__18 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
+      throw new Error "Ωdbricm__14 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
     @state.columns = ( try R?.columns?() catch error then null ) ? []
     return R
 
@@ -390,7 +391,7 @@ class Dbric extends Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   create_function: ( cfg ) ->
     if ( type_of @db.function ) isnt 'function'
-      throw new Error "Ωdbricm__19 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
+      throw new Error "Ωdbricm__15 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
     { name,
       overwrite,
       value,
@@ -398,13 +399,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__20 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__16 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.function name, { deterministic, varargs, directOnly, }, value
 
   #---------------------------------------------------------------------------------------------------------
   create_aggregate_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__21 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
+      throw new Error "Ωdbricm__17 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
     { name,
       overwrite,
       start,
@@ -414,13 +415,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__22 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__18 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_window_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__23 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
+      throw new Error "Ωdbricm__19 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
     { name,
       overwrite,
       start,
@@ -431,13 +432,13 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_window_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__24 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__20 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_table_function: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__25 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
+      throw new Error "Ωdbricm__21 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
     { name,
       overwrite,
       parameters,
@@ -447,18 +448,18 @@ class Dbric extends Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_table_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__26 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__22 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   create_virtual_table: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__27 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
+      throw new Error "Ωdbricm__23 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
     { name,
       overwrite,
       create,   } = { templates.create_virtual_table_cfg..., cfg..., }
     if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__28 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__24 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, create
 
 
