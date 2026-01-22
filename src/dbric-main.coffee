@@ -232,17 +232,54 @@ class Dbric_classprop_absorber
     clasz         = @constructor
     contributions = @_collect_contributor_properties()
     #.......................................................................................................
-    @_create_udfs contributions
-    #.......................................................................................................
     for method_name, method of contributions.methods
       hide @, method_name, method
     #.......................................................................................................
-    @_rebuild() if @cfg.rebuild
+    @_create_udfs contributions
+    #.......................................................................................................
+    @_rebuild contributions if @cfg.rebuild
     @_prepare_statements()
     # debug 'Ωdbricm__10', clasz.name, clasz.build
     # for statement in contributions.build
     null
 
+  #=========================================================================================================
+  # TEARDOWN & REBUILD
+  #---------------------------------------------------------------------------------------------------------
+  _get_db_objects: ->
+    R = {}
+    for dbo from ( @db.prepare SQL"select name, type from sqlite_schema" ).iterate()
+      R[ dbo.name ] = { name: dbo.name, type: dbo.type, }
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  teardown: ->
+    count = 0
+    #.......................................................................................................
+    ( @prepare SQL"pragma foreign_keys = off;" ).run()
+    for _, { name, type, } of @_get_db_objects()
+      count++
+      try
+        ( @prepare SQL"drop #{type} #{IDN name};" ).run()
+      catch error
+        warn "Ωdbricm__11 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+    ( @prepare SQL"pragma foreign_keys = on;" ).run()
+    return count
+
+  #---------------------------------------------------------------------------------------------------------
+  _rebuild: ( contributions ) ->
+    clasz                 = @constructor
+    debug 'Ωdbricm___1', contributions.build
+    @teardown()
+    #.......................................................................................................
+    for build_statement in contributions.build
+      ( @prepare build_statement ).run()
+    #.......................................................................................................
+    ;null
+
+
+  #=========================================================================================================
+  # UDFs
   #---------------------------------------------------------------------------------------------------------
   _create_udfs: ( contributions ) ->
     names_of_callables  =
@@ -254,7 +291,7 @@ class Dbric_classprop_absorber
     #.......................................................................................................
     for category in Object.keys names_of_callables
       property_name     = "#{category}s"
-      method_name       = "create_#{category}"
+      method_name       = "_create_#{category}"
       for udf_name, fn_cfg of contributions[ property_name ]
         fn_cfg = lets fn_cfg, ( d ) =>
           d.name ?= udf_name
@@ -267,6 +304,84 @@ class Dbric_classprop_absorber
         @[ method_name ] fn_cfg
     #.......................................................................................................
     return null
+  #---------------------------------------------------------------------------------------------------------
+  _get_udf_names: -> new Set ( name for { name, } from \
+    @walk SQL"select name from pragma_function_list() order by name;" )
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_function: ( cfg ) ->
+    if ( type_of @db.function ) isnt 'function'
+      throw new Error "Ωdbricm__15 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
+    { name,
+      overwrite,
+      value,
+      directOnly,
+      deterministic,
+      varargs,        } = { templates.create_function_cfg..., cfg..., }
+    if ( not overwrite ) and ( @_get_udf_names().has name )
+      throw new Error "Ωdbricm__16 a UDF or built-in function named #{rpr name} has already been declared"
+    return @db.function name, { deterministic, varargs, directOnly, }, value
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_aggregate_function: ( cfg ) ->
+    if ( type_of @db.aggregate ) isnt 'function'
+      throw new Error "Ωdbricm__17 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
+    { name,
+      overwrite,
+      start,
+      step,
+      result,
+      directOnly,
+      deterministic,
+      varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
+    if ( not overwrite ) and ( @_get_udf_names().has name )
+      throw new Error "Ωdbricm__18 a UDF or built-in function named #{rpr name} has already been declared"
+    return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_window_function: ( cfg ) ->
+    if ( type_of @db.aggregate ) isnt 'function'
+      throw new Error "Ωdbricm__19 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
+    { name,
+      overwrite,
+      start,
+      step,
+      inverse,
+      result,
+      directOnly,
+      deterministic,
+      varargs,        } = { templates.create_window_function_cfg..., cfg..., }
+    if ( not overwrite ) and ( @_get_udf_names().has name )
+      throw new Error "Ωdbricm__20 a UDF or built-in function named #{rpr name} has already been declared"
+    return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_table_function: ( cfg ) ->
+    if ( type_of @db.table ) isnt 'function'
+      throw new Error "Ωdbricm__21 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
+    { name,
+      overwrite,
+      parameters,
+      columns,
+      rows,
+      directOnly,
+      deterministic,
+      varargs,        } = { templates.create_table_function_cfg..., cfg..., }
+    if ( not overwrite ) and ( @_get_udf_names().has name )
+      throw new Error "Ωdbricm__22 a UDF or built-in function named #{rpr name} has already been declared"
+    return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_virtual_table: ( cfg ) ->
+    if ( type_of @db.table ) isnt 'function'
+      throw new Error "Ωdbricm__23 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
+    { name,
+      overwrite,
+      create,   } = { templates.create_virtual_table_cfg..., cfg..., }
+    if ( not overwrite ) and ( @_get_udf_names().has name )
+      throw new Error "Ωdbricm__24 a UDF or built-in function named #{rpr name} has already been declared"
+    return @db.table name, create
+
 
 #===========================================================================================================
 class Dbric extends Dbric_classprop_absorber
@@ -318,50 +433,6 @@ class Dbric extends Dbric_classprop_absorber
     return null
 
   #---------------------------------------------------------------------------------------------------------
-  _get_db_objects: ->
-    R = {}
-    for dbo from ( @db.prepare SQL"select name, type from sqlite_schema" ).iterate()
-      R[ dbo.name ] = { name: dbo.name, type: dbo.type, }
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  teardown: ->
-    count = 0
-    #.......................................................................................................
-    ( @prepare SQL"pragma foreign_keys = off;" ).run()
-    for _, { name, type, } of @_get_db_objects()
-      count++
-      try
-        ( @prepare SQL"drop #{type} #{IDN name};" ).run()
-      catch error
-        warn "Ωdbricm__11 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
-    ( @prepare SQL"pragma foreign_keys = on;" ).run()
-    return count
-
-  # #---------------------------------------------------------------------------------------------------------
-  # build: ->
-
-  #---------------------------------------------------------------------------------------------------------
-  _rebuild: ->
-    clasz                 = @constructor
-    build_statements      = @_get_statements_in_prototype_chain 'build', 'list'
-    @teardown()
-    #.......................................................................................................
-    for build_statement in build_statements
-      # debug 'Ωdbricm__12', rpr build_statement
-      ( @prepare build_statement ).run()
-    #.......................................................................................................
-    return build_statements.length
-
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
-  set_getter @::, '_function_names',  -> @_get_function_names()
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_function_names: -> new Set ( name for { name, } from \
-    @walk SQL"select name from pragma_function_list() order by name;" )
-
-  #---------------------------------------------------------------------------------------------------------
   execute: ( sql ) -> @db.exec sql
 
   #---------------------------------------------------------------------------------------------------------
@@ -380,83 +451,6 @@ class Dbric extends Dbric_classprop_absorber
       throw new Error "Ωdbricm__14 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
     @state.columns = ( try R?.columns?() catch error then null ) ? []
     return R
-
-  #=========================================================================================================
-  # FUNCTIONS
-  #---------------------------------------------------------------------------------------------------------
-  create_function: ( cfg ) ->
-    if ( type_of @db.function ) isnt 'function'
-      throw new Error "Ωdbricm__15 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
-    { name,
-      overwrite,
-      value,
-      directOnly,
-      deterministic,
-      varargs,        } = { templates.create_function_cfg..., cfg..., }
-    if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__16 a UDF or built-in function named #{rpr name} has already been declared"
-    return @db.function name, { deterministic, varargs, directOnly, }, value
-
-  #---------------------------------------------------------------------------------------------------------
-  create_aggregate_function: ( cfg ) ->
-    if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__17 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
-    { name,
-      overwrite,
-      start,
-      step,
-      result,
-      directOnly,
-      deterministic,
-      varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
-    if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__18 a UDF or built-in function named #{rpr name} has already been declared"
-    return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
-
-  #---------------------------------------------------------------------------------------------------------
-  create_window_function: ( cfg ) ->
-    if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__19 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
-    { name,
-      overwrite,
-      start,
-      step,
-      inverse,
-      result,
-      directOnly,
-      deterministic,
-      varargs,        } = { templates.create_window_function_cfg..., cfg..., }
-    if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__20 a UDF or built-in function named #{rpr name} has already been declared"
-    return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
-
-  #---------------------------------------------------------------------------------------------------------
-  create_table_function: ( cfg ) ->
-    if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__21 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
-    { name,
-      overwrite,
-      parameters,
-      columns,
-      rows,
-      directOnly,
-      deterministic,
-      varargs,        } = { templates.create_table_function_cfg..., cfg..., }
-    if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__22 a UDF or built-in function named #{rpr name} has already been declared"
-    return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
-
-  #---------------------------------------------------------------------------------------------------------
-  create_virtual_table: ( cfg ) ->
-    if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__23 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
-    { name,
-      overwrite,
-      create,   } = { templates.create_virtual_table_cfg..., cfg..., }
-    if ( not overwrite ) and ( @_function_names.has name )
-      throw new Error "Ωdbricm__24 a UDF or built-in function named #{rpr name} has already been declared"
-    return @db.table name, create
-
 
 #===========================================================================================================
 ignored_prototypes = Object.freeze [
