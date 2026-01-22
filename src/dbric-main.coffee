@@ -140,39 +140,6 @@ class Dbric_classprop_absorber
       @statements[ statement_name ] = @prepare statement
     return null
 
-  #---------------------------------------------------------------------------------------------------------
-  _create_udfs: ->
-    clasz               = @constructor
-    ### TAINT should be put somewhere else? ###
-    names_of_callables  =
-      function:             [ 'value', ]
-      aggregate_function:   [ 'start', 'step', 'result', ]
-      window_function:      [ 'start', 'step', 'inverse', 'result', ]
-      table_function:       [ 'rows', ]
-      virtual_table:        [ 'rows', ]
-    #.......................................................................................................
-    for category in [ 'function', \
-      'aggregate_function', 'window_function', 'table_function', 'virtual_table', ]
-      property_name     = "#{category}s"
-      method_name       = "create_#{category}"
-      declarations_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
-      for declarations in declarations_list
-        continue unless declarations?
-        #...................................................................................................
-        for udf_name, fn_cfg of declarations
-          #.................................................................................................
-          fn_cfg = lets fn_cfg, ( d ) =>
-            d.name ?= udf_name
-            #...............................................................................................
-            ### bind UDFs to `this` ###
-            for name_of_callable in names_of_callables[ category ]
-              continue unless ( callable = d[ name_of_callable ] )?
-              d[ name_of_callable ] = callable.bind @
-            return null
-          @[ method_name ] fn_cfg
-    #.......................................................................................................
-    return null
-
   ###
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
@@ -264,9 +231,42 @@ class Dbric_classprop_absorber
   _apply_contributions: ->
     clasz         = @constructor
     contributions = @_collect_contributor_properties()
-    # debug 'Ωdbricm___1', clasz.name, clasz.build
+    #.......................................................................................................
+    @_create_udfs contributions
+    #.......................................................................................................
+    for method_name, method of contributions.methods
+      hide @, method_name, method
+    #.......................................................................................................
+    @_rebuild() if @cfg.rebuild
+    @_prepare_statements()
+    # debug 'Ωdbricm__10', clasz.name, clasz.build
     # for statement in contributions.build
     null
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_udfs: ( contributions ) ->
+    names_of_callables  =
+      function:             [ 'value', ]
+      aggregate_function:   [ 'start', 'step', 'result', ]
+      window_function:      [ 'start', 'step', 'inverse', 'result', ]
+      table_function:       [ 'rows', ]
+      virtual_table:        [ 'rows', ]
+    #.......................................................................................................
+    for category in Object.keys names_of_callables
+      property_name     = "#{category}s"
+      method_name       = "create_#{category}"
+      for udf_name, fn_cfg of contributions[ property_name ]
+        fn_cfg = lets fn_cfg, ( d ) =>
+          d.name ?= udf_name
+          #.................................................................................................
+          ### bind UDFs to `this` ###
+          for name_of_callable in names_of_callables[ category ]
+            continue unless ( callable = d[ name_of_callable ] )?
+            d[ name_of_callable ] = callable.bind @
+          return null
+        @[ method_name ] fn_cfg
+    #.......................................................................................................
+    return null
 
 #===========================================================================================================
 class Dbric extends Dbric_classprop_absorber
@@ -300,12 +300,7 @@ class Dbric extends Dbric_classprop_absorber
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
     #.......................................................................................................
     @run_standard_pragmas()
-    #.......................................................................................................
-    fn_cfg_template = { deterministic: true, varargs: false, }
-    @_create_udfs()
-    #.......................................................................................................
-    @_rebuild() if @cfg.rebuild
-    @_prepare_statements()
+    @_apply_contributions()
     return undefined
 
   #---------------------------------------------------------------------------------------------------------
