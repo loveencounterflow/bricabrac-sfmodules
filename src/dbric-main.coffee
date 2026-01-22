@@ -65,6 +65,7 @@ build_statement_re = ///
 templates =
   dbric_cfg:
     db_path:        ':memory:'
+    rebuild:        false
   #.........................................................................................................
   create_function_cfg:
     deterministic:  true
@@ -130,30 +131,6 @@ class Dbric_classprop_absorber
             throw new E.Dbric_named_statement_exists 'Ωdbricm___9', statement_name
           R[ statement_name ] = statement_from_candidate candidate
     return R
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_objects_in_build_statements: ->
-    ### TAINT does not yet deal with quoted names ###
-    clasz                 = @constructor
-    db_objects            = {}
-    statement_count       = 0
-    error_count           = 0
-    build_statements      = @_get_statements_in_prototype_chain 'build', 'list'
-    for build_statement in build_statements
-      statement_count++
-      if ( match = build_statement.match build_statement_re )?
-        { name,
-          type, }           = match.groups
-        continue unless name? ### NOTE ignore statements like `insert` ###
-        name                = unquote_name name
-        db_objects[ name ]  = { name, type, }
-      else
-        error_count++
-        name                = "error_#{statement_count}"
-        type                = 'error'
-        message             = "non-conformant statement: #{rpr build_statement}"
-        db_objects[ name ]  = { name, type, message, }
-    return { error_count, statement_count, db_objects, }
 
   #---------------------------------------------------------------------------------------------------------
   _prepare_statements: ->
@@ -300,41 +277,34 @@ class Dbric extends Dbric_classprop_absorber
   @plugins:         null
 
   #---------------------------------------------------------------------------------------------------------
+  @rebuild: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
+    cfg.rebuild = true
+    return new @ cfg
+
+  #---------------------------------------------------------------------------------------------------------
   ### NOTE this unusual arrangement is solely there so we can call `super()` from an instance method ###
   constructor: ( P... ) ->
     super()
     return @_constructor P...
   _constructor: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
-    @_validate_is_property 'is_ready'
     #.......................................................................................................
     db_path                  ?= ':memory:'
     #.......................................................................................................
     clasz                     = @constructor
-    hide @, 'db',               if cfg.host? then cfg.host.db else new Db_adapter db_path
-    # #.......................................................................................................
-    # for plugin_name, plugin_class of clasz.plugins ? {}
-    #   debug 'Ωdbricm__11', plugin_name, plugin_class
-    #   @[ plugin_name ] = new plugin_class { cfg..., host: @, }
+    hide @, 'db',               new Db_adapter db_path
     #.......................................................................................................
     @cfg                      = freeze { templates.dbric_cfg..., db_path, cfg..., }
     hide @, 'statements',       {}
-    hide @, '_w',               null
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
     #.......................................................................................................
-    unless cfg.host?
-      @run_standard_pragmas()
-      @initialize()
-      #.......................................................................................................
-      fn_cfg_template = { deterministic: true, varargs: false, }
-      @_create_udfs()
-      #.......................................................................................................
-      ### NOTE A 'fresh' DB instance is a DB that should be (re-)built and/or (re-)populated; in
-      contradistinction to `Dbric::is_ready`, `Dbric::is_fresh` retains its value for the lifetime of
-      the instance. ###
-      @is_fresh = not @is_ready
-      @build()
-      @_prepare_statements()
+    @run_standard_pragmas()
+    #.......................................................................................................
+    fn_cfg_template = { deterministic: true, varargs: false, }
+    @_create_udfs()
+    #.......................................................................................................
+    @_rebuild() if @cfg.rebuild
+    @_prepare_statements()
     return undefined
 
   #---------------------------------------------------------------------------------------------------------
@@ -350,19 +320,6 @@ class Dbric extends Dbric_classprop_absorber
     # @db.pragma SQL"journal_mode = wal"
     # @db.pragma SQL"foreign_keys = on"
     return null
-
-  #---------------------------------------------------------------------------------------------------------
-  initialize: ->
-    ### This method will be called *before* any build statements are executed and before any statements
-    in `@constructor.statements` are prepared and is a good place to create user-defined functions
-    (UDFs). You probably want to override it with a method that starts with `super()`. ###
-    return null
-
-  #---------------------------------------------------------------------------------------------------------
-  _validate_is_property: ( name ) ->
-    descriptor = get_property_descriptor @, name
-    return null if ( type_of descriptor.get ) is 'function'
-    throw new Error "Ωdbricm__13 not allowed to override property #{rpr name}; use '_get_#{name} instead"
 
   #---------------------------------------------------------------------------------------------------------
   _get_db_objects: ->
@@ -385,11 +342,11 @@ class Dbric extends Dbric_classprop_absorber
     ( @prepare SQL"pragma foreign_keys = on;" ).run()
     return count
 
-  #---------------------------------------------------------------------------------------------------------
-  build: -> if @is_ready then 0 else @rebuild()
+  # #---------------------------------------------------------------------------------------------------------
+  # build: ->
 
   #---------------------------------------------------------------------------------------------------------
-  rebuild: ->
+  _rebuild: ->
     clasz                 = @constructor
     build_statements      = @_get_statements_in_prototype_chain 'build', 'list'
     @teardown()
@@ -402,33 +359,7 @@ class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   set_getter @::, 'super',            -> Object.getPrototypeOf @constructor
-  set_getter @::, 'is_ready',         -> @_get_is_ready()
   set_getter @::, '_function_names',  -> @_get_function_names()
-  set_getter @::, 'w',                -> @_get_w()
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_is_ready: ->
-    { error_count,
-      statement_count,
-      db_objects: expected_db_objects, } = @_get_objects_in_build_statements()
-    #.......................................................................................................
-    if error_count isnt 0
-      messages = []
-      for name, { type, message, } of expected_db_objects
-        continue unless type is 'error'
-        messages.push message
-      throw new Error "Ωdbricm__16 #{error_count} out of #{statement_count} build statement(s) could not be parsed: #{rpr messages}"
-    #.......................................................................................................
-    present_db_objects = @_get_db_objects()
-    for name, { type: expected_type, } of expected_db_objects
-      return false unless present_db_objects[ name ]?.type is expected_type
-    return true
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_w: ->
-    return @_w if @_w?
-    @_w = new @constructor @cfg.db_path, { state: @state, }
-    return @_w
 
   #---------------------------------------------------------------------------------------------------------
   _get_function_names: -> new Set ( name for { name, } from \
