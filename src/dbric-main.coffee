@@ -218,13 +218,6 @@ class Dbric_classprop_absorber
         continue if ( type isnt 'plugin' ) and ( property_name is 'methods' )
         ### TAINT make overwriting behavior configurable ###
         target[ key ] = value for key, value of ( source[ property_name ] ? {} )
-        # R.statements[          key ] = value for key, value  of ( contributor.statements          ? {} )
-        # R.functions[           key ] = value for key, value  of ( contributor.functions           ? {} )
-        # R.aggregate_functions[ key ] = value for key, value  of ( contributor.aggregate_functions ? {} )
-        # R.window_functions[    key ] = value for key, value  of ( contributor.window_functions    ? {} )
-        # R.table_functions[     key ] = value for key, value  of ( contributor.table_functions     ? {} )
-        # R.virtual_tables[      key ] = value for key, value  of ( contributor.virtual_tables      ? {} )
-        # R.exports[             key ] = value for key, value  of ( contributor.exports             ? {} )
     return R
 
   #---------------------------------------------------------------------------------------------------------
