@@ -101,48 +101,6 @@ templates =
 class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
-  _get_statements_in_prototype_chain: ( property_name, property_type ) ->
-    clasz           = @constructor
-    candidates_list = ( get_all_in_prototype_chain clasz, property_name ).reverse()
-    #.......................................................................................................
-    statement_from_candidate = ( candidate ) =>
-      if ( type_of candidate ) is 'function' then R = candidate.call @
-      else                                        R = candidate
-      unless ( type = type_of R ) is 'text'
-        throw new E.Dbric_expected_string_or_string_val_fn 'Ωdbricm___1', type
-      return R
-    #.......................................................................................................
-    R = switch property_type
-      when 'list' then []
-      when 'pod'  then {}
-      else throw new E.Dbric_internal_error 'Ωdbricm___2', "unknown property_type #{rpr property_type}"
-    #.......................................................................................................
-    for candidates in candidates_list
-      ### TAINT use proper validation ###
-      unless ( type = type_of candidates ) is property_type
-        throw new Error "Ωdbricm___3 expected an optional #{property_type} for #{clasz.name}.#{property_name}, got a #{type}"
-      #.....................................................................................................
-      if property_type is 'list'
-        for candidate in candidates
-          R.push statement_from_candidate candidate
-      else
-        for statement_name, candidate of candidates
-          if Reflect.has R, statement_name
-            throw new E.Dbric_named_statement_exists 'Ωdbricm___4', statement_name
-          R[ statement_name ] = statement_from_candidate candidate
-    return R
-
-  ###
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
-  ###
-
-  #---------------------------------------------------------------------------------------------------------
   ### TAINT use proper typing ###
   _validate_plugins_property: ( x ) ->
     unless ( type = type_of x ) is 'list'
