@@ -132,14 +132,6 @@ class Dbric_classprop_absorber
           R[ statement_name ] = statement_from_candidate candidate
     return R
 
-  #---------------------------------------------------------------------------------------------------------
-  _prepare_statements: ->
-    clasz       = @constructor
-    statements  = @_get_statements_in_prototype_chain 'statements', 'pod'
-    for statement_name, statement of statements
-      @statements[ statement_name ] = @prepare statement
-    return null
-
   ###
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
   ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ
@@ -228,16 +220,23 @@ class Dbric_classprop_absorber
     clasz         = @constructor
     contributions = @_collect_contributor_properties()
     #.......................................................................................................
+    @_acquire_methods     contributions
+    @_create_udfs         contributions
+    @_rebuild             contributions if @cfg.rebuild
+    @_acquire_statements  contributions
+    ;null
+
+  #---------------------------------------------------------------------------------------------------------
+  _acquire_methods: ( contributions ) ->
     for method_name, method of contributions.methods
       hide @, method_name, method
-    #.......................................................................................................
-    @_create_udfs contributions
-    #.......................................................................................................
-    @_rebuild contributions if @cfg.rebuild
-    @_prepare_statements()
-    # debug 'Ωdbricm__10', clasz.name, clasz.build
-    # for statement in contributions.build
-    null
+    ;null
+
+  #---------------------------------------------------------------------------------------------------------
+  _acquire_statements: ( contributions ) ->
+    for statement_name, statement of contributions.statements
+      @statements[ statement_name ] = @prepare statement
+    ;null
 
   #=========================================================================================================
   # TEARDOWN & REBUILD
