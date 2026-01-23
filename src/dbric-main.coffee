@@ -212,10 +212,13 @@ class Dbric_classprop_absorber
       methods:              {}
     #.......................................................................................................
     for { type, contributor, } in acquisition_chain
-      R.build.push item for item in ( contributor.build ? [] )
       source = if type is 'plugin' then contributor.exports else contributor
+      if ( Object.hasOwn source, 'build' )
+        R.build.push item for item in ( source.build ? [] )
       for property_name, target of R
-        continue if ( type isnt 'plugin' ) and ( property_name is 'methods' )
+        continue if ( property_name is 'build' )
+        continue if ( property_name is 'methods' ) and ( type isnt 'plugin' )
+        continue if ( not Object.hasOwn source, property_name )
         ### TAINT make overwriting behavior configurable ###
         target[ key ] = value for key, value of ( source[ property_name ] ? {} )
     return R
