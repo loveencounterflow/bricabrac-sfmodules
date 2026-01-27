@@ -101,6 +101,11 @@ templates =
 class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
+
+  #---------------------------------------------------------------------------------------------------------
+  _resolve_function: ( x ) -> if ( ( type_of x ) is 'function' ) then ( x.call @ ) else x
+
+  #---------------------------------------------------------------------------------------------------------
   ### TAINT use proper typing ###
   _validate_plugins_property: ( x ) ->
     unless ( type = type_of x ) is 'list'
@@ -193,7 +198,7 @@ class Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   _acquire_statements: ( contributions ) ->
     for statement_name, statement of contributions.statements
-      @statements[ statement_name ] = @prepare statement
+      @statements[ statement_name ] = @prepare @_resolve_function statement
     ;null
 
   #=========================================================================================================
@@ -225,7 +230,7 @@ class Dbric_classprop_absorber
     @teardown()
     #.......................................................................................................
     for build_statement in contributions.build
-      ( @prepare build_statement ).run()
+      ( @prepare @_resolve_function build_statement ).run()
     #.......................................................................................................
     ;null
 
@@ -246,6 +251,7 @@ class Dbric_classprop_absorber
       method_name       = "_create_#{category}"
       #.....................................................................................................
       for udf_name, fn_cfg of contributions[ property_name ]
+        fn_cfg = @_resolve_function fn_cfg
         fn_cfg = lets fn_cfg, ( d ) =>
           d.name ?= udf_name
           #.................................................................................................
