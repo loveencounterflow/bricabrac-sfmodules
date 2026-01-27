@@ -66,6 +66,8 @@ templates =
   dbric_cfg:
     db_path:        ':memory:'
     rebuild:        false
+    prefix:         misfit
+    # overwrite:      misfit
   #.........................................................................................................
   create_function_cfg:
     deterministic:  true
@@ -101,6 +103,8 @@ templates =
 class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
+  @prefix:    null
+  # @overwrite: false
 
   #---------------------------------------------------------------------------------------------------------
   _resolve_function: ( x ) -> if ( ( type_of x ) is 'function' ) then ( x.call @ ) else x
@@ -351,6 +355,8 @@ class Dbric extends Dbric_classprop_absorber
   @statements:      {}
   @build:           null
   @plugins:         null
+  # @overwrite:       false
+  # @prefix:          null
 
   #---------------------------------------------------------------------------------------------------------
   @rebuild: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
@@ -369,7 +375,11 @@ class Dbric extends Dbric_classprop_absorber
     clasz                     = @constructor
     hide @, 'db',               new Db_adapter db_path
     #.......................................................................................................
-    @cfg                      = freeze { templates.dbric_cfg..., db_path, cfg..., }
+    extra                     = {}
+    cfg                       = { templates.dbric_cfg..., db_path, cfg..., }
+    cfg.prefix                = clasz.prefix    if cfg.prefix     is misfit
+    # cfg.overwrite             = clasz.overwrite if cfg.overwrite  is misfit
+    @cfg                      = freeze cfg
     hide @, 'statements',       {}
     hide @, '_statement_class', ( @db.prepare SQL"select 1;" ).constructor
     hide @, 'state',            ( cfg?.state ) ? { columns: null, }
