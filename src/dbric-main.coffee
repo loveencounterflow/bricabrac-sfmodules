@@ -40,26 +40,26 @@ misfit                          = Symbol 'misfit'
 ignored_prototypes              = null
 
 
-#-----------------------------------------------------------------------------------------------------------
-### TAINT put into separate module ###
-### TAINT rewrite with `get_all_in_prototype_chain()` ###
-### TAINT rewrite as `get_first_descriptor_in_prototype_chain()`, `get_first_in_prototype_chain()` ###
-get_property_descriptor = ( x, name, fallback = misfit ) ->
-  while x?
-    return R if ( R = Object.getOwnPropertyDescriptor x, name )?
-    x = Object.getPrototypeOf x
-  return fallback unless fallback is misfit
-  throw new Error "unable to find descriptor for property #{String(name)} not found on object or its prototypes"
+# #-----------------------------------------------------------------------------------------------------------
+# ### TAINT put into separate module ###
+# ### TAINT rewrite with `get_all_in_prototype_chain()` ###
+# ### TAINT rewrite as `get_first_descriptor_in_prototype_chain()`, `get_first_in_prototype_chain()` ###
+# get_property_descriptor = ( x, name, fallback = misfit ) ->
+#   while x?
+#     return R if ( R = Object.getOwnPropertyDescriptor x, name )?
+#     x = Object.getPrototypeOf x
+#   return fallback unless fallback is misfit
+#   throw new Error "unable to find descriptor for property #{String(name)} not found on object or its prototypes"
 
-#-----------------------------------------------------------------------------------------------------------
-build_statement_re = ///
-  ^ \s*
-  insert | (
-    ( create | alter ) \s+
-    (?<type> table | view | index | trigger ) \s+
-    (?<name> \S+ ) \s+
-    )
-  ///is
+# #-----------------------------------------------------------------------------------------------------------
+# build_statement_re = ///
+#   ^ \s*
+#   insert | (
+#     ( create | alter ) \s+
+#     (?<type> table | view | index | trigger ) \s+
+#     (?<name> \S+ ) \s+
+#     )
+#   ///is
 
 #-----------------------------------------------------------------------------------------------------------
 templates =
@@ -221,7 +221,7 @@ class Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
   _rebuild: ( contributions ) ->
-    clasz                 = @constructor
+    clasz = @constructor
     @teardown()
     #.......................................................................................................
     for build_statement in contributions.build
@@ -244,6 +244,7 @@ class Dbric_classprop_absorber
     for category in Object.keys names_of_callables
       property_name     = "#{category}s"
       method_name       = "_create_#{category}"
+      #.....................................................................................................
       for udf_name, fn_cfg of contributions[ property_name ]
         fn_cfg = lets fn_cfg, ( d ) =>
           d.name ?= udf_name
@@ -256,6 +257,7 @@ class Dbric_classprop_absorber
         @[ method_name ] fn_cfg
     #.......................................................................................................
     return null
+
   #---------------------------------------------------------------------------------------------------------
   _get_udf_names: -> new Set ( name for { name, } from \
     @walk SQL"select name from pragma_function_list() order by name;" )
@@ -368,7 +370,7 @@ class Dbric extends Dbric_classprop_absorber
     #.......................................................................................................
     @run_standard_pragmas()
     @_apply_contributions()
-    return undefined
+    ;undefined
 
   #---------------------------------------------------------------------------------------------------------
   isa_statement: ( x ) -> x instanceof @_statement_class
@@ -382,7 +384,7 @@ class Dbric extends Dbric_classprop_absorber
     ( @db.prepare SQL"pragma strict       = on;"    ).run()
     # @db.pragma SQL"journal_mode = wal"
     # @db.pragma SQL"foreign_keys = on"
-    return null
+    ;null
 
   #---------------------------------------------------------------------------------------------------------
   execute: ( sql ) -> @db.exec sql
@@ -430,7 +432,6 @@ module.exports = {
     E,
     ignored_prototypes,
     type_of,
-    build_statement_re,
     templates, }
   }
 
