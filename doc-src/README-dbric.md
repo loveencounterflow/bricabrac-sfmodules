@@ -29,6 +29,39 @@
   messages that quote the offending row; this could be enabled by registering a function with a suitable
   known name, such as `trigger_on_before_insert()`
 
+## Overwriting / Overriding / Shadowing Behavior
+
+* pending; probably to be handled by life cycle methods
+
+<!--
+When DB instances are built with chains of prototypes and&nbsp;/&nbsp;or plugins there's always the
+possibility that the name for a method, a user-defined function (UDF) or a statement is being
+unintentionally used more than once.
+
+Users are encouraged to set the class property and&nbsp;/&nbsp;or instance configuration setting `prefix`
+and use that setting when defining properties of a given `Dbric` derivative class or DBric plugin. The
+appropriate usage of the prefix is up to the user and not enforced in any way.
+
+Each time a `Dbric` instance is set up, the names declared on derived classes and in plugins will be checked
+for duplication. All duplicate names that have been encountered in the process will be catalogued in a
+property `Dbric::_duplicates` which is intended to be checked and reacted upone from within the
+`Dbric::_finalize()` method. (Both items are marked as private so as to signal that mere consumers of
+classes or plugins don't have to worry about them; knowledge of their use is only necessary for the
+developer of derivatives.)
+
+The items listed in `Dbric::_duplicates` include `counts`, `methods`, `statements`, `udfs`:
+* `methods` lists all shadowing methods defined by plugins; it does *not* list any shadowing methods from
+  derived classes. Further, a plugin repeating method names already defined by a class or another plugin do
+  not cause an error in the default implementation. The reason for this behavior is that in Object Oriented
+  Programming the re-use of method names is considered the normal course of action, not something to be
+  avoided.
+* `statements` lists all statement names that are used more than once.
+* `udfs` lists all names of UDFs that are used more than once and that are not licensed by an `overwrite:
+  true` setting in the UDF declaration.
+* In the default implementation, a non-empty `Dbric::_duplicates.statements` or `Dbric::_duplicates.udfs`
+  will cause an error to be thrown. Override `Dbric::_finalize()` to change that behavior.
+-->
+
 ## API
 
 ### Class property `plugins`
@@ -39,6 +72,23 @@
 * in addition to the optional entries `prototypes` and `me`, which indicate the relative positioning of the
   instance's prototype chain and the instance itself, suitable objects that act as Dbric plugins may be
   placed into the
+
+#### Using Ersatz `super()` in Plugin `methods`
+
+* functions defined in the `exports.methods` member of a plugin object will become methods of the database
+  adapter instance and can be used like regular (non-plugin) methods
+* a hitch with defining methods on a further unspecified object is that JavaScript limits the use of
+  `super()` to instance methods
+* for this reason, instead of using `super()` in your plugin methods, use the 'Ersatz Super Device'
+  `@_super()`.
+* `@_super()` expects needs to be told the name of the upstream method to be called. Typically, within a
+  plugin method `frob()`, when you want to call the original version of that method, you'd use `@_super
+  'frob'`, followed by whatever are deemed the appropriate arguments. Other than that, any valid API name
+  can be used when calling `@_super()`.
+* In any event, `@_super method_name` will refer to the *instance's* method named `method_name`, *not*
+  another plugin's method having the same name. Just as with named `statements`, methods coming later in the
+  plugin chain will replace values of the same name that have been provided by a plugin coming earlier in
+  the chain.
 
 ### `Dbric_classprop_absorber::_get_acquisition_chain()` (private)
 
@@ -52,7 +102,7 @@
 
 ## To Do
 
-* **`[—]`** DBric: paramterized views as in DBay `parametrized-views.demo`
+* **`[—]`** DBric: parameterized views as in DBay `parametrized-views.demo`
 * **`[—]`** adapter for recutils?
   * https://www.gnu.org/software/recutils/manual/recutils.html
   * https://news.ycombinator.com/item?id=46265811
@@ -131,6 +181,10 @@ class My_db extends Dbric_std
   @create_window_udf_your_name_here:        ...
   @create_virtual_table_udf_your_name_here: ...
 ```
+
+* **`[—]`** what about transitive plugins, i.e. plugins as declared by a base class?
+* **`[—]`** implement life cycle methods to be called at various points during instantiation; might
+  use these to handle name clashes
 
 ## Won't Do
 
