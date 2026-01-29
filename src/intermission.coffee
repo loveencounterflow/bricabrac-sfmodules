@@ -5,7 +5,7 @@
 #===========================================================================================================
 { debug,                } = console
 { freeze,               } = Object
-IFN                       = require './../dependencies/intervals-fn-lib.ts'
+IFN                       = require './../dependencies/intervals-fn-lib.js'
 { T,                    } = require './intermission-types'
 #...........................................................................................................
 { nfa,                  } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
