@@ -41,11 +41,12 @@ A collection of (sometimes not-so) small-ish utilities
       - [JetStream: Note on Picking Values](#jetstream-note-on-picking-values)
       - [JetStream: Selectors](#jetstream-selectors)
       - [See Also](#see-also)
+      - [To Do](#to-do-5)
     - [Loupe, Show](#loupe-show)
     - [Random](#random)
       - [Random: Implementation Structure](#random-implementation-structure)
         - [References](#references)
-        - [To Do](#to-do-5)
+        - [To Do](#to-do-6)
     - [Benchmark](#benchmark)
     - [Errors](#errors)
     - [Remap](#remap)
@@ -863,6 +864,14 @@ stream.push 'data', '#first', '#last', ( d ) ->
 #### See Also
 
 * in case more complicated selectors must be parsed: https://github.com/fb55/css-what
+
+
+#### To Do
+
+* **`[—]`** presently selectors can only be added by calling `Jetstream::push()`; the only way to make a
+  construct like `Jetstream::push $transform()` include selectors is by making `$transform()` return a list
+  `[ selectors, transform, ]` and then apply as `Jetstream::push $transform()...`. This is unfortunate as
+  now we have to know whther or not a given transform-constructor includes selectors or not
 
 ### Loupe, Show
 
