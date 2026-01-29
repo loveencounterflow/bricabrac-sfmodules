@@ -351,6 +351,14 @@ stream.push 'data', '#first', '#last', ( d ) ->
 
 * in case more complicated selectors must be parsed: https://github.com/fb55/css-what
 
+
+#### To Do
+
+* **`[—]`** presently selectors can only be added by calling `Jetstream::push()`; the only way to make a
+  construct like `Jetstream::push $transform()` include selectors is by making `$transform()` return a list
+  `[ selectors, transform, ]` and then apply as `Jetstream::push $transform()...`. This is unfortunate as
+  now we have to know whther or not a given transform-constructor includes selectors or not
+
 ### Loupe, Show
 
 * add `cfg` parameter
