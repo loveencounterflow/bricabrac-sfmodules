@@ -173,7 +173,7 @@ class Dbric_classprop_absorber
     for { type, contributor, } in acquisition_chain
       source = if type is 'plugin' then contributor.exports else contributor
       if ( Object.hasOwn source, 'build' )
-        R.build.push item for item in ( source.build ? [] )
+        R.build.push item for item in ( @_resolve_function source.build ? [] )
       for property_name, target of R
         continue if ( property_name is 'build' )
         continue if ( property_name is 'methods' ) and ( type isnt 'plugin' )
