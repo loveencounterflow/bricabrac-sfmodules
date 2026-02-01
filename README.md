@@ -246,6 +246,7 @@ class My_db extends Dbric_std
 * **`[—]`** what about transitive plugins, i.e. plugins as declared by a base class?
 * **`[—]`** implement life cycle methods to be called at various points during instantiation; might
   use these to handle name clashes
+* **`[—]`** plugins should get to define their own `cfg` values under `Dbric::cfg.$prefix`
 
 ## Won't Do
 
