@@ -37,8 +37,6 @@ templates =
   scatter_cfg:
     hoard:      null
     data:       null
-    sort:       false
-    normalize:  false
   #.........................................................................................................
   scatter_add:
     lo:         null
@@ -117,14 +115,10 @@ class Run
 class Scatter
 
   #---------------------------------------------------------------------------------------------------------
-  constructor: ( hoard, cfg ) ->
+  constructor: ( hoard, data ) ->
     ### TAINT validate ###
-    ### TAINT should freeze data ###
-    [ cfg,
-      { data, },  ] = deploy { templates.scatter_cfg..., cfg..., }, [ 'sort', 'normalize', ], [ 'data', ]
-    @data           = freeze data
+    set_readonly @, 'data', if data? then freeze data else data
     @runs           = []
-    hide @, 'cfg',    freeze cfg
     hide @, 'hoard',  hoard
     hide @, 'state',  { is_normalized: true, }
     ;undefined
@@ -189,8 +183,6 @@ class Scatter
   #---------------------------------------------------------------------------------------------------------
   add_run: ( P... ) ->
     @_insert @hoard.create_run P...
-    if @cfg.normalize then @normalize()
-    else if @cfg.sort then @sort()
     ;null
 
   #---------------------------------------------------------------------------------------------------------
