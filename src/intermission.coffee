@@ -122,7 +122,7 @@ class Run
 class Scatter
 
   #---------------------------------------------------------------------------------------------------------
-  constructor: ( hoard, data ) ->
+  constructor: ( hoard, data = null ) ->
     ### TAINT validate ###
     set_readonly @, 'data', if data? then freeze data else data
     set_readonly @, 'rowid', "t:hrd:scatters,R=#{hoard.scatters.length + 1}"
