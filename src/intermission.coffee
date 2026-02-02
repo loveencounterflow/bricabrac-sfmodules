@@ -25,6 +25,13 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
   IDN,
   VEC,                  } = require './dbric'
 
+#===========================================================================================================
+### TAINT move to dedicated module ###
+### NOTE not using `letsfreezethat` to avoid issue with deep-freezing `Run` instances ###
+lets = ( original, modifier = null ) ->
+  draft = if Array.isArray then [ original..., ] else { original..., }
+  modifier draft
+  return freeze draft
 
 #===========================================================================================================
 templates =
@@ -118,9 +125,11 @@ class Scatter
   constructor: ( hoard, data ) ->
     ### TAINT validate ###
     set_readonly @, 'data', if data? then freeze data else data
-    @runs           = []
+    set_readonly @, 'rowid', "t:hrd:scatters,R=#{hoard.scatters.length + 1}"
+    # set_readonly @, 'runs', freeze []
+    @runs = freeze []
     hide @, 'hoard',  hoard
-    hide @, 'state',  { is_normalized: true, }
+    hide @, 'state',  { is_normalized: false, }
     ;undefined
 
   #---------------------------------------------------------------------------------------------------------
@@ -160,24 +169,18 @@ class Scatter
   _insert: ( run ) ->
     ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
     sorting all ranges when needed by a method like `Scatter::normalize()` ###
-    # run.rowid = "t:hrd:runs,R=#{@runs.length + 1}"
-    @runs.push run
+    @runs = lets @runs, ( runs ) => runs.push run
     @state.is_normalized = false
     ;null
 
   #---------------------------------------------------------------------------------------------------------
-  sort: ->
-    @runs.sort ( a, b ) ->
+  _sort_runs: ( runs ) ->
+    runs.sort ( a, b ) ->
       return +1 if a.lo > b.lo
       return -1 if a.lo < b.lo
       return +1 if a.hi > b.hi
       return -1 if a.hi < b.hi
       return  0
-    ;null
-
-  #---------------------------------------------------------------------------------------------------------
-  clear: ->
-    @runs.length = []
     ;null
 
   #---------------------------------------------------------------------------------------------------------
@@ -190,11 +193,18 @@ class Scatter
 
   #---------------------------------------------------------------------------------------------------------
   normalize: ->
-    @sort()
-    halfopens = IFN.simplify ( run.as_halfopen() for run in @runs )
-    @clear()
-    @runs.push Run.from_halfopen halfopen for halfopen in halfopens
-    @state.is_normalized = true
+    @runs = lets @runs, ( runs ) =>
+      @_sort_runs runs
+      halfopens   = IFN.simplify ( run.as_halfopen() for run in runs )
+      runs.length = 0
+      for halfopen, idx in halfopens
+        run = Run.from_halfopen halfopen
+        ### TAINT use API ###
+        set_readonly run, 'rowid',    "t:hrd:runs,R=#{idx + 1}"
+        set_readonly run, 'scatter',  @rowid
+        runs.push run
+      ;null
+      @state.is_normalized = true
     ;null
 
   #---------------------------------------------------------------------------------------------------------
@@ -243,11 +253,8 @@ class Hoard
     return new Run @_get_hi_and_lo cfg
 
   #---------------------------------------------------------------------------------------------------------
-  create_scatter: ( P... ) -> new Scatter  @, P...
-
-  #---------------------------------------------------------------------------------------------------------
   add_scatter: ( P... ) ->
-    R = @create_scatter P...
+    R = new Scatter @, P...
     @scatters.push R
     return R
 
