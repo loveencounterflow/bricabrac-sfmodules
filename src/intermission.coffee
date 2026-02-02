@@ -188,7 +188,7 @@ class Scatter
     @_insert @hoard.create_run P...
     if @cfg.normalize then @normalize()
     else if @cfg.sort then @sort()
-    return null
+    ;null
 
   #---------------------------------------------------------------------------------------------------------
   add_codepoints_of: ( texts... ) -> @add_run chr for chr from new Set texts.join ''
@@ -200,7 +200,7 @@ class Scatter
     @clear()
     @runs.push Run.from_halfopen halfopen for halfopen in halfopens
     @state.is_normalized = true
-    return null
+    ;null
 
   #---------------------------------------------------------------------------------------------------------
   contains: ( probe ) ->
