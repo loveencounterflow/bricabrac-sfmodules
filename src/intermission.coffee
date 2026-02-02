@@ -164,6 +164,7 @@ class Scatter
   _insert: ( run ) ->
     ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
     sorting all ranges when needed by a method like `Scatter::normalize()` ###
+    # run.rowid = "t:hrd:runs,R=#{@runs.length + 1}"
     @runs.push run
     @state.is_normalized = false
     ;null
