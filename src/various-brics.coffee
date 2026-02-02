@@ -120,6 +120,17 @@ VARIOUS_BRICS =
   #===========================================================================================================
   ### NOTE Future Single-File Module ###
   require_managed_property_tools: ->
+    set_readonly = ( object, name, value ) -> Object.defineProperty object, name,
+        enumerable:   true
+        writable:     false
+        configurable: false
+        value:        value
+    set_hidden_readonly = ( object, name, value ) -> Object.defineProperty object, name,
+        enumerable:   false
+        writable:     false
+        configurable: false
+        value:        value
+    ### TAINT should use `Object.defineProperty()` for `set_getter()` ###
     set_getter = ( object, name, get ) -> Object.defineProperties object, { [name]: { get, }, }
     hide = ( object, name, value ) => Object.defineProperty object, name,
         enumerable:   false
@@ -128,7 +139,7 @@ VARIOUS_BRICS =
         value:        value
 
     #---------------------------------------------------------------------------------------------------------
-    return { set_getter, hide, }
+    return { set_readonly, set_hidden_readonly, set_getter, hide, }
 
   #===========================================================================================================
   ### NOTE Future Single-File Module ###

@@ -12,6 +12,8 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
 { nameit,               } = ( require './various-brics' ).require_nameit()
 { type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
 { hide,
+  set_readonly,
+  set_hidden_readonly,
   set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
 { rpr,                  } = ( require './loupe-brics' ).require_loupe()
 { deploy,               } = ( require './unstable-object-tools-brics' ).require_deploy()
@@ -78,15 +80,15 @@ class Run
 
   #---------------------------------------------------------------------------------------------------------
   constructor: ({ lo, hi, }) ->
-    @lo   = lo
-    @hi   = hi
+    ### TAINT use typing ###
+    # throw new Error ""
+    set_readonly        @, 'lo',   lo
+    set_readonly        @, 'hi',   hi
+    set_hidden_readonly @, 'size', hi - lo + 1
     ;undefined
 
   #---------------------------------------------------------------------------------------------------------
   [Symbol.iterator]: -> yield from [ @lo .. @hi ]
-
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'size', -> @hi - @lo + 1 ### TAINT consider to make `Run`s immutable, then size is a constant ###
 
   #---------------------------------------------------------------------------------------------------------
   as_halfopen:                -> { start: @lo, end: @hi + 1, }
