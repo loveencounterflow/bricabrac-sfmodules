@@ -200,9 +200,9 @@ class Scatter
       for halfopen, idx in halfopens
         run = Run.from_halfopen halfopen
         ### TAINT use API ###
-        set_readonly run, 'rowid',    "t:hrd:runs,R=#{idx + 1}"
-        set_readonly run, 'scatter',  @rowid
-        runs.push run
+        run.rowid   = @hoard._get_next_run_rowid()
+        run.scatter =  @rowid
+        runs.push freeze run
       ;null
       @state.is_normalized = true
     ;null
@@ -243,7 +243,7 @@ class Hoard
     @gaps = []
     @hits = []
     hide @, 'scatters', []
-    hide @, 'state',    { is_normalized: true, }
+    hide @, 'state',    { is_normalized: true, run_rowid: 0, }
     ;undefined
 
   #---------------------------------------------------------------------------------------------------------
@@ -251,6 +251,9 @@ class Hoard
     # debug 'Ωim___1', { lo, hi, cfg, }
     # debug 'Ωim___2', @_get_hi_and_lo cfg
     return new Run @_get_hi_and_lo cfg
+
+  #---------------------------------------------------------------------------------------------------------
+  _get_next_run_rowid: -> @state.run_rowid++; "t:hrd:runs,R=#{@state.run_rowid}"
 
   #---------------------------------------------------------------------------------------------------------
   add_scatter: ( P... ) ->
