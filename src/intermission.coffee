@@ -122,14 +122,14 @@ class Run
 class Scatter
 
   #---------------------------------------------------------------------------------------------------------
-  constructor: ( hoard, data = null ) ->
+  constructor: ( hoard, data = null, { rowid, is_normalized, }={} ) ->
     ### TAINT validate ###
     set_readonly @, 'data', if data? then freeze data else data
-    set_readonly @, 'rowid', "t:hrd:scatters,R=#{hoard.scatters.length + 1}"
+    set_readonly @, 'rowid', rowid ? "t:hrd:scatters,R=#{hoard.scatters.length + 1}"
     # set_readonly @, 'runs', freeze []
     @runs = freeze []
     hide @, 'hoard',  hoard
-    hide @, 'state',  { is_normalized: false, }
+    hide @, 'state',  { is_normalized: is_normalized ? false, }
     ;undefined
 
   #---------------------------------------------------------------------------------------------------------
