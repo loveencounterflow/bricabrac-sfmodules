@@ -140,5 +140,6 @@
 * **`[—]`** `rowid`s of runs need to be unique across scatters
 * **`[—]`** add ability to name scatters (and runs?)
 * **`[—]`** implement `Hoard::normalize()`
+* **`[—]`** implement ability to create a `Scatter`-like object from any number of existing scatters
 
 
