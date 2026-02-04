@@ -137,7 +137,7 @@ class Scatter
 
   #---------------------------------------------------------------------------------------------------------
   walk: ->
-    @normalize() unless @is_normalized
+    @normalize()
     yield from run for run in @runs
     ;null
 
@@ -192,12 +192,13 @@ class Scatter
   add_codepoints_of: ( texts... ) -> @add_run chr for chr from new Set texts.join ''
 
   #---------------------------------------------------------------------------------------------------------
-  normalize: ->
+  normalize: ( force = false ) ->
+    return null if @is_normalized and ( not force )
     @runs = lets @runs, ( runs ) =>
       @_sort_runs runs
       halfopens   = IFN.simplify ( run.as_halfopen() for run in runs )
       runs.length = 0
-      for halfopen, idx in halfopens
+      for halfopen in halfopens
         run = Run.from_halfopen halfopen
         ### TAINT use API ###
         run.rowid   = @hoard._get_next_run_rowid()
@@ -209,7 +210,7 @@ class Scatter
 
   #---------------------------------------------------------------------------------------------------------
   contains: ( probe ) ->
-    @normalize() unless @is_normalized
+    @normalize()
     { min, max, } = @minmax
     #.......................................................................................................
     switch true
