@@ -137,3 +137,8 @@
 
 * **`[—]`** reject floats
 * **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
+* **`[—]`** `rowid`s of runs need to be unique across scatters
+* **`[—]`** add ability to name scatters (and runs?)
+* **`[—]`** implement `Hoard::normalize()`
+
+
