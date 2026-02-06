@@ -41,6 +41,15 @@
   `lo <= i <= hi`; empty intervals are not representable, nor are non-contiguous runs possible; for
   single-integer runs `lo == i == hi` holds.
 
+* **Ranges** or **Sets**: indiscriminately used to refer to a possibly further unspecified combination of
+  runs and / or scatters with no commitment to the actual implementation. E.g. "the range, the set of
+  accent-bearing Latin letters" makes sense as a concept; its exhaustive implementation in Unicode will at
+  least need to make use of a number of runs (and possibly, depending on needs, a number of scatters)
+  because the relevant codepoints do not form a contiguous series in Unicode. We can refer to "the set of
+  accent-bearing Latin letters" with the same ease like "the set of codepoints matched by `/[A-Z]/`"
+  although the latter *can* be represented by a single run (except `Hoard::base` introduces gaps in that
+  area).
+
 * **Scatter**: A set of **Run**s that is associated with a shared set of data. For example, the Unicode
   codepoints that are Latin letters and that are representable with a single UTF-8 byte is commonly seen in
   the regular expression `/[A-Za-z]/` which in our model can be represented as a scatter `[ (0x41,0x5a),
@@ -133,6 +142,20 @@
       );
     ```
 
+## Monopolarity and `Hoard::base`
+
+There are no positive vs negative runs or scatters; all runs in all scatters define what points are
+included, and the points they do not contain, they exclude. It would be possible to use bipolar scatters or
+runs and use explicit 'negative' ranges to exclude points, but that would unduly complicate matters. Instead
+what we do is restrict ourselves to monopolar (always positive) ranges. There is, however, one way to universally
+exclude points from any additive operation on a hoard, implemented by `Hoard::base`, which is a positive scatter
+whose absent points will be silently removed from any additive action on a hoard. Put plainly, when the base
+set of points does not include a point that is explicitly or implicitly added to any regular scatter, that point,
+although mentioned in the additive action, will then not appear in the set of points covered by said scatter.
+
+
+
+
 ## To Do
 
 * **`[—]`** reject floats
@@ -141,5 +164,9 @@
 * **`[—]`** add ability to name scatters (and runs?)
 * **`[—]`** implement `Hoard::normalize()`
 * **`[—]`** implement ability to create a `Scatter`-like object from any number of existing scatters
+* **`[—]`** implement `Scatter::subtract_run()` / `Scatter::subtract()`
+* **`[—]`** implement `Hoard::base`
+* **`[—]`** implement a setting to determine whether points added to a scatter but not in `Hoard::base`
+  should cause an error or be dropped silently
 
 
