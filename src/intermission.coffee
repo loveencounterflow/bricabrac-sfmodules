@@ -358,7 +358,7 @@ class Hoard
 
 #===========================================================================================================
 module.exports = do =>
-  internals = Object.freeze { Run, Scatter, templates, IFN, lets, }
+  internals = Object.freeze { Run, Scatter, templates, IFN, lets, typespace: T, }
   return {
     Hoard,
     Scatter,
