@@ -31,13 +31,7 @@ class Intermission_typespace extends Typespace
   #---------------------------------------------------------------------------------------------------------
   @point: ( x ) ->
     @assign { x, }
-    return true if ( @T.integer.isa x )
-    return @fail "#{rpr x} is not an integer and not a text"          unless ( @T.text.isa x )
-    return @fail "#{rpr x} is a text but not with a single codepoint" unless ( ( Array.from x ).length is 1 )
-    ;true
-    # return true if Number.isSafeInteger x
-    # return @fail "#{rpr x} is a non-integer number", { fraction: x % 1, } if Number.isFinite x
-    # return @fail "#{rpr x} is not even a finite number"
+    return @T.integer.isa x
 
 #===========================================================================================================
 module.exports = { T: ( new Intermission_typespace() ), }
