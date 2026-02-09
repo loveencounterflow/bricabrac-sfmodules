@@ -37,9 +37,8 @@ lets = ( original, modifier = null ) ->
 templates =
   #.........................................................................................................
   run_cfg:
-    lo:         null
+    lo:         0
     hi:         null
-    scatter:    null
   #.........................................................................................................
   scatter_cfg:
     hoard:      null
@@ -52,10 +51,6 @@ templates =
   hoard_cfg:
     first:      0x00_0000
     last:       0x10_ffff
-  #.........................................................................................................
-  create_run:
-    lo:         null
-    hi:         null
   #.........................................................................................................
   get_build_statements:
     runs_rowid_regexp:        '0x00_0000'
@@ -84,13 +79,22 @@ summarize_data =
 class Run
 
   #---------------------------------------------------------------------------------------------------------
-  constructor: ({ lo, hi, }) ->
-    ### TAINT use typing ###
-    # throw new Error ""
+  constructor: ( P... ) -> @_constructor P...
+  _constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
+    T.point.validate lo
+    T.point.validate hi ?= lo
+    ### TAINT should be covered by typing ###
+    unless lo <= hi
+      throw new Error "Ωim___1 lo must be less than or equal to hi, got lo: #{lo}, hi: #{hi}"
     set_readonly        @, 'lo',   lo
     set_readonly        @, 'hi',   hi
     set_hidden_readonly @, 'size', hi - lo + 1
     ;undefined
+
+  #---------------------------------------------------------------------------------------------------------
+  toString: ( base = 10 ) ->
+    return "{ lo: #{as_hex @lo}, #{as_hex @hi}, }" if base is 16
+    return "{ lo: #{@lo.toString base}, #{@hi.toString base}, }"
 
   #---------------------------------------------------------------------------------------------------------
   [Symbol.iterator]: -> yield from [ @lo .. @hi ]
@@ -144,11 +148,6 @@ class Scatter
   #---------------------------------------------------------------------------------------------------------
   set_getter @::, 'is_normalized',  -> @state.is_normalized
   set_getter @::, 'points', -> [ @..., ]
-    # points = new Set [ ( [ run..., ] for run in @runs )..., ].flat()
-    # return [ points..., ].sort ( a, b ) ->
-    #   return +1 if a > b
-    #   return -1 if a < b
-    #   return  0
 
   #---------------------------------------------------------------------------------------------------------
   set_getter @::, 'min', ->
@@ -169,6 +168,11 @@ class Scatter
   _insert: ( run ) ->
     ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
     sorting all ranges when needed by a method like `Scatter::normalize()` ###
+    ### TAINT preliminary solution; handling of out-of-bound runs should be configurable ###
+    { first, last, } = @hoard.cfg
+    unless ( first <= run.lo <= last ) and ( first <= run.hi <= last )
+      throw new Error "Ωim___1 expected run to be entirely between #{as_hex first} and #{as_hex last}, " \
+        + "got #{run.toString 16}"
     @runs = lets @runs, ( runs ) => runs.push run
     @state.is_normalized = false
     ;null
@@ -185,11 +189,11 @@ class Scatter
 
   #---------------------------------------------------------------------------------------------------------
   add_run: ( P... ) ->
-    @_insert @hoard.create_run P...
+    @_insert new Run P...
     ;null
 
   #---------------------------------------------------------------------------------------------------------
-  add_codepoints_of: ( texts... ) -> @add_run chr for chr from new Set texts.join ''
+  add_codepoints_of: ( texts... ) -> @add_run ( chr.codePointAt 0 ) for chr from new Set texts.join ''
 
   #---------------------------------------------------------------------------------------------------------
   normalize: ( force = false ) ->
@@ -248,12 +252,6 @@ class Hoard
     ;undefined
 
   #---------------------------------------------------------------------------------------------------------
-  create_run: nfa { template: templates.create_run, }, ( lo, hi, cfg ) ->
-    # debug 'Ωim___1', { lo, hi, cfg, }
-    # debug 'Ωim___2', @_get_hi_and_lo cfg
-    return new Run @_get_hi_and_lo cfg
-
-  #---------------------------------------------------------------------------------------------------------
   _get_next_run_rowid: -> @state.run_rowid++; "t:hrd:runs,R=#{@state.run_rowid}"
 
   #---------------------------------------------------------------------------------------------------------
@@ -263,7 +261,7 @@ class Hoard
     return R
 
   #---------------------------------------------------------------------------------------------------------
-  contains: ->
+  contains: ( P... ) -> @scatters.some ( scatter ) -> scatter.contains P...
 
   #---------------------------------------------------------------------------------------------------------
   get_data_for_point: ( point ) ->
@@ -292,25 +290,6 @@ class Hoard
 
   #---------------------------------------------------------------------------------------------------------
   summarize_data_tags: ( values ) -> summarize_data.as_unique_sorted values
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_hi_and_lo: ( cfg ) ->
-    return { lo: ( @_cast_bound cfg.lo ), hi: ( @_cast_bound cfg.hi ? cfg.lo ), }
-
-  #---------------------------------------------------------------------------------------------------------
-  _cast_bound: ( bound ) ->
-    switch type = type_of bound
-      when 'float'
-        unless Number.isInteger bound
-          throw new Error "Ωim___5 expected an integer or a text, got a #{type}"
-        R = bound
-      when 'text'
-        R = bound.codePointAt 0
-      else
-        throw new Error "Ωim___6 expected an integer or a text, got a #{type}"
-    unless ( @cfg.first <= R <= @cfg.last )
-      throw new Error "Ωim___7 #{as_hex R} is not between #{as_hex @cfg.first} and #{as_hex @cfg.last}"
-    return R
 
   #---------------------------------------------------------------------------------------------------------
   @functions: ->
@@ -345,11 +324,11 @@ class Hoard
           scatter   text            not null,
         -- primary key ( rowid ),
         foreign key ( scatter ) references hrd_hoard_scatters ( rowid ),
-        constraint "Ωconstraint__11" check ( rowid regexp #{LIT cfg.runs_rowid_regexp } ),
-        constraint "Ωconstraint__10" check ( lo between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
-        constraint "Ωconstraint__11" check ( hi between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
-        constraint "Ωconstraint__12" check ( lo <= hi )
-        -- constraint "Ωconstraint__13" check ( rowid regexp '^.*$' )
+        constraint "Ωconstraint___2" check ( rowid regexp #{LIT cfg.runs_rowid_regexp } ),
+        constraint "Ωconstraint___3" check ( lo between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
+        constraint "Ωconstraint___4" check ( hi between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
+        constraint "Ωconstraint___5" check ( lo <= hi )
+        -- constraint "Ωconstraint___6" check ( rowid regexp '^.*$' )
         );"""
     #-------------------------------------------------------------------------------------------------------
     return R
