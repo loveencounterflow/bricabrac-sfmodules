@@ -214,31 +214,16 @@ class Scatter
     ;null
 
   #---------------------------------------------------------------------------------------------------------
-  contains: ( probe ) ->
+  contains: ( probe ) -> @contains_number probe
+
+  #---------------------------------------------------------------------------------------------------------
+  contains_number: ( probe ) ->
     @normalize()
+    T.point.validate probe
     { min, max, } = @minmax
-    #.......................................................................................................
-    switch true
-      #.....................................................................................................
-      when Number.isFinite probe
-        return false unless min <= probe <= max
-        return @runs.some ( run ) => run.contains probe
-      #.....................................................................................................
-      when probe instanceof Run
-        return false unless ( min <= probe.lo <= max ) and ( min <= probe.hi <= max )
-        return @runs.some ( run ) => ( run.contains probe.lo ) and ( run.contains probe.hi )
-      #.....................................................................................................
-      when probe instanceof Scatter
-        probe.normalize() unless probe.is_normalized
-        return false unless ( min <= probe.min <= max ) and ( min <= probe.max <= max )
-        return probe.runs.every ( run ) => @contains run
-      #.....................................................................................................
-      when ( type_of probe ) is 'text'
-        probe = ( chr.codePointAt 0 for chr in Array.from probe )
-    #.......................................................................................................
-    for n from probe
-      return false unless @runs.some ( run ) -> run.contains n
-    return true
+    return false unless min <= probe <= max
+    return @runs.some ( run ) => run.contains probe
+
 
 #===========================================================================================================
 class Hoard
