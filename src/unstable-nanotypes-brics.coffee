@@ -21,7 +21,8 @@ BRICS =
       set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
     { nameit,               } = ( require './various-brics' ).require_nameit()
     { remap,                } = ( require './unstable-object-tools-brics' ).require_remap()
-    { show_no_colors: rpr,  } = ( require './unstable-rpr-type_of-brics' ).require_show()
+    # { show_no_colors: rpr,  } = ( require './unstable-rpr-type_of-brics' ).require_show()
+    { rpr,                  } = ( require './loupe-brics' ).require_loupe()
     # { type_of,              } = SFMODULES.unstable.require_type_of()
     CFG                       = Symbol.for 'cfg'
 
@@ -52,7 +53,7 @@ BRICS =
       validate: ( x, data = null, mapping = null ) ->
         return x if @isa x, data, mapping
         ### TAINT use better rpr() ###
-        throw new Error "Ωbbnt___1 not a valid #{@name}: #{x}"
+        throw new Error "Ωbbnt___1 not a valid #{@name}: #{rpr x}"
 
       #-----------------------------------------------------------------------------------------------------
       assign: ( P... ) -> clean_assign @data, P...
@@ -135,13 +136,13 @@ BRICS =
       # #-----------------------------------------------------------------------------------------------------
       # dm_validate: ( data, mapping, x, P... ) ->
       #   return x if @isa x, P...
-      #   message   = "not a valid #{@full_name}: #{x}"
+      #   message   = "not a valid #{@full_name}: #{rpr x}"
       #   message  += " – #{@data.message}" if @data.message?
       #   throw new Error message
 
       #-----------------------------------------------------------------------------------------------------
       _get_validation_failure_message: ( x ) ->
-        R   = "(#{@full_name}) not a valid #{@full_name}: #{x}"
+        R   = "(#{@full_name}) not a valid #{@full_name}: #{rpr x}"
         R  += " – #{@data.message}" if @data.message?
         return R
 
