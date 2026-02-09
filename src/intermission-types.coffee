@@ -17,6 +17,8 @@ class Intermission_typespace extends Typespace
   @integer: ( x ) ->
     @assign { x, }
     return true if Number.isSafeInteger x
+    return true if x is +Infinity
+    return true if x is -Infinity
     return @fail "#{rpr x} is a non-integer number", { fraction: x % 1, } if Number.isFinite x
     return @fail "#{rpr x} is not even a finite number"
 
