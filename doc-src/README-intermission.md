@@ -142,18 +142,16 @@
       );
     ```
 
-## Monopolarity and `Hoard::base`
+## Monopolarity and `Hoard::bases`
 
-There are no positive vs negative runs or scatters; all runs in all scatters define what points are
-included, and the points they do not contain, they exclude. It would be possible to use bipolar scatters or
-runs and use explicit 'negative' ranges to exclude points, but that would unduly complicate matters. Instead
-what we do is restrict ourselves to monopolar (always positive) ranges. There is, however, one way to universally
-exclude points from any additive operation on a hoard, implemented by `Hoard::base`, which is a positive scatter
-whose absent points will be silently removed from any additive action on a hoard. Put plainly, when the base
-set of points does not include a point that is explicitly or implicitly added to any regular scatter, that point,
-although mentioned in the additive action, will then not appear in the set of points covered by said scatter.
-
-
+* Scatters are monopolar in the sense that they only attribute data to points they include (via the runs
+  that they contain); they do not associate any data to points they exclude.
+* A hoard contains any number of bases.
+* A base contains any number of runs; it defines the universe of discourse or Grundmenge of integers.
+* Each scatter must be associated with one base.
+* A scatter contains any number of runs and a `data` element (any value that can be expressed as JSON).
+* A run consists of one or more consecutive integers bounded by `lo`w point and a `hi`gh point where
+  `lo <= hi` and each integer is an element of the associated base.
 
 
 ## To Do
