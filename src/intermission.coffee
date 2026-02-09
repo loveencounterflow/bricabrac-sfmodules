@@ -15,7 +15,8 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
   set_readonly,
   set_hidden_readonly,
   set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
-{ rpr,                  } = ( require './loupe-brics' ).require_loupe()
+{ inspect: rpr,         } = require 'node:util'
+# { rpr,                  } = ( require './loupe-brics' ).require_loupe()
 { deploy,               } = ( require './unstable-object-tools-brics' ).require_deploy()
 # { get_sha1sum7d,        } = require './shasum'
 { Dbric,
