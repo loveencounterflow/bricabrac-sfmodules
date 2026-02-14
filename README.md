@@ -19,16 +19,17 @@ A collection of (sometimes not-so) small-ish utilities
   - [Won't Do](#wont-do)
 - [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
   - [Ranges / Integer Intervals](#ranges--integer-intervals)
-  - [Monopolarity and `Hoard::bases`](#monopolarity-and-hoardbases)
+  - [Bipolarity of Runs](#bipolarity-of-runs)
   - [To Do](#to-do-1)
+  - [Is Done](#is-done)
 - [Prototype Tools](#prototype-tools)
   - [Usage Example](#usage-example)
   - [To Do](#to-do-2)
-  - [Is Done](#is-done)
+  - [Is Done](#is-done-1)
 - [Coverage Analyzer](#coverage-analyzer)
   - [Usage Example](#usage-example-1)
   - [To Do](#to-do-3)
-  - [Is Done](#is-done-1)
+  - [Is Done](#is-done-2)
 - [Unsorted](#unsorted)
   - [To Do](#to-do-4)
     - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
@@ -265,158 +266,96 @@ class My_db extends Dbric_std
 
 ## Ranges / Integer Intervals
 
-<!--
-* An integer range `ir` is defined by its lowest element `ir.lo` and its highest element `ir.hi` and an
-  associated set of user-defined properties `ir.data`.
-* The lowest element `ir.lo` must be less than or equal to `ir.hi`; thus,
-  * a range with exactly one element (a *singular range*) will have `ir.lo` = `ir.hi`, and
-  * empty ranges with no elements are not representable.
-  * It is always the case that all integers `i` for which `ir.lo <= i <= ir.hi` holds are elements of `ir`
-    and are invariably associated with the same set of user-defined properties.
-* The first inserted range becomes the universal range, `ur`.
-* The boundaries of any ranges inserted or otherwise arrived at can not exceed the boundaries of `ur`.
-* A *complete range set* is an intrinsically ordered collection of a universal range and *n* integer ranges
-  `[ ur, ir_1, ir_2, ..., ir_n, ]` where
--->
-<!-- * **Rangeset** -->
-<!-- * **Rangegroup** -->
+* A **Run** is defined by a tuple `( lo, hi, key, value, )`.
+  * `key` must be a non-empty string. Valid JS identifiers are preferred. Keys starting with `$` are
+    considered special.
+  * `value` must be JSON-serializable value such as e.g. `true`, `"a text"`, `22.5` or `[6,8,11]`.
+    * It is possible to store JSON object literals in `value`, but observe that doing so requires
+      normalizing the value e.g. with the [RFC8785](https://github.com/erdtman/canonicalize) algorithm to
+      allow for trivial value equality checks.
+  * The triplet `( lo, hi, key, )` must be unique in a given collection (hoard).
+  * `lo` and `hi` are either JS 'safe' integers (that satisfy `Number.isSafeInteger n`) or positive or
+    negative `Infinity`.
+  * The pair `{ lo, hi, }` defines a span of consecutive integers `n` such that `lo <= n <= hi`
+    * empty intervals are not representable;
+    * non-contiguous runs are only representable by using multiple runs;
+    * single-point runs `lo == n == hi` holds.
+  * All runs with a given combination of `( key, value, )` form a 'group'.
+  * A group is considered 'normalized' when it is represented with the minimal number of runs.
+  * Two groups that share the same `key` but have different `value`s must be mutually exclusive in a given
+    hoard.
+  * Runs with the special key `$ex` and any allowable value are used to declare 'exclusion zones' that no
+    non-special runs can cover. For example, in a hoard that is only used for points between `0` and `100`,
+    one may define exclusion zones as `{ lo: -Infinity, hi: -1, key: '$ex', value: 'too small', }`, `{ lo:
+    101, hi: +Infinity, key: '$ex', value: 'too big', }` and use `value`s to give a reason for exclusion
+    which may be used for error messages and so on.
 
-* **Points**: The smallest entity of a hoard, represented as an integer; integers between `0x00_0000` and
-  `0x10_ffff` can alternatively be represented as their corresponding Unicode character (i.e. a string that
-  will yield an array of length one when passed into `Array.from string`; it may have `string.length == 2`
-  notwithstanding, which is an unfortunate legacy of JavaScript being based on UTF-16 code *units*, not
-  Unicode 32bit code *points*).
+  ```sql
+    create table hrd_runs (
+        rowid   text not null,
+        lo      real not null,
+        hi      real not null,
+        key     text not null,
+        value   text not null, -- proper data type is `json` but declared as `text` b/c of `strict`
+      primary key ( rowid ),
+      unique ( lo, hi, key, value ),
+      constraint "Ωconstraint___1" check (
+        ( abs( lo ) = 9e999 ) or (
+          ( lo = cast( lo as integer ) )
+          and (       #{Number.MIN_SAFE_INTEGER} <= lo )
+          and ( lo <= #{Number.MAX_SAFE_INTEGER} ) ) )
+      constraint "Ωconstraint___2" check (
+        ( abs( hi ) = 9e999 ) or (
+          ( hi = cast( hi as integer ) )
+          and (       #{Number.MIN_SAFE_INTEGER} <= hi )
+          and ( hi <= #{Number.MAX_SAFE_INTEGER} ) ) )
+      constraint "Ωconstraint___3" check ( lo <= hi )
+    ) strict;
+  ```
 
-* **Bounds**:
-  * In the case of a **Run** instance, its defining `lo`west and `hi`ghest points.
-  * In the case of a **Scatter** instance, its `min`imal and `max`imal points found among the `lo`s and
-    `hi`s of its constituent runs, if any.
-  * In the case of a **Hoard** instance, its `first` and `last` points, which demarcate the maximal extent
-    of any runs it contains via its constituent scatters. The default has `first: 0x00_0000, last:
-    0x10_ffff` so as to accommodate all Unicode code points, although in an actual implementation one may
-    want to set `first: 0x00_0001` so as to avoid `'\x00'` for compatibility with traditional C string
-    processing.
+  ```sql
+  select lo, hi, key, value
+  from hrd_runs
+  where true
+    and ( lo <= $lo )
+    and ( hi >= $hi );
+  ```
 
-* **Run**: A span of consecutive integers `i` defined by two numbers `lo` and `hi` such that `lo <= hi` and
-  `lo <= i <= hi`; empty intervals are not representable, nor are non-contiguous runs possible; for
-  single-integer runs `lo == i == hi` holds.
 
-* **Ranges** or **Sets**: indiscriminately used to refer to a possibly further unspecified combination of
-  runs and / or scatters with no commitment to the actual implementation. E.g. "the range, the set of
-  accent-bearing Latin letters" makes sense as a concept; its exhaustive implementation in Unicode will at
-  least need to make use of a number of runs (and possibly, depending on needs, a number of scatters)
-  because the relevant codepoints do not form a contiguous series in Unicode. We can refer to "the set of
-  accent-bearing Latin letters" with the same ease like "the set of codepoints matched by `/[A-Z]/`"
-  although the latter *can* be represented by a single run (except `Hoard::base` introduces gaps in that
-  area).
+<!-- * **Hoard**:
 
-* **Scatter**: A set of **Run**s that is associated with a shared set of data. For example, the Unicode
-  codepoints that are Latin letters and that are representable with a single UTF-8 byte is commonly seen in
-  the regular expression `/[A-Za-z]/` which in our model can be represented as a scatter `[ (0x41,0x5a),
-  (0x61,0x7a), ]` (i.e. `[ ('A','Z'), ('a','z'), ]`).
+  ```sql
+    create table hrd_hoard (
+        rowid   text not null,
+        json    json not null default '{}',
+      primary key ( rowid ) )
+  ```
+ -->
 
-  * The canonical ordering of a scatter is by ascending `lo` bounds, then by ascending `hi` bounds for runs
-    that share `lo` points.
 
-  * A normalized (a.k.a. 'simplified') scatter has no overlapping and no directly adjacent runs and is
-    sorted by ascending bounds; thus, `[ (3,7), (0,5), ]` and `[ (0,5), (6,7), ]` both get normalized to `[
-    (0,7), ]`, but `[ (0,5), (7,7), ]` is already normal as it is sorted and the gap at `(6,6)` prevents
-    further simplification.
+## Bipolarity of Runs
 
-  * A crucial functionality of our model is the ability to build non-normalized scatters which can at some
-    later point get normalized to a lesser or greater degree depending on their associated data.
+* Inclusive runs are defined by the points they include
+* Exclusive runs are defined by the points they exclude.
 
-* Scatter of a *single Universal Inclusion Run* (`0x00_0000..0x10_ffff`); this sets data `ugc:Cn`
-  (`Unassigned`, 'a reserved unassigned code point or a noncharacter') as a baseline for all other, more
-  specific data; it also reflects the absolute boundaries of the universe of discourse. Among other things,
-  this enables set algebra with finite complementary sets such as 'the set of all codepoints that are not
-  classified as `ugc:Lu` (**u**ppercase **L**etters)'
+  As an example, a base intended to represent valid Unicode codepoints could contain, among others, the
+  following exclusive runs:
 
-* Multiple scatters of multiple universal **Exclusion** / **Gap** / **Hole** Runs
+  * `{ lo: -Infinity, hi:        -1, key: '$ex', value: "negative CIDs",   }`
+  * `{ lo:    0x0000, hi:    0x0000, key: '$ex', value: "zero bytes",      }`
+  * `{ lo:    0xd800, hi:    0xdbff, key: '$ex', value: "high surrogates", }`
+  * `{ lo:    0xdc00, hi:    0xdfff, key: '$ex', value: "low surrogates",  }`
+  * `{ lo:    0xfdd0, hi:    0xfdef, key: '$ex', value: "noncharacters",   }`
+  * `{ lo:    0xfffe, hi:    0xffff, key: '$ex', value: "noncharacters",   }`
+  * `{ lo:  0x110000, hi: +Infinity, key: '$ex', value: "excessive CIDs",  }`
 
-* **Hoard** (**Horde**?) or **Layered Scalar Property Set**: An unordered collection of any number of
-  positive and negative scatters plus one neutral scatter.
-
-  * The neutral scatter `s0` defines the universe of discourse (universal set, G. *Grundmenge*; its bounds
-    `s0.lo`, `s0.hi` define the lowest `r.lo` and the highest `r.hi` that any *normalized* run `r` can
-    have). Since the single neutral scatter must axiomatically be contiguous, it can be represented by a
-    single run whose sole properties `r0.lo`, `r0.hi` can then be implemented as properties of the SPS.
-
-  * **Hits**: The positive or inclusive scatters determine which integers are part of the universal set i.e.
-    which are considers 'hits' with respect to one ore more scatters; the (one or more) scatters that are
-    hit by a given element (point, scalar, integer) determine(s) which properties that element will be
-    associated with.
-
-  * **Gaps**: the negative or exclusive scatters determine which integers are not part of the 'set of
-    interest', i.e. which are considered 'holes' or 'gaps'. Gaps take precedence over hits in the sense that
-    any element that is found in both positive and negative scatters is considered a gap and not a hit.
-
-  * **Layers** are selectable sets of hit scatters so element properties can be selected by purpose (ex.
-    different virtual / composite fonts for different printing styles).
-
-    * To this end, hit layers can add 'tags' which are arbitrary data items that can be selected by way of
-      on API. The universal set and gap scatters could likewise have tags but the present intention is to
-      probably disallow those and at any rate disregards any tags on non-hit scatters when selecting.
-
-* Implementation of Hoards in SQL:
-
-  * The below implementation notes assume use of hoard data structures specifically for the purpose of
-    classifying Unicode codepoints (i.e. practically speaking glyphs) and determine associated properties;
-    given a codepoint (CP), such data structures should be able to answer questions like: is this CP a CJK
-    ideograph? Is it part of IICORE (i.e. moderately frequently used / not rare)? Assuming bold gothic (or
-    handwritten, or running text) typesetting context, which font should be used and what typographic tweaks
-    should be applied to the outline when rendering it?
-
-  * The boundaries represented by the universal set can probably best be hard coded as SQL `check`
-    constraints `lo between 0x000000 and 0x10ffff`, `hi between 0x000000 and 0x10ffff`. These are not moving
-    targets and already represent the entire neutral scatter.
-
-    ```sql
-    create table jzr_glyphruns (
-        rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
-        scatter   text            not null,
-        lo        integer         not null,
-        hi        integer         not null,
-      -- primary key ( rowid ),
-      foreign key scatter references jzr_glyphscatters ( rowid ),
-      constraint "Ωconstraint___5" check ( lo between 0x000000 and 0x10ffff ),
-      constraint "Ωconstraint___6" check ( hi between 0x000000 and 0x10ffff ),
-      constraint "Ωconstraint___7" check ( lo <= hi ),
-      constraint "Ωconstraint___8" check ( rowid regexp '^.*$' )
-      );
-    ```
-
-    ```sql
-    create table jzr_glyphscatters (
-        rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
-        data      json            not null
-      -- primary key ( rowid )
-      );
-    ```
-
-    ```sql
-    create table jzr_glyphhoard (
-        rowid     text    unique  not null generated always as ( 't:uc:rsg:V=' || rsg ),
-        data      json            not null
-      -- primary key ( rowid )
-      );
-    ```
-
-## Monopolarity and `Hoard::bases`
-
-* Scatters are monopolar in the sense that they only attribute data to points they include (via the runs
-  that they contain); they do not associate any data to points they exclude.
-* A hoard contains any number of bases.
-* A base contains any number of runs; it defines the universe of discourse or Grundmenge of integers.
-* Each scatter must be associated with one base.
-* A scatter contains any number of runs and a `data` element (any value that can be expressed as JSON).
-* A run consists of one or more consecutive integers bounded by `lo`w point and a `hi`gh point where
-  `lo <= hi` and each integer is an element of the associated base.
+  Each of these runs will prevent some points from being used in any associated (and normalized) scatters
+  and, additionaly, allow to formulate instructive error messages that may be caused e.g. by a text
+  processing utility that encounters illegal codepoints.
 
 
 ## To Do
 
-* **`[—]`** reject floats
 * **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
 * **`[—]`** `rowid`s of runs need to be unique across scatters
 * **`[—]`** add ability to name scatters (and runs?)
@@ -427,7 +366,9 @@ class My_db extends Dbric_std
 * **`[—]`** implement a setting to determine whether points added to a scatter but not in `Hoard::base`
   should cause an error or be dropped silently
 
+## Is Done
 
+* **`[+]`** reject floats
 
 <!-- END <!insert src=./README-intermission.md> -->
 ------------------------------------------------------------------------------------------------------------
