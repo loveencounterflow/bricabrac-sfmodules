@@ -9,50 +9,7 @@ A collection of (sometimes not-so) small-ish utilities
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [DBric Database Adapter](#dbric-database-adapter)
-  - [Overwriting / Overriding / Shadowing Behavior](#overwriting--overriding--shadowing-behavior)
-  - [API](#api)
-    - [Class property `plugins`](#class-property-plugins)
-      - [Using Ersatz `super()` in Plugin `methods`](#using-ersatz-super-in-plugin-methods)
-    - [`Dbric_classprop_absorber::_get_acquisition_chain()` (private)](#dbric_classprop_absorber_get_acquisition_chain-private)
-  - [To Do](#to-do)
-  - [Won't Do](#wont-do)
-- [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
-  - [Ranges / Integer Intervals](#ranges--integer-intervals)
-  - [Bipolarity of Runs](#bipolarity-of-runs)
-  - [To Do](#to-do-1)
-  - [Is Done](#is-done)
-- [Prototype Tools](#prototype-tools)
-  - [Usage Example](#usage-example)
-  - [To Do](#to-do-2)
-  - [Is Done](#is-done-1)
-- [Coverage Analyzer](#coverage-analyzer)
-  - [Usage Example](#usage-example-1)
-  - [To Do](#to-do-3)
-  - [Is Done](#is-done-2)
-- [Unsorted](#unsorted)
-  - [To Do](#to-do-4)
-    - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
-    - [Fast Line Reader](#fast-line-reader)
-    - [Coarse SQLite Statement Segmenter](#coarse-sqlite-statement-segmenter)
-    - [SQLite Undumper](#sqlite-undumper)
-    - [JetStream](#jetstream)
-      - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
-      - [JetStream: Adding Data](#jetstream-adding-data)
-      - [JetStream: Running and Retrieving Results](#jetstream-running-and-retrieving-results)
-      - [JetStream: Note on Picking Values](#jetstream-note-on-picking-values)
-      - [JetStream: Selectors](#jetstream-selectors)
-      - [See Also](#see-also)
-      - [To Do](#to-do-5)
-    - [Loupe, Show](#loupe-show)
-    - [Random](#random)
-      - [Random: Implementation Structure](#random-implementation-structure)
-        - [References](#references)
-        - [To Do](#to-do-6)
-    - [Benchmark](#benchmark)
-    - [Errors](#errors)
-    - [Remap](#remap)
-    - [Other](#other)
+TOC goes here
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -276,19 +233,20 @@ class My_db extends Dbric_std
   * The triplet `( lo, hi, key, )` must be unique in a given collection (hoard).
   * `lo` and `hi` are either JS 'safe' integers (that satisfy `Number.isSafeInteger n`) or positive or
     negative `Infinity`.
-  * The pair `{ lo, hi, }` defines a span of consecutive integers `n` such that `lo <= n <= hi`
+  * The pair `( lo, hi, )` defines a span of consecutive integers `n` such that `lo <= n <= hi`
     * empty intervals are not representable;
     * non-contiguous runs are only representable by using multiple runs;
     * single-point runs `lo == n == hi` holds.
   * All runs with a given combination of `( key, value, )` form a 'group'.
   * A group is considered 'normalized' when it is represented with the minimal number of runs.
   * Two groups that share the same `key` but have different `value`s must be mutually exclusive in a given
-    hoard.
+    hoard; stated the other way round, each point that is comprised by two runs with the same `key` but
+    different `value`s is considered a fault in the collection.
   * Runs with the special key `$ex` and any allowable value are used to declare 'exclusion zones' that no
     non-special runs can cover. For example, in a hoard that is only used for points between `0` and `100`,
     one may define exclusion zones as `{ lo: -Infinity, hi: -1, key: '$ex', value: 'too small', }`, `{ lo:
-    101, hi: +Infinity, key: '$ex', value: 'too big', }` and use `value`s to give a reason for exclusion
-    which may be used for error messages and so on.
+    101, hi: +Infinity, key: '$ex', value: 'too big', }` where the `value`s can be used for error messages
+    and so on.
 
   ```sql
     create table hrd_runs (
@@ -314,23 +272,43 @@ class My_db extends Dbric_std
   ```
 
   ```sql
-  select lo, hi, key, value
+  select rowid, lo, hi, key, value
   from hrd_runs
   where true
     and ( lo <= $lo )
     and ( hi >= $hi );
   ```
 
+  ```sql
+  select rowid, lo, hi, key, value
+  from hrd_runs
+  where true
+    and ( key = $key )
+    and ( lo <= $lo )
+    and ( hi >= $hi );
+  ```
 
-<!-- * **Hoard**:
+  Conflicts:
 
   ```sql
-    create table hrd_hoard (
-        rowid   text not null,
-        json    json not null default '{}',
-      primary key ( rowid ) )
+  select a.rowid  as rowid_a,
+         a.lo     as lo_a,
+         a.hi     as hi_a,
+         b.rowid  as rowid_b,
+         b.lo     as lo_b,
+         b.hi     as hi_b,
+         a.key    as key,
+         a.value  as value_a,
+         b.value  as value_b
+  from hrd_runs as a
+  join hrd_runs as b
+    on true
+      and ( a.rowid <   b.rowid )
+      and ( a.key   =   b.key   )
+      and ( a.value <>  b.value )
+      and ( a.lo    <=  b.hi    )
+      and ( a.hi    >=  b.lo    );
   ```
- -->
 
 
 ## Bipolarity of Runs

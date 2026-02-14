@@ -15,19 +15,20 @@
   * The triplet `( lo, hi, key, )` must be unique in a given collection (hoard).
   * `lo` and `hi` are either JS 'safe' integers (that satisfy `Number.isSafeInteger n`) or positive or
     negative `Infinity`.
-  * The pair `{ lo, hi, }` defines a span of consecutive integers `n` such that `lo <= n <= hi`
+  * The pair `( lo, hi, )` defines a span of consecutive integers `n` such that `lo <= n <= hi`
     * empty intervals are not representable;
     * non-contiguous runs are only representable by using multiple runs;
     * single-point runs `lo == n == hi` holds.
   * All runs with a given combination of `( key, value, )` form a 'group'.
   * A group is considered 'normalized' when it is represented with the minimal number of runs.
   * Two groups that share the same `key` but have different `value`s must be mutually exclusive in a given
-    hoard.
+    hoard; stated the other way round, each point that is comprised by two runs with the same `key` but
+    different `value`s is considered a fault in the collection.
   * Runs with the special key `$ex` and any allowable value are used to declare 'exclusion zones' that no
     non-special runs can cover. For example, in a hoard that is only used for points between `0` and `100`,
     one may define exclusion zones as `{ lo: -Infinity, hi: -1, key: '$ex', value: 'too small', }`, `{ lo:
-    101, hi: +Infinity, key: '$ex', value: 'too big', }` and use `value`s to give a reason for exclusion
-    which may be used for error messages and so on.
+    101, hi: +Infinity, key: '$ex', value: 'too big', }` where the `value`s can be used for error messages
+    and so on.
 
   ```sql
     create table hrd_runs (
@@ -90,16 +91,6 @@
       and ( a.lo    <=  b.hi    )
       and ( a.hi    >=  b.lo    );
   ```
-
-<!-- * **Hoard**:
-
-  ```sql
-    create table hrd_hoard (
-        rowid   text not null,
-        json    json not null default '{}',
-      primary key ( rowid ) )
-  ```
- -->
 
 
 ## Bipolarity of Runs
