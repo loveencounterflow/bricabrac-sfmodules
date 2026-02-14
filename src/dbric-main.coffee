@@ -202,7 +202,12 @@ class Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   _acquire_statements: ( contributions ) ->
     for statement_name, statement of contributions.statements
-      @statements[ statement_name ] = @prepare @_resolve_function statement
+      try
+        @statements[ statement_name ] = @prepare @_resolve_function statement
+      catch cause
+        throw new Error "Ωdbricm__10 when trying to prepare statement #{rpr statement_name}, " \
+          + "an error occurred; maybe you forgot to call `@{constructor.name}.rebuild()`? " \
+          + "See above cause for details", { cause, }
     ;null
 
   #=========================================================================================================
