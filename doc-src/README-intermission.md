@@ -53,13 +53,43 @@
   ```
 
   ```sql
-  select lo, hi, key, value
+  select rowid, lo, hi, key, value
   from hrd_runs
   where true
     and ( lo <= $lo )
     and ( hi >= $hi );
   ```
 
+  ```sql
+  select rowid, lo, hi, key, value
+  from hrd_runs
+  where true
+    and ( key = $key )
+    and ( lo <= $lo )
+    and ( hi >= $hi );
+  ```
+
+  Conflicts:
+
+  ```sql
+  select a.rowid  as rowid_a,
+         a.lo     as lo_a,
+         a.hi     as hi_a,
+         b.rowid  as rowid_b,
+         b.lo     as lo_b,
+         b.hi     as hi_b,
+         a.key    as key,
+         a.value  as value_a,
+         b.value  as value_b
+  from hrd_runs as a
+  join hrd_runs as b
+    on true
+      and ( a.rowid <   b.rowid )
+      and ( a.key   =   b.key   )
+      and ( a.value <>  b.value )
+      and ( a.lo    <=  b.hi    )
+      and ( a.hi    >=  b.lo    );
+  ```
 
 <!-- * **Hoard**:
 
