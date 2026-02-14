@@ -242,10 +242,10 @@ class My_db extends Dbric_std
   * Two groups that share the same `key` but have different `value`s must be mutually exclusive in a given
     hoard; stated the other way round, each point that is comprised by two runs with the same `key` but
     different `value`s is considered a fault in the collection.
-  * Runs with the special key `$ex` and any allowable value are used to declare 'exclusion zones' that no
+  * Runs with the special key `$x` and any allowable value are used to declare 'exclusion zones' that no
     non-special runs can cover. For example, in a hoard that is only used for points between `0` and `100`,
-    one may define exclusion zones as `{ lo: -Infinity, hi: -1, key: '$ex', value: 'too small', }`, `{ lo:
-    101, hi: +Infinity, key: '$ex', value: 'too big', }` where the `value`s can be used for error messages
+    one may define exclusion zones as `{ lo: -Infinity, hi: -1, key: '$x', value: 'too small', }`, `{ lo:
+    101, hi: +Infinity, key: '$x', value: 'too big', }` where the `value`s can be used for error messages
     and so on.
 
   ```sql
@@ -319,13 +319,13 @@ class My_db extends Dbric_std
   As an example, a base intended to represent valid Unicode codepoints could contain, among others, the
   following exclusive runs:
 
-  * `{ lo: -Infinity, hi:        -1, key: '$ex', value: "negative CIDs",   }`
-  * `{ lo:    0x0000, hi:    0x0000, key: '$ex', value: "zero bytes",      }`
-  * `{ lo:    0xd800, hi:    0xdbff, key: '$ex', value: "high surrogates", }`
-  * `{ lo:    0xdc00, hi:    0xdfff, key: '$ex', value: "low surrogates",  }`
-  * `{ lo:    0xfdd0, hi:    0xfdef, key: '$ex', value: "noncharacters",   }`
-  * `{ lo:    0xfffe, hi:    0xffff, key: '$ex', value: "noncharacters",   }`
-  * `{ lo:  0x110000, hi: +Infinity, key: '$ex', value: "excessive CIDs",  }`
+  * `{ lo: -Infinity, hi:        -1, key: '$x', value: "negative CIDs",   }`
+  * `{ lo:    0x0000, hi:    0x0000, key: '$x', value: "zero bytes",      }`
+  * `{ lo:    0xd800, hi:    0xdbff, key: '$x', value: "high surrogates", }`
+  * `{ lo:    0xdc00, hi:    0xdfff, key: '$x', value: "low surrogates",  }`
+  * `{ lo:    0xfdd0, hi:    0xfdef, key: '$x', value: "noncharacters",   }`
+  * `{ lo:    0xfffe, hi:    0xffff, key: '$x', value: "noncharacters",   }`
+  * `{ lo:  0x110000, hi: +Infinity, key: '$x', value: "excessive CIDs",  }`
 
   Each of these runs will prevent some points from being used in any associated (and normalized) scatters
   and, additionaly, allow to formulate instructive error messages that may be caused e.g. by a text
