@@ -69,22 +69,40 @@ dbric_plugin =
               and ( hi <= #{Number.MAX_SAFE_INTEGER} ) ) ),
           constraint "Ωhrd_constraint___3" check ( lo <= hi ),
           constraint "Ωhrd_constraint___4" check ( key regexp '.*' )
-          -- constraint "Ωhrd_constraint___4" check ( key regexp '^\$x$|^[^$].+' )
+          -- constraint "Ωhrd_constraint___5" check ( key regexp '^\$x$|^[^$].+' )
         ) strict;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create index "hrd_index_runs_hi"  on hrd_runs ( hi );"""
       SQL"""create index "hrd_index_runs_key" on hrd_runs ( key );"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_groups as
+        select distinct
+            a.key   as key,
+            a.value as value
+          from hrd_runs as a
+          order by a.key, a.value;"""
+
+      #-----------------------------------------------------------------------------------------------------
       ]
 
     #-------------------------------------------------------------------------------------------------------
     functions:
+
+      #-----------------------------------------------------------------------------------------------------
       hrd_get_run_rowid:
         deterministic: true
         value: ( lo, hi, key ) ->
           ls = if lo < 0 then '-' else '+'
           hs = if hi < 0 then '-' else '+'
           f"t:hrd:runs:V=#{ls}#{Math.abs lo}:*<06x;,#{hs}#{Math.abs hi}:*<06x;,#{key}"
+
+      # #-----------------------------------------------------------------------------------------------------
+      # hrd_json_quote:
+      #   deterministic: true
+      #   value: ( x ) -> JSON.stringify x
+
     #-------------------------------------------------------------------------------------------------------
     statements:
 
@@ -139,6 +157,39 @@ dbric_plugin =
               and ( a.hi    >=  b.lo    )
           order by a.lo, a.hi, a.key;"""
 
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_groups:        SQL"""select * from hrd_groups;"""
+      hrd_find_runs_by_group: SQL"""select * from hrd_runs order by key, value, lo, hi;"""
+
+
+    #-------------------------------------------------------------------------------------------------------
+    methods:
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_conflicts: -> @walk @statements.hrd_find_conflicts
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_validate: ->
+        return null if ( conflicts = [ ( @hrd_find_conflicts() )..., ] ).length is 0
+        throw new Error "Ωhrd___6 found conflicts: #{rpr conflicts}"
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_groups: -> @walk @statements.hrd_find_groups
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_runs_by_group: ->
+        prv_key   = null
+        prv_value = null
+        group     = null
+        for { rowid, lo, hi, key, value, } from @walk @statements.hrd_find_runs_by_group
+          unless ( key is prv_key ) and ( value is prv_value )
+            yield group if group?
+            group         = { key, value, runs: [], }
+            prv_key       = key
+            prv_value     = value
+          group.runs.push { rowid, lo, hi, key, value, }
+        yield group if group?
+        return null
 
 #===========================================================================================================
 module.exports = do =>
