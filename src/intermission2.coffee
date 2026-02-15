@@ -85,6 +85,27 @@ dbric_plugin =
           order by a.key, a.value;"""
 
       #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_normalization as
+        with ordered as (
+          select
+              key                                                     as key,
+              value                                                   as value,
+              lo                                                      as lo,
+              hi                                                      as hi,
+              lag( hi ) over ( partition by key, value order by lo )  as prev_hi
+          from hrd_runs )
+        select
+            key                                                       as key,
+            value                                                     as value,
+            case when sum(
+              case
+                when ( prev_hi is not null ) and ( lo <= prev_hi + 1 ) then 1 else 0 end ) > 0
+                then 0 else 1 end                                     as is_normal
+          from ordered
+          group by key, value
+          order by key, value;"""
+
+      #-----------------------------------------------------------------------------------------------------
       ]
 
     #-------------------------------------------------------------------------------------------------------
@@ -160,7 +181,6 @@ dbric_plugin =
       #-----------------------------------------------------------------------------------------------------
       hrd_find_groups:        SQL"""select * from hrd_groups;"""
       hrd_find_runs_by_group: SQL"""select * from hrd_runs order by key, value, lo, hi;"""
-
 
     #-------------------------------------------------------------------------------------------------------
     methods:
