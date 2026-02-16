@@ -79,9 +79,11 @@ dbric_plugin =
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_group_facets as
         select distinct
-            a.key   as key,
-            a.value as value
+            a.key     as key,
+            a.value   as value,
+            count(*)  as runs
           from hrd_runs as a
+          group by a.key, a.value
           order by a.key, a.value;"""
 
       #-----------------------------------------------------------------------------------------------------
@@ -146,6 +148,7 @@ dbric_plugin =
             g.value                     as value,
             first_value( r.lo ) over w  as first,
             last_value(  r.hi ) over w  as last,
+            g.runs                      as runs,
             n.is_normal                 as is_normal
           from hrd_group_facets           as g
           left join hrd_normalization     as n using ( key, value )
