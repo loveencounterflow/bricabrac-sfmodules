@@ -27,7 +27,6 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
   VEC,                  } = require './dbric'
 
 #===========================================================================================================
-#===========================================================================================================
 ### TAINT move to dedicated module ###
 ### NOTE not using `letsfreezethat` to avoid issue with deep-freezing `Run` instances ###
 lets = ( original, modifier = null ) ->
@@ -36,7 +35,12 @@ lets = ( original, modifier = null ) ->
   return freeze draft
 
 #===========================================================================================================
-templates = {}
+templates =
+  insert_run_cfg:
+    lo:       0
+    hi:       null
+    key:      null
+    value:    null
 
 #===========================================================================================================
 dbric_plugin =
@@ -219,10 +223,25 @@ dbric_plugin =
     methods:
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts:         -> @walk @statements.hrd_find_conflicts
-      hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
-      hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
-      hrd_find_groups:            -> @walk @statements.hrd_find_groups
+      hrd_find_conflicts:                   -> @walk @statements.hrd_find_conflicts
+      hrd_find_group_facets:                -> @walk @statements.hrd_find_group_facets
+      hrd_find_nonnormal_groups:            -> @walk @statements.hrd_find_nonnormal_groups
+      hrd_find_groups:                      -> @walk @statements.hrd_find_groups
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
+        hi   ?= lo
+        value = JSON.stringify value
+        return { lo, hi, key, value, }
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_insert_run: nfa { template: templates.insert_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+        return @statements.hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_punch: nfa { template: templates.insert_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+        ### like `hrd_insert_run()` but resolves key/value conflicts in favor of value given ###
+        @hrd_validate()
 
       #-----------------------------------------------------------------------------------------------------
       hrd_validate: ->
