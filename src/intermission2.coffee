@@ -142,7 +142,7 @@ dbric_plugin =
           order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_groups_plus as
+      SQL"""create view hrd_groups as
         select
             g.key                       as key,
             g.value                     as value,
@@ -209,7 +209,7 @@ dbric_plugin =
       hrd_find_conflicts:         SQL"""select * from hrd_conflicts;"""
       hrd_find_group_facets:      SQL"""select * from hrd_group_facets;"""
       hrd_find_runs_by_group:     SQL"""select * from hrd_runs order by key, value, lo, hi;"""
-      hrd_find_groups_plus:       SQL"""select * from hrd_groups_plus order by key, value;"""
+      hrd_find_groups:       SQL"""select * from hrd_groups order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_nonnormal_groups: SQL"""
@@ -222,7 +222,7 @@ dbric_plugin =
       hrd_find_conflicts:         -> @walk @statements.hrd_find_conflicts
       hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
       hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
-      hrd_find_groups_plus:       -> @walk @statements.hrd_find_groups_plus
+      hrd_find_groups:            -> @walk @statements.hrd_find_groups
 
       #-----------------------------------------------------------------------------------------------------
       hrd_validate: ->
