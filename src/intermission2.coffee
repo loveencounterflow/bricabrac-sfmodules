@@ -255,14 +255,14 @@ dbric_plugin =
     #-------------------------------------------------------------------------------------------------------
     methods:
 
-      #-----------------------------------------------------------------------------------------------------
-      _hrd_as_halfopen:   ( run       ) -> { start: run.lo,         end:  run.hi        + 1, }
-      _hrd_from_halfopen: ( halfopen  ) -> { lo:    halfopen.start, hi:   halfopen.end  - 1, }
+      # #-----------------------------------------------------------------------------------------------------
+      # _hrd_as_halfopen:   ( run       ) -> { start: run.lo,         end:  run.hi        + 1, }
+      # _hrd_from_halfopen: ( halfopen  ) -> { lo:    halfopen.start, hi:   halfopen.end  - 1, }
 
-      #-----------------------------------------------------------------------------------------------------
-      _hrd_subtract: ( base, mask ) ->
-        halfopens = IFN.substract [ ( @_hrd_as_halfopen base ), ], [ ( @_hrd_as_halfopen mask ), ]
-        return ( @_hrd_from_halfopen halfopen for halfopen in halfopens )
+      # #-----------------------------------------------------------------------------------------------------
+      # _hrd_subtract: ( base, mask ) ->
+      #   halfopens = IFN.substract [ ( @_hrd_as_halfopen base ), ], [ ( @_hrd_as_halfopen mask ), ]
+      #   return ( @_hrd_from_halfopen halfopen for halfopen in halfopens )
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_conflicts:                   -> @walk @statements.hrd_find_conflicts
@@ -303,7 +303,7 @@ dbric_plugin =
           debug 'Ωhrd___6', "new:         ", new_ok
           debug 'Ωhrd___7', "OK:          ", run_ok
           debug 'Ωhrd___8', "not OK:      ", run_nk
-          debug 'Ωhrd___9', "subtracted:  ", @_hrd_subtract run_nk, run_ok
+          # debug 'Ωhrd___9', "subtracted:  ", @_hrd_subtract run_nk, run_ok
           debug 'Ωhrd__10', { rowid: run_nk.rowid, }
           debug 'Ωhrd__12', @statements.hrd_remove_overlap.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
           debug 'Ωhrd__11', @statements.hrd_delete_run.run { rowid: run_nk.rowid, }
