@@ -77,12 +77,46 @@ dbric_plugin =
       SQL"""create index "hrd_index_runs_key" on hrd_runs ( key );"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_groups as
+      SQL"""create view hrd_group_facets as
         select distinct
             a.key   as key,
             a.value as value
           from hrd_runs as a
           order by a.key, a.value;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_conflicts as
+        select
+            a.rowid  as rowid_a,
+            a.lo     as lo_a,
+            a.hi     as hi_a,
+            a.key    as key_a,
+            a.value  as value_a,
+            b.rowid  as rowid_b,
+            b.lo     as lo_b,
+            b.hi     as hi_b,
+            b.key    as key_b,
+            b.value  as value_b
+          from hrd_runs as a
+          join hrd_runs as b
+            on true
+              and ( a.rowid <   b.rowid )
+              and ( a.key   =   b.key   )
+              and ( a.value <>  b.value )
+              and ( a.lo    <=  b.hi    )
+              and ( a.hi    >=  b.lo    )
+          order by a.lo, a.hi, a.key;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view _hrd_group_has_conflict as
+        select distinct
+            f.key                                                     as key,
+            f.value                                                   as value,
+            not ( ca.key_a is null and cb.key_b is null )             as has_conflict
+        from hrd_group_facets as f
+        left join hrd_conflicts as ca on ( f.key = ca.key_a and f.value = ca.value_a )
+        left join hrd_conflicts as cb on ( f.key = cb.key_b and f.value = cb.value_b )
+        order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_normalization as
@@ -105,6 +139,19 @@ dbric_plugin =
           group by key, value
           order by key, value;"""
 
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_groups_plus as
+        select
+            g.key                       as key,
+            g.value                     as value,
+            first_value( r.lo ) over w  as first,
+            last_value(  r.hi ) over w  as last,
+            n.is_normal                 as is_normal
+          from hrd_group_facets           as g
+          left join hrd_normalization     as n using ( key, value )
+          left join hrd_runs              as r using ( key, value )
+          window w as ( partition by r.key, r.value order by r.lo, r.hi, r.key, r.value )
+          order by key, value;"""
       #-----------------------------------------------------------------------------------------------------
       ]
 
@@ -156,45 +203,28 @@ dbric_plugin =
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts: SQL"""
-        select
-            a.rowid  as rowid_a,
-            a.lo     as lo_a,
-            a.hi     as hi_a,
-            a.key    as key_a,
-            a.value  as value_a,
-            b.rowid  as rowid_b,
-            b.lo     as lo_b,
-            b.hi     as hi_b,
-            b.key    as key_b,
-            b.value  as value_b
-          from hrd_runs as a
-          join hrd_runs as b
-            on true
-              and ( a.rowid <   b.rowid )
-              and ( a.key   =   b.key   )
-              and ( a.value <>  b.value )
-              and ( a.lo    <=  b.hi    )
-              and ( a.hi    >=  b.lo    )
-          order by a.lo, a.hi, a.key;"""
+      hrd_find_conflicts:         SQL"""select * from hrd_conflicts;"""
+      hrd_find_group_facets:      SQL"""select * from hrd_group_facets;"""
+      hrd_find_runs_by_group:     SQL"""select * from hrd_runs order by key, value, lo, hi;"""
+      hrd_find_groups_plus:       SQL"""select * from hrd_groups_plus order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_groups:        SQL"""select * from hrd_groups;"""
-      hrd_find_runs_by_group: SQL"""select * from hrd_runs order by key, value, lo, hi;"""
+      hrd_find_nonnormal_groups: SQL"""
+        select key, value from hrd_normalization where is_normal = false order by key, value;"""
 
     #-------------------------------------------------------------------------------------------------------
     methods:
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts: -> @walk @statements.hrd_find_conflicts
+      hrd_find_conflicts:         -> @walk @statements.hrd_find_conflicts
+      hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
+      hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
+      hrd_find_groups_plus:       -> @walk @statements.hrd_find_groups_plus
 
       #-----------------------------------------------------------------------------------------------------
       hrd_validate: ->
         return null if ( conflicts = [ ( @hrd_find_conflicts() )..., ] ).length is 0
         throw new Error "Ωhrd___6 found conflicts: #{rpr conflicts}"
-
-      #-----------------------------------------------------------------------------------------------------
-      hrd_find_groups: -> @walk @statements.hrd_find_groups
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs_by_group: ->
