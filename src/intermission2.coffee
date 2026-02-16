@@ -222,31 +222,31 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_remove_overlap: SQL"""
+        -- .................................................................................................
         insert into hrd_runs ( lo, hi, key, value )
         select lo, hi, key, value
-        from (
-            select
-                b.lo as lo,
-                m.lo - 1 as hi,
-                b.key,
-                b.value
-            from hrd_runs b
-            join hrd_runs m on m.rowid = $mask_rowid
-            where b.rowid = $base_rowid
-              and b.lo <= m.hi
-              and b.hi >= m.lo
-              and b.lo < m.lo
-
-            union all
-
-            select
+        from ( select
+              b.lo      as lo,
+              m.lo - 1  as hi,
+              b.key     as key,
+              b.value   as value
+          from hrd_runs as b
+          join hrd_runs as m on ( m.rowid = $mask_rowid )
+          where true
+            and b.rowid = $base_rowid
+            and b.lo <= m.hi
+            and b.hi >= m.lo
+            and b.lo < m.lo
+        -- .................................................................................................
+        union all select
                 m.hi + 1,
                 b.hi,
                 b.key,
                 b.value
-            from hrd_runs b
-            join hrd_runs m on m.rowid = $mask_rowid
-            where b.rowid = $base_rowid
+            from hrd_runs as b
+            join hrd_runs as m on m.rowid = $mask_rowid
+            where true
+              and b.rowid = $base_rowid
               and b.lo <= m.hi
               and b.hi >= m.lo
               and b.hi > m.hi
@@ -265,10 +265,11 @@ dbric_plugin =
       #   return ( @_hrd_from_halfopen halfopen for halfopen in halfopens )
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts:                   -> @walk @statements.hrd_find_conflicts
-      hrd_find_group_facets:                -> @walk @statements.hrd_find_group_facets
-      hrd_find_nonnormal_groups:            -> @walk @statements.hrd_find_nonnormal_groups
-      hrd_find_groups:                      -> @walk @statements.hrd_find_groups
+      hrd_find_runs:              -> @walk @statements.hrd_find_runs
+      hrd_find_conflicts:         -> @walk @statements.hrd_find_conflicts
+      hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
+      hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
+      hrd_find_groups:            -> @walk @statements.hrd_find_groups
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
@@ -295,22 +296,15 @@ dbric_plugin =
         ### like `hrd_insert_run()` but resolves key/value conflicts in favor of value given ###
         # @hrd_validate()
         new_ok = @_hrd_create_insert_run_cfg lo, hi, key, value
-        @statements.hrd_insert_run.run new_ok
-        conflicts = [ ( @hrd_find_conflicts() )..., ]
-        for conflict in conflicts
-          continue unless conflict.key_a is new_ok.key ### do not resolve conflicts of other key/value pairs ###
-          { run_ok, run_nk, } = @_hrd_runs_from_conflict conflict, new_ok.value
-          debug 'Ωhrd___6', "new:         ", new_ok
-          debug 'Ωhrd___7', "OK:          ", run_ok
-          debug 'Ωhrd___8', "not OK:      ", run_nk
-          # debug 'Ωhrd___9', "subtracted:  ", @_hrd_subtract run_nk, run_ok
-          debug 'Ωhrd__10', { rowid: run_nk.rowid, }
-          debug 'Ωhrd__12', @statements.hrd_remove_overlap.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
-          debug 'Ωhrd__11', @statements.hrd_delete_run.run { rowid: run_nk.rowid, }
-          debug 'Ωhrd__13', row for row from @walk "select * from hrd_runs order by lo, hi, key;"
-          ### remove run_nk ###
-          ### find new runs ###
-          ### add/punch new runs ###
+        @with_transaction =>
+          @statements.hrd_insert_run.run new_ok
+          conflicts = [ ( @hrd_find_conflicts() )..., ]
+          for conflict in conflicts
+            continue unless conflict.key_a is new_ok.key ### do not resolve conflicts of other key/value pairs ###
+            { run_ok, run_nk, } = @_hrd_runs_from_conflict conflict, new_ok.value
+            @statements.hrd_remove_overlap.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
+            @statements.hrd_delete_run.run { rowid: run_nk.rowid, }
+            ;null
         ;null
 
       #-----------------------------------------------------------------------------------------------------

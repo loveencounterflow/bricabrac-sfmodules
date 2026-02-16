@@ -45,6 +45,8 @@ class E.Dbric_internal_error                                                    
   constructor: ( ref, message )       -> super ref, message
 class E.Dbric_named_statement_exists                                                  extends E.Dbric_error
   constructor: ( ref, name )          -> super ref, "statement #{rpr name} is already declared"
+class E.Dbric_no_nested_transactions    extends E.Dbric_error
+  constructor: ( ref )              -> super ref, "cannot start a transaction within a transaction"
 # class E.Dbric_unknown_variable          extends E.Dbric_error
 #   constructor: ( ref, name )        -> super ref, "unknown variable #{rpr name}"
 
@@ -93,8 +95,6 @@ class E.Dbric_named_statement_exists                                            
 #   constructor: ( ref, path )        -> super ref, "no CSV records found in file #{path}"
 # class E.Dbric_interpolation_format_unknown extends E.Dbric_error
 #   constructor: ( ref, format )      -> super ref, "unknown interpolation format #{rpr format}"
-# class E.Dbric_no_nested_transactions    extends E.Dbric_error
-#   constructor: ( ref )              -> super ref, "cannot start a transaction within a transaction"
 # class E.Dbric_no_deferred_fks_in_tx     extends E.Dbric_error
 #   constructor: ( ref )              -> super ref, "cannot defer foreign keys inside a transaction"
 # class E.Dbric_invalid_timestamp         extends E.Dbric_error

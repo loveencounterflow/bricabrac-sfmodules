@@ -205,7 +205,7 @@ class Dbric_classprop_absorber
       try
         @statements[ statement_name ] = @prepare @_resolve_function statement
       catch cause
-        throw new Error "Ωdbricm__10 when trying to prepare statement #{rpr statement_name}, " \
+        throw new Error "Ωdbricm___6 when trying to prepare statement #{rpr statement_name}, " \
           + "an error occurred; maybe you forgot to call `@{constructor.name}.rebuild()`? " \
           + "See above cause for details", { cause, }
     ;null
@@ -229,7 +229,7 @@ class Dbric_classprop_absorber
       try
         ( @prepare SQL"drop #{type} #{IDN name};" ).run()
       catch error
-        warn "Ωdbricm___6 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
+        warn "Ωdbricm___7 ignored error: #{error.message}" unless /// no \s+ such \s+ #{type}: ///.test error.message
     ( @prepare SQL"pragma foreign_keys = on;" ).run()
     return count
 
@@ -280,7 +280,7 @@ class Dbric_classprop_absorber
   #---------------------------------------------------------------------------------------------------------
   _create_function: ( cfg ) ->
     if ( type_of @db.function ) isnt 'function'
-      throw new Error "Ωdbricm___7 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
+      throw new Error "Ωdbricm___8 DB adapter class #{rpr @db.constructor.name} does not provide user-defined functions"
     { name,
       overwrite,
       value,
@@ -288,13 +288,13 @@ class Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_get_udf_names().has name )
-      throw new Error "Ωdbricm___8 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm___9 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.function name, { deterministic, varargs, directOnly, }, value
 
   #---------------------------------------------------------------------------------------------------------
   _create_aggregate_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm___9 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
+      throw new Error "Ωdbricm__10 DB adapter class #{rpr @db.constructor.name} does not provide user-defined aggregate functions"
     { name,
       overwrite,
       start,
@@ -304,13 +304,13 @@ class Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_aggregate_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_get_udf_names().has name )
-      throw new Error "Ωdbricm__10 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__11 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   _create_window_function: ( cfg ) ->
     if ( type_of @db.aggregate ) isnt 'function'
-      throw new Error "Ωdbricm__11 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
+      throw new Error "Ωdbricm__12 DB adapter class #{rpr @db.constructor.name} does not provide user-defined window functions"
     { name,
       overwrite,
       start,
@@ -321,13 +321,13 @@ class Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_window_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_get_udf_names().has name )
-      throw new Error "Ωdbricm__12 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__13 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.aggregate name, { start, step, inverse, result, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   _create_table_function: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__13 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
+      throw new Error "Ωdbricm__14 DB adapter class #{rpr @db.constructor.name} does not provide table-valued user-defined functions"
     { name,
       overwrite,
       parameters,
@@ -337,18 +337,18 @@ class Dbric_classprop_absorber
       deterministic,
       varargs,        } = { templates.create_table_function_cfg..., cfg..., }
     if ( not overwrite ) and ( @_get_udf_names().has name )
-      throw new Error "Ωdbricm__14 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__15 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, { parameters, columns, rows, deterministic, varargs, directOnly, }
 
   #---------------------------------------------------------------------------------------------------------
   _create_virtual_table: ( cfg ) ->
     if ( type_of @db.table ) isnt 'function'
-      throw new Error "Ωdbricm__15 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
+      throw new Error "Ωdbricm__16 DB adapter class #{rpr @db.constructor.name} does not provide user-defined virtual tables"
     { name,
       overwrite,
       create,   } = { templates.create_virtual_table_cfg..., cfg..., }
     if ( not overwrite ) and ( @_get_udf_names().has name )
-      throw new Error "Ωdbricm__16 a UDF or built-in function named #{rpr name} has already been declared"
+      throw new Error "Ωdbricm__17 a UDF or built-in function named #{rpr name} has already been declared"
     return @db.table name, create
 
 
@@ -419,12 +419,37 @@ class Dbric extends Dbric_classprop_absorber
   prepare: ( sql ) ->
     return sql if @isa_statement sql
     unless ( type = type_of sql ) is 'text'
-      throw new Error "Ωdbricm__17 expected a statement or a text, got a #{type}"
+      throw new Error "Ωdbricm__18 expected a statement or a text, got a #{type}"
     try
       R = @db.prepare sql
     catch cause
-      throw new Error "Ωdbricm__18 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
+      throw new Error "Ωdbricm__19 when trying to prepare the following statement, an error with message: #{rpr cause.message} was thrown: #{rpr sql}", { cause, }
     @state.columns = ( try R?.columns?() catch error then null ) ? []
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  with_transaction: ( f ) ->
+  # with_transaction: ( cfg, f ) ->
+  #   switch arity = arguments.length
+  #     when 1 then [ cfg, f, ] = [ null, cfg, ]
+  #     when 2 then null
+  #     else throw new E.DBay_wrong_arity '^dbay/ctx@4^', 'with_transaction()', 1, 2, arity
+  #   @types.validate.dbay_with_transaction_cfg ( cfg = { @constructor.C.defaults.dbay_with_transaction_cfg..., cfg..., } )
+  #   @types.validate.function f
+    cfg = { mode: 'deferred', }
+    throw new E.Dbric_no_nested_transactions 'Ωdbricm__20' if @db.inTransaction
+    @execute SQL"begin #{cfg.mode} transaction;"
+    error = null
+    try
+      R = f()
+    catch error
+      @execute SQL"rollback;" if @db.inTransaction
+      throw error
+    try
+      @execute SQL"commit;"   if @db.inTransaction
+    catch error
+      @execute SQL"rollback;" if @db.inTransaction
+      # try @execute SQL"rollback;" if @db.inTransaction catch error then null
     return R
 
 #===========================================================================================================
