@@ -36,7 +36,7 @@ lets = ( original, modifier = null ) ->
 
 #===========================================================================================================
 templates =
-  insert_run_cfg:
+  add_run_cfg:
     lo:       0
     hi:       null
     key:      null
@@ -235,18 +235,34 @@ dbric_plugin =
         return { lo, hi, key, value, }
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_insert_run: nfa { template: templates.insert_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+      hrd_add_run: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         return @statements.hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_punch: nfa { template: templates.insert_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+      hrd_punch: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         ### like `hrd_insert_run()` but resolves key/value conflicts in favor of value given ###
         @hrd_validate()
+        new_ok = @_hrd_create_insert_run_cfg lo, hi, key, value
+        @statements.hrd_insert_run.run new_ok
+        conflicts = [ ( @hrd_find_conflicts() )..., ]
+        for conflict in conflicts
+          { rowid_a, lo_a, hi_a, key_a, value_a,
+            rowid_b, lo_b, hi_b, key_b, value_b, }  = conflict
+          run_ok = { rowid: rowid_a, lo: lo_a, hi: hi_a, key: key_a, value: value_a, }
+          run_nk = { rowid: rowid_b, lo: lo_b, hi: hi_b, key: key_b, value: value_b, }
+          [ run_ok, run_nk, ] = [ run_nk, run_ok, ] if value is value_b
+          debug 'Ωhrd___6', "new:     ", new_ok
+          debug 'Ωhrd___7', "OK:      ", run_ok
+          debug 'Ωhrd___8', "not OK:  ", run_nk
+          ### remove run_nk ###
+          ### find new runs ###
+          ### add/punch new runs ###
+        ;null
 
       #-----------------------------------------------------------------------------------------------------
       hrd_validate: ->
         return null if ( conflicts = [ ( @hrd_find_conflicts() )..., ] ).length is 0
-        throw new Error "Ωhrd___6 found conflicts: #{rpr conflicts}"
+        throw new Error "Ωhrd___9 found conflicts: #{rpr conflicts}"
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs_by_group: ->
