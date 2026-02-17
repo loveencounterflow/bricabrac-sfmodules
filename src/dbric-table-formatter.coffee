@@ -4,6 +4,7 @@
 
 #===========================================================================================================
 { debug,
+  log: echo,
   warn                  } = console
 { Table, }                = ( require './cli-table3a.brics' ).require_cli_table3a()
 { f, }                    = require 'effstring'
@@ -40,7 +41,28 @@ class Dbric_table_formatter
     return table.toString()
 
   #---------------------------------------------------------------------------------------------------------
-  echo_cli_table = ( P... ) -> echo @tbl_as_text P...
+  tbl_echo_as_text: ( P... ) -> echo @tbl_as_text P...
+
+
+#-----------------------------------------------------------------------------------------------------------
+output_query_as_csv = ( query ) ->
+  CSV   = require 'csv-stringify/sync'
+  jzr   = new Jizura()
+  wout  = ( P... ) -> process.stdout.write P...;                            ;null
+  woutn = ( P... ) -> process.stdout.write P...; process.stdout.write '\n'  ;null
+  werr  = ( P... ) -> process.stderr.write P...;                            ;null
+  werrn = ( P... ) -> process.stderr.write P...; process.stderr.write '\n'  ;null
+  # query = process.argv[ 2 ] ? null
+  if ( not query? ) or ( query is '' )
+    werrn reverse red " Ωjzrsdb___8 no query given "
+    process.exit 111
+    return null
+  rows  = jzr.dba.get_all query
+  # woutn cli_commands.use_pspg
+  wout CSV.stringify [ ( column.name for column in jzr.dba.state.columns ), ]
+  wout CSV.stringify rows
+  ;null
+
 
 #===========================================================================================================
 module.exports = do =>
