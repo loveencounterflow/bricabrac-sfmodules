@@ -278,6 +278,16 @@ dbric_plugin =
         return { lo, hi, key, value, }
 
       #-----------------------------------------------------------------------------------------------------
+      # hrd_find_overlaps: nfa { template: templates.lo_hi, }, ( lo, hi, cfg ) ->
+      hrd_find_overlaps: ( lo, hi = null ) ->
+        hi   ?= lo
+        ### TAINT should be immutable ###
+        for row from @walk @statements.hrd_find_overlaps, { lo, hi, }
+          row.value = JSON.parse row.value
+          yield row
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
       hrd_add_run: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         return @statements.hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
 
