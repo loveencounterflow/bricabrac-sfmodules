@@ -147,17 +147,17 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_groups as
-        select
+        select distinct
             g.key                       as key,
             g.value                     as value,
-            first_value( r.lo ) over w  as first,
-            last_value(  r.hi ) over w  as last,
+            min( r.lo ) over w          as first,
+            max( r.hi ) over w          as last,
             g.runs                      as runs,
             n.is_normal                 as is_normal
           from hrd_group_facets           as g
           left join hrd_normalization     as n using ( key, value )
           left join hrd_runs              as r using ( key, value )
-          window w as ( partition by r.key, r.value order by r.lo, r.hi, r.key, r.value )
+          window w as ( partition by r.key, r.value )
           order by key, value;"""
       #-----------------------------------------------------------------------------------------------------
       ]
