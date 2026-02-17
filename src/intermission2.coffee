@@ -21,6 +21,10 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
 { f,                    } = require 'effstring'
 { Dbric,
   Dbric_std,
+  True,
+  False,
+  as_bool,
+  from_bool,
   SQL,
   LIT,
   IDN,
@@ -28,7 +32,6 @@ IFN                       = require './../dependencies/intervals-fn-lib.js'
 
 #===========================================================================================================
 ### TAINT move to dedicated module ###
-### NOTE not using `letsfreezethat` to avoid issue with deep-freezing `Run` instances ###
 lets = ( original, modifier = null ) ->
   draft = if Array.isArray then [ original..., ] else { original..., }
   modifier draft
@@ -90,6 +93,32 @@ dbric_plugin =
           group by a.key, a.value
           order by a.key, a.value;"""
 
+      # #-----------------------------------------------------------------------------------------------------
+      # SQL"""create view hrd_conflicts as
+      #   select distinct
+      #       a.rowid  as rowid,
+      #       a.lo     as lo,
+      #       a.hi     as hi,
+      #       a.key    as key,
+      #       a.value  as value
+      #     from hrd_runs as a
+      #     join hrd_runs as b
+      #       on true
+      #         and ( a.key   =   b.key   )
+      #         and ( a.value !=  b.value )
+      #         and ( a.lo    <=  b.hi    )
+      #         and ( a.hi    >=  b.lo    )
+      #     order by a.lo, a.hi, a.key;"""
+
+      # #-----------------------------------------------------------------------------------------------------
+      # SQL"""create view _hrd_group_has_conflict as
+      #   select distinct
+      #       f.key                     as key,
+      #       not ( c.key is null )     as has_conflict
+      #   from hrd_group_facets   as f
+      #   left join hrd_conflicts as c on ( f.key = c.key and f.value = c.value )
+      #   order by key, value;"""
+
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_conflicts as
         select
@@ -108,7 +137,7 @@ dbric_plugin =
             on true
               and ( a.rowid <   b.rowid )
               and ( a.key   =   b.key   )
-              and ( a.value <>  b.value )
+              and ( a.value !=  b.value )
               and ( a.lo    <=  b.hi    )
               and ( a.hi    >=  b.lo    )
           order by a.lo, a.hi, a.key;"""
@@ -121,8 +150,8 @@ dbric_plugin =
             not ( ca.key_a is null and cb.key_b is null )             as has_conflict
         from hrd_group_facets as f
         left join hrd_conflicts as ca on ( f.key = ca.key_a and f.value = ca.value_a )
-        left join hrd_conflicts as cb on ( f.key = cb.key_b and f.value = cb.value_b )
         order by key, value;"""
+
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_normalization as
@@ -153,6 +182,7 @@ dbric_plugin =
             min( r.lo ) over w          as first,
             max( r.hi ) over w          as last,
             g.runs                      as runs,
+            false                       as has_conflict, -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             n.is_normal                 as is_normal
           from hrd_group_facets           as g
           left join hrd_normalization     as n using ( key, value )
@@ -266,10 +296,24 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs:              -> @walk @statements.hrd_find_runs
-      hrd_find_conflicts:         -> @walk @statements.hrd_find_conflicts
       hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
       hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
-      hrd_find_groups:            -> @walk @statements.hrd_find_groups
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_groups: ->
+        for row from @walk @statements.hrd_find_groups
+          row.has_conflict  = as_bool row.has_conflict
+          row.is_normal     = as_bool row.is_normal
+          yield row
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_conflicts: ->
+        for row from @walk @statements.hrd_find_conflicts
+          # row.has_conflict  = as_bool row.has_conflict
+          # row.is_normal     = as_bool row.is_normal
+          yield row
+        ;null
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
@@ -281,7 +325,6 @@ dbric_plugin =
       # hrd_find_overlaps: nfa { template: templates.lo_hi, }, ( lo, hi, cfg ) ->
       hrd_find_overlaps: ( lo, hi = null ) ->
         hi   ?= lo
-        ### TAINT should be immutable ###
         for row from @walk @statements.hrd_find_overlaps, { lo, hi, }
           row.value = JSON.parse row.value
           yield row
