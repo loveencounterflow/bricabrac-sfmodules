@@ -186,6 +186,11 @@ class My_db extends Dbric_std
 * **`[—]`** implement life cycle methods to be called at various points during instantiation; might
   use these to handle name clashes
 * **`[—]`** plugins should get to define their own `cfg` values under `Dbric::cfg.$prefix`
+* **`[—]`** offer easy API to produce tables:
+  * **`[+]`** CLI table (with bricabrac `cli_table3a`)
+  * **`[—]`** HTML tables
+  * **`[—]`** CVS for use with [`pspg`](https://github.com/okbob/pspg)
+
 
 ## Won't Do
 

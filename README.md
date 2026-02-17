@@ -206,6 +206,11 @@ class My_db extends Dbric_std
 * **`[—]`** implement life cycle methods to be called at various points during instantiation; might
   use these to handle name clashes
 * **`[—]`** plugins should get to define their own `cfg` values under `Dbric::cfg.$prefix`
+* **`[—]`** offer easy API to produce tables:
+  * **`[+]`** CLI table (with bricabrac `cli_table3a`)
+  * **`[—]`** HTML tables
+  * **`[—]`** CVS for use with [`pspg`](https://github.com/okbob/pspg)
+
 
 ## Won't Do
 
@@ -237,7 +242,8 @@ class My_db extends Dbric_std
     * empty intervals are not representable;
     * non-contiguous runs are only representable by using multiple runs;
     * single-point runs `lo == n == hi` holds.
-  * All runs with a given combination of `( key, value, )` form a 'group'.
+  * All runs with a given `key` form a 'key group'.
+  * All runs with a given combination of `key` and `value` form a 'facet group'.
   * A group is considered 'normalized' when it is represented with the minimal number of runs.
   * Two groups that share the same `key` but have different `value`s must be mutually exclusive in a given
     hoard; stated the other way round, each point that is comprised by two runs with the same `key` but
@@ -334,15 +340,7 @@ class My_db extends Dbric_std
 
 ## To Do
 
-* **`[—]`** implement UR bounds, default `0x00_0000..0x10_ffff`
-* **`[—]`** `rowid`s of runs need to be unique across scatters
-* **`[—]`** add ability to name scatters (and runs?)
-* **`[—]`** implement `Hoard::normalize()`
-* **`[—]`** implement ability to create a `Scatter`-like object from any number of existing scatters
-* **`[—]`** implement `Scatter::subtract_run()` / `Scatter::subtract()`
-* **`[—]`** implement `Hoard::base`
-* **`[—]`** implement a setting to determine whether points added to a scatter but not in `Hoard::base`
-  should cause an error or be dropped silently
+* **`[—]`** implement immutability
 
 ## Is Done
 
