@@ -58,7 +58,8 @@ BRICS =
         style:
           'padding-left':   1
           'padding-right':  1
-          'head':           [ 'bold', 'brightYellow', 'bgBlue', ]
+          # 'head':           [ 'bold', 'brightYellow', 'bgBlue', ]
+          'head':           [ 'bold', 'black', 'bgBlue', ]
           'border':         [ 'grey', ]
           'compact':        false
         head: []

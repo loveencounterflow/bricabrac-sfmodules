@@ -36,6 +36,7 @@ misfit                          = Symbol 'misfit'
   LIT,
   VEC,
   SQL,                        } = require './dbric-utilities'
+{ Dbric_table_formatter,      } = require './dbric-table-formatter'
 #-----------------------------------------------------------------------------------------------------------
 ignored_prototypes              = null
 
@@ -100,7 +101,7 @@ templates =
 
 
 #===========================================================================================================
-class Dbric_classprop_absorber
+class Dbric_classprop_absorber extends Dbric_table_formatter
 
   #---------------------------------------------------------------------------------------------------------
   @prefix:    null
@@ -456,6 +457,7 @@ class Dbric extends Dbric_classprop_absorber
 ignored_prototypes = Object.freeze [
   ( Object.getPrototypeOf {} ),
   ( Object.getPrototypeOf Object ),
+  Dbric_table_formatter,
   Dbric_classprop_absorber,
   Dbric,
   ]
