@@ -93,31 +93,41 @@ dbric_plugin =
           group by a.key, a.value
           order by a.key, a.value;"""
 
-      # #-----------------------------------------------------------------------------------------------------
-      # SQL"""create view hrd_conflicts as
-      #   select distinct
-      #       a.rowid  as rowid,
-      #       a.lo     as lo,
-      #       a.hi     as hi,
-      #       a.key    as key,
-      #       a.value  as value
-      #     from hrd_runs as a
-      #     join hrd_runs as b
-      #       on true
-      #         and ( a.key   =   b.key   )
-      #         and ( a.value !=  b.value )
-      #         and ( a.lo    <=  b.hi    )
-      #         and ( a.hi    >=  b.lo    )
-      #     order by a.lo, a.hi, a.key;"""
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_conflicts_2 as
+        select distinct
+            a.rowid  as rowid,
+            a.lo     as lo,
+            a.hi     as hi,
+            a.key    as key,
+            a.value  as value
+          from hrd_runs as a
+          join hrd_runs as b
+            on true
+              and ( a.key   =   b.key   )
+              and ( a.value !=  b.value )
+              and ( a.lo    <=  b.hi    )
+              and ( a.hi    >=  b.lo    )
+          order by a.lo, a.hi, a.key;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view _hrd_key_group_has_conflict_2 as
+        select distinct
+            f.key                     as key,
+            not ( c.key is null )     as has_conflict
+        from hrd_group_facets   as f
+        left join hrd_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
+        order by f.key, f.value;"""
 
       # #-----------------------------------------------------------------------------------------------------
-      # SQL"""create view _hrd_group_has_conflict as
+      # SQL"""create view _hrd_facet_group_has_conflict_2 as
       #   select distinct
       #       f.key                     as key,
+      #       f.value                   as value,
       #       not ( c.key is null )     as has_conflict
       #   from hrd_group_facets   as f
-      #   left join hrd_conflicts as c on ( f.key = c.key and f.value = c.value )
-      #   order by key, value;"""
+      #   left join hrd_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
+      #   order by f.key, f.value;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_conflicts as
@@ -150,6 +160,7 @@ dbric_plugin =
             not ( ca.key_a is null and cb.key_b is null )             as has_conflict
         from hrd_group_facets as f
         left join hrd_conflicts as ca on ( f.key = ca.key_a and f.value = ca.value_a )
+        left join hrd_conflicts as cb on ( f.key = cb.key_b and f.value = cb.value_b )
         order by key, value;"""
 
 
