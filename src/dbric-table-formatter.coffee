@@ -24,7 +24,7 @@ class Dbric_table_formatter
     rows        = @walk sql, P...
     # caption     = f"#{relation_type} #{relation_name} (#{row_count}:,.0f; rows)"
     col_names   = @_tbl_get_column_names sql
-    caption     = "(caption here)"
+    caption     = " #{sql.toString()} "
     table       = new Table { caption, head: [ '', col_names..., ], }
     count       = 0
     #.......................................................................................................
@@ -54,7 +54,7 @@ output_query_as_csv = ( query ) ->
   werrn = ( P... ) -> process.stderr.write P...; process.stderr.write '\n'  ;null
   # query = process.argv[ 2 ] ? null
   if ( not query? ) or ( query is '' )
-    werrn reverse red " Ωjzrsdb___8 no query given "
+    werrn reverse red " Ωdtf___2 no query given "
     process.exit 111
     return null
   rows  = jzr.dba.get_all query
