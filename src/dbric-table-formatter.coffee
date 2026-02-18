@@ -8,7 +8,7 @@
   warn                  } = console
 { Table, }                = ( require './cli-table3a.brics' ).require_cli_table3a()
 { f, }                    = require 'effstring'
-# { type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
+{ type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
 
 
 #===========================================================================================================
@@ -21,10 +21,11 @@ class Dbric_table_formatter
 
   #---------------------------------------------------------------------------------------------------------
   tbl_as_text: ( sql, P... ) ->
-    rows        = @walk sql, P...
+    if ( type = type_of sql ) is 'generator' then rows = [ sql..., ]
+    else                                          rows = @walk sql, P...
     # caption     = f"#{relation_type} #{relation_name} (#{row_count}:,.0f; rows)"
     col_names   = @_tbl_get_column_names sql
-    caption     = " #{sql.toString()} "
+    caption     = ' ' + ( if ( type is 'generator' ) then sql.name else sql.toString() ) + ' '
     table       = new Table { caption, head: [ '', col_names..., ], }
     count       = 0
     #.......................................................................................................
