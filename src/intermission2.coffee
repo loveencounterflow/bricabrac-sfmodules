@@ -84,7 +84,7 @@ dbric_plugin =
       SQL"""create index "hrd_index_runs_key" on hrd_runs ( key );"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_group_facets as
+      SQL"""create view _hrd_facet_groups as
         select distinct
             a.key     as key,
             a.value   as value,
@@ -115,22 +115,12 @@ dbric_plugin =
         select distinct
             f.key                     as key,
             not ( c.key is null )     as has_conflict
-        from hrd_group_facets   as f
+        from _hrd_facet_groups   as f
         left join hrd_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
         order by f.key, f.value;"""
 
-      # #-----------------------------------------------------------------------------------------------------
-      # SQL"""create view _hrd_facet_group_has_conflict_2 as
-      #   select distinct
-      #       f.key                     as key,
-      #       f.value                   as value,
-      #       not ( c.key is null )     as has_conflict
-      #   from hrd_group_facets   as f
-      #   left join hrd_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
-      #   order by f.key, f.value;"""
-
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_conflicts as
+      SQL"""create view hrd_runs_with_conflict_1 as
         select
             a.rowid  as rowid_a,
             a.lo     as lo_a,
@@ -153,16 +143,15 @@ dbric_plugin =
           order by a.lo, a.hi, a.key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_group_has_conflict as
+      SQL"""create view _hrd_facet_group_has_conflict_1 as
         select distinct
             f.key                                                     as key,
             f.value                                                   as value,
             not ( ca.key_a is null and cb.key_b is null )             as has_conflict
-        from hrd_group_facets as f
-        left join hrd_conflicts as ca on ( f.key = ca.key_a and f.value = ca.value_a )
-        left join hrd_conflicts as cb on ( f.key = cb.key_b and f.value = cb.value_b )
+        from _hrd_facet_groups as f
+        left join hrd_runs_with_conflict_1 as ca on ( f.key = ca.key_a and f.value = ca.value_a )
+        left join hrd_runs_with_conflict_1 as cb on ( f.key = cb.key_b and f.value = cb.value_b )
         order by key, value;"""
-
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_normalization as
@@ -195,7 +184,7 @@ dbric_plugin =
             g.runs                      as runs,
             false                       as has_conflict, -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             n.is_normal                 as is_normal
-          from hrd_group_facets           as g
+          from _hrd_facet_groups           as g
           left join hrd_normalization     as n using ( key, value )
           left join hrd_runs              as r using ( key, value )
           window w as ( partition by r.key, r.value )
@@ -251,18 +240,16 @@ dbric_plugin =
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts:         SQL"""select * from hrd_conflicts;"""
-      hrd_find_group_facets:      SQL"""select * from hrd_group_facets;"""
-      hrd_find_runs_by_group:     SQL"""select * from hrd_runs order by key, value, lo, hi;"""
-      hrd_find_groups:            SQL"""select * from hrd_groups order by key, value;"""
-      hrd_delete_run:             SQL"""delete from hrd_runs where rowid = $rowid;"""
+      hrd_find_runs_with_conflicts_1: SQL"""select * from hrd_runs_with_conflict_1;"""
+      hrd_find_facet_groups:          SQL"""select * from hrd_groups order by key, value;"""
+      hrd_delete_run:                 SQL"""delete from hrd_runs where rowid = $rowid;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_nonnormal_groups: SQL"""
         select key, value from hrd_normalization where is_normal = false order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_remove_overlap: SQL"""
+      hrd_remove_overlap_1: SQL"""
         -- .................................................................................................
         insert into hrd_runs ( lo, hi, key, value )
         select lo, hi, key, value
@@ -311,16 +298,16 @@ dbric_plugin =
       hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_groups: ->
-        for row from @walk @statements.hrd_find_groups
+      hrd_find_facet_groups: ->
+        for row from @walk @statements.hrd_find_facet_groups
           row.has_conflict  = as_bool row.has_conflict
           row.is_normal     = as_bool row.is_normal
           yield row
         ;null
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_conflicts: ->
-        for row from @walk @statements.hrd_find_conflicts
+      hrd_find_runs_with_conflicts_1: ->
+        for row from @walk @statements.hrd_find_runs_with_conflicts_1
           # row.has_conflict  = as_bool row.has_conflict
           # row.is_normal     = as_bool row.is_normal
           yield row
@@ -346,7 +333,7 @@ dbric_plugin =
         return @statements.hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
 
       #-----------------------------------------------------------------------------------------------------
-      _hrd_runs_from_conflict: ( conflict, ok_value_json ) ->
+      _hrd_runs_from_conflict_1: ( conflict, ok_value_json ) ->
           { rowid_a, lo_a, hi_a, key_a, value_a,
             rowid_b, lo_b, hi_b, key_b, value_b, }  = conflict
           run_ok = { rowid: rowid_a, lo: lo_a, hi: hi_a, key: key_a, value: value_a, }
@@ -355,41 +342,27 @@ dbric_plugin =
           return { run_ok: run_nk, run_nk: run_ok, }
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_punch: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+      hrd_punch_1: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         ### TAINT need to wrap in transaction ###
         ### like `hrd_insert_run()` but resolves key/value conflicts in favor of value given ###
-        # @hrd_validate()
+        # @hrd_validate_1()
         new_ok = @_hrd_create_insert_run_cfg lo, hi, key, value
         @with_transaction =>
           @statements.hrd_insert_run.run new_ok
-          conflicts = [ ( @hrd_find_conflicts() )..., ]
+          conflicts = [ ( @hrd_find_runs_with_conflicts_1() )..., ]
           for conflict in conflicts
             continue unless conflict.key_a is new_ok.key ### do not resolve conflicts of other key/value pairs ###
-            { run_ok, run_nk, } = @_hrd_runs_from_conflict conflict, new_ok.value
-            @statements.hrd_remove_overlap.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
+            { run_ok, run_nk, } = @_hrd_runs_from_conflict_1 conflict, new_ok.value
+            @statements.hrd_remove_overlap_1.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
             @statements.hrd_delete_run.run { rowid: run_nk.rowid, }
             ;null
         ;null
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_validate: ->
-        return null if ( conflicts = [ ( @hrd_find_conflicts() )..., ] ).length is 0
-        throw new Error "Ωhrd__14 found conflicts: #{rpr conflicts}"
+      hrd_validate_1: ->
+        return null if ( conflicts = [ ( @hrd_find_runs_with_conflicts_1() )..., ] ).length is 0
+        throw new Error "Ωhrd___6 found conflicts: #{rpr conflicts}"
 
-      #-----------------------------------------------------------------------------------------------------
-      hrd_find_runs_by_group: ->
-        prv_key   = null
-        prv_value = null
-        group     = null
-        for { rowid, lo, hi, key, value, } from @walk @statements.hrd_find_runs_by_group
-          unless ( key is prv_key ) and ( value is prv_value )
-            yield group if group?
-            group         = { key, value, runs: [], }
-            prv_key       = key
-            prv_value     = value
-          group.runs.push { rowid, lo, hi, key, value, }
-        yield group if group?
-        return null
 
 #===========================================================================================================
 module.exports = do =>
