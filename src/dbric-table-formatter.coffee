@@ -21,11 +21,23 @@ class Dbric_table_formatter
 
   #---------------------------------------------------------------------------------------------------------
   tbl_as_text: ( sql, P... ) ->
-    if ( type = type_of sql ) is 'generator' then rows = [ sql..., ]
-    else                                          rows = @walk sql, P...
+    switch type = type_of sql
+      when 'generator'
+        ### TAINT assert P is empty ###
+        rows    = sql
+        caption = '?'
+      when 'generatorfunction'
+        rows    = sql.call @, P...
+        caption = sql.name
+      when 'text'
+        rows    = @walk sql, P...
+        caption = sql
+      else
+        rows    = @walk sql, P...
+        caption = sql.toString()
     # caption     = f"#{relation_type} #{relation_name} (#{row_count}:,.0f; rows)"
     col_names   = @_tbl_get_column_names sql
-    caption     = ' ' + ( if ( type is 'generator' ) then sql.name else sql.toString() ) + ' '
+    caption     = " #{caption} "
     table       = new Table { caption, head: [ '', col_names..., ], }
     count       = 0
     #.......................................................................................................
