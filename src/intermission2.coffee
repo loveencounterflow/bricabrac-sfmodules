@@ -175,7 +175,7 @@ dbric_plugin =
           order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_groups as
+      SQL"""create view hrd_families as
         select distinct
             g.key                       as key,
             g.value                     as value,
@@ -241,7 +241,7 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs_with_conflicts_1: SQL"""select * from hrd_runs_with_conflict_1;"""
-      hrd_find_facet_groups:          SQL"""select * from hrd_groups order by key, value;"""
+      hrd_find_families:          SQL"""select * from hrd_families order by key, value;"""
       hrd_delete_run:                 SQL"""delete from hrd_runs where rowid = $rowid;"""
 
       #-----------------------------------------------------------------------------------------------------
@@ -298,8 +298,8 @@ dbric_plugin =
       hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_facet_groups: ->
-        for row from @walk @statements.hrd_find_facet_groups
+      hrd_find_families: ->
+        for row from @walk @statements.hrd_find_families
           row.has_conflict  = as_bool row.has_conflict
           row.is_normal     = as_bool row.is_normal
           yield row
