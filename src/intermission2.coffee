@@ -88,7 +88,7 @@ dbric_plugin =
       SQL"""create index "hrd_index_runs_key" on hrd_runs ( key );"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_facet_groups as
+      SQL"""create view _hrd_families as
         select distinct
             a.key     as key,
             a.value   as value,
@@ -115,15 +115,6 @@ dbric_plugin =
           order by a.lo, a.hi, a.key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_clan_has_conflict_2 as
-        select distinct
-            f.key                     as key,
-            not ( c.key is null )     as has_conflict
-        from _hrd_facet_groups   as f
-        left join hrd_family_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
-        order by f.key, f.value;"""
-
-      #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_family_conflicts_1 as
         select
             a.rowid  as rowid_a,
@@ -145,17 +136,6 @@ dbric_plugin =
               and ( a.lo    <=  b.hi    )
               and ( a.hi    >=  b.lo    )
           order by a.lo, a.hi, a.key;"""
-
-      #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_family_has_conflict_1 as
-        select distinct
-            f.key                                                     as key,
-            f.value                                                   as value,
-            not ( ca.key_a is null and cb.key_b is null )             as has_conflict
-        from _hrd_facet_groups as f
-        left join hrd_family_conflicts_1 as ca on ( f.key = ca.key_a and f.value = ca.value_a )
-        left join hrd_family_conflicts_1 as cb on ( f.key = cb.key_b and f.value = cb.value_b )
-        order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_normalization as
@@ -188,7 +168,7 @@ dbric_plugin =
             g.runs                      as runs,
             false                       as has_conflict, -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             n.is_normal                 as is_normal
-          from _hrd_facet_groups           as g
+          from _hrd_families           as g
           left join hrd_normalization     as n using ( key, value )
           left join hrd_runs              as r using ( key, value )
           window w as ( partition by r.key, r.value )
@@ -341,6 +321,7 @@ dbric_plugin =
       hrd_find_overlaps: ( lo, hi = null ) ->
         hi   ?= lo
         for row from @walk @statements.hrd_find_overlaps, { lo, hi, }
+          hide row, 'value_json', row.value
           row.value = JSON.parse row.value
           yield row
         ;null
