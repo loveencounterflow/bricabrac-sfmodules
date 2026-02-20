@@ -8,7 +8,7 @@
 IFN                       = require './../dependencies/intervals-fn-lib.js'
 { T,                    } = require './intermission-types'
 #...........................................................................................................
-{ nfa,                  } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
+{ nfa,                  } = require 'normalize-function-arguments'
 { nameit,               } = ( require './various-brics' ).require_nameit()
 { type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
 { hide,
@@ -44,6 +44,10 @@ templates =
     hi:       null
     key:      null
     value:    null
+  hrd_find_families:
+    key:      null
+    value:    null
+
 
 #===========================================================================================================
 dbric_plugin =
@@ -94,7 +98,7 @@ dbric_plugin =
           order by a.key, a.value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_conflicts_2 as
+      SQL"""create view hrd_family_conflicts_2 as
         select distinct
             a.rowid  as rowid,
             a.lo     as lo,
@@ -111,16 +115,16 @@ dbric_plugin =
           order by a.lo, a.hi, a.key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_key_group_has_conflict_2 as
+      SQL"""create view _hrd_clan_has_conflict_2 as
         select distinct
             f.key                     as key,
             not ( c.key is null )     as has_conflict
         from _hrd_facet_groups   as f
-        left join hrd_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
+        left join hrd_family_conflicts_2 as c on ( f.key = c.key and f.value = c.value )
         order by f.key, f.value;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view hrd_runs_with_conflict_1 as
+      SQL"""create view hrd_family_conflicts_1 as
         select
             a.rowid  as rowid_a,
             a.lo     as lo_a,
@@ -143,14 +147,14 @@ dbric_plugin =
           order by a.lo, a.hi, a.key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create view _hrd_facet_group_has_conflict_1 as
+      SQL"""create view _hrd_family_has_conflict_1 as
         select distinct
             f.key                                                     as key,
             f.value                                                   as value,
             not ( ca.key_a is null and cb.key_b is null )             as has_conflict
         from _hrd_facet_groups as f
-        left join hrd_runs_with_conflict_1 as ca on ( f.key = ca.key_a and f.value = ca.value_a )
-        left join hrd_runs_with_conflict_1 as cb on ( f.key = cb.key_b and f.value = cb.value_b )
+        left join hrd_family_conflicts_1 as ca on ( f.key = ca.key_a and f.value = ca.value_a )
+        left join hrd_family_conflicts_1 as cb on ( f.key = cb.key_b and f.value = cb.value_b )
         order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
@@ -212,7 +216,7 @@ dbric_plugin =
     statements:
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_insert_run: SQL"""insert into hrd_runs ( lo, hi, key, value ) values ( $lo, $hi, $key, $value );"""
+      _hrd_insert_run: SQL"""insert into hrd_runs ( lo, hi, key, value ) values ( $lo, $hi, $key, $value );"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs: SQL"""
@@ -240,12 +244,11 @@ dbric_plugin =
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_runs_with_conflicts_1: SQL"""select * from hrd_runs_with_conflict_1;"""
-      hrd_find_families:          SQL"""select * from hrd_families order by key, value;"""
+      hrd_find_runs_with_conflicts_1: SQL"""select * from hrd_family_conflicts_1;"""
       hrd_delete_run:                 SQL"""delete from hrd_runs where rowid = $rowid;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_nonnormal_groups: SQL"""
+      hrd_find_nonnormal_families: SQL"""
         select key, value from hrd_normalization where is_normal = false order by key, value;"""
 
       #-----------------------------------------------------------------------------------------------------
@@ -294,14 +297,28 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs:              -> @walk @statements.hrd_find_runs
-      hrd_find_group_facets:      -> @walk @statements.hrd_find_group_facets
-      hrd_find_nonnormal_groups:  -> @walk @statements.hrd_find_nonnormal_groups
+      hrd_find_nonnormal_families:  -> @walk @statements.hrd_find_nonnormal_families
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_find_families: ->
-        for row from @walk @statements.hrd_find_families
+      ### TAINT should use `nfa` but currently fails for generators ###
+      # hrd_find_families: nfa { template: templates.hrd_find_families, }, ( key, value, cfg ) ->
+      hrd_find_families: ( cfg ) ->
+        cfg = { templates.hrd_find_families..., cfg..., }
+        switch true
+          when cfg.key? and cfg.value?
+            cfg.value = JSON.stringify cfg.value
+            sql       = SQL"""select * from hrd_families where key = $key and value = $value order by key, value;"""
+          when cfg.key?
+            sql       = SQL"""select * from hrd_families where key = $key order by key, value;"""
+          when cfg.value?
+            cfg.value = JSON.stringify cfg.value
+            sql       = SQL"""select * from hrd_families where value = $value order by key, value;"""
+          else
+            sql       = SQL"""select * from hrd_families order by key, value;"""
+        for row from @walk sql, cfg
           row.has_conflict  = as_bool row.has_conflict
           row.is_normal     = as_bool row.is_normal
+          row.value         = JSON.parse row.value
           yield row
         ;null
 
@@ -330,7 +347,7 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_add_run: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
-        return @statements.hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
+        return @statements._hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_runs_from_conflict_1: ( conflict, ok_value_json ) ->
@@ -344,11 +361,11 @@ dbric_plugin =
       #-----------------------------------------------------------------------------------------------------
       hrd_punch_1: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         ### TAINT need to wrap in transaction ###
-        ### like `hrd_insert_run()` but resolves key/value conflicts in favor of value given ###
+        ### like `_hrd_add_run()` but resolves key/value conflicts in favor of value given ###
         # @hrd_validate_1()
         new_ok = @_hrd_create_insert_run_cfg lo, hi, key, value
         @with_transaction =>
-          @statements.hrd_insert_run.run new_ok
+          @statements._hrd_insert_run.run new_ok
           conflicts = [ ( @hrd_find_runs_with_conflicts_1() )..., ]
           for conflict in conflicts
             continue unless conflict.key_a is new_ok.key ### do not resolve conflicts of other key/value pairs ###
