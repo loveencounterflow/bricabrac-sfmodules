@@ -224,6 +224,15 @@ dbric_plugin =
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
+      _hrd_find_runs_of_family_sorted: SQL"""
+        select rowid, lo, hi, key, value
+          from hrd_runs
+          where true
+            and ( key   = $key    )
+            and ( value = $value  )
+          order by lo, hi, key;"""
+
+      #-----------------------------------------------------------------------------------------------------
       hrd_find_overlaps: SQL"""
         select rowid, lo, hi, key, value
           from hrd_runs
@@ -285,9 +294,9 @@ dbric_plugin =
     #-------------------------------------------------------------------------------------------------------
     methods:
 
-      # #-----------------------------------------------------------------------------------------------------
-      # _hrd_as_halfopen:   ( run       ) -> { start: run.lo,         end:  run.hi        + 1, }
-      # _hrd_from_halfopen: ( halfopen  ) -> { lo:    halfopen.start, hi:   halfopen.end  - 1, }
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_as_halfopen:   ( run       ) -> { start: run.lo,         end:  run.hi        + 1, }
+      _hrd_from_halfopen: ( halfopen  ) -> { lo:    halfopen.start, hi:   halfopen.end  - 1, }
 
       # #-----------------------------------------------------------------------------------------------------
       # _hrd_subtract: ( base, mask ) ->
@@ -368,7 +377,6 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_punch_1: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
-        ### TAINT need to wrap in transaction ###
         ### like `_hrd_add_run()` but resolves key/value conflicts in favor of value given ###
         # @hrd_validate_1()
         new_ok = @_hrd_create_insert_run_cfg lo, hi, key, value
@@ -381,6 +389,27 @@ dbric_plugin =
             @statements.hrd_remove_overlap_1.run { base_rowid: run_nk.rowid, mask_rowid: run_ok.rowid, }
             @statements.hrd_delete_run.run { rowid: run_nk.rowid, }
             ;null
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_normalize_family: ( key, value_json ) ->
+        ### TAINT potentially doing too much as we only have to join adjacent, remove overlaps ###
+        @with_transaction =>
+          old_runs      = @get_all @statements._hrd_find_runs_of_family_sorted, { key, value: value_json, }
+          @statements.hrd_delete_run.run { rowid: old_run.rowid, } for old_run in old_runs
+          old_halfopens = ( @_hrd_as_halfopen old_run for old_run in old_runs )
+          new_halfopens = IFN.simplify old_halfopens
+          new_runs      = ( @_hrd_from_halfopen halfopen for halfopen in new_halfopens )
+          value         = JSON.parse value_json
+          @hrd_add_run { new_run..., key, value, } for new_run in new_runs
+          ;null
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_normalize: ->
+        families = @get_all SQL"select * from hrd_normalization where is_normal = false;"
+        for family in families
+          @_hrd_normalize_family family.key, family.value
         ;null
 
       #-----------------------------------------------------------------------------------------------------
