@@ -59,13 +59,13 @@ dbric_plugin =
     build: [
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create table hrd_runs (
-            rowid   text not null generated always as ( hrd_get_run_rowid( lo, hi, key ) ) stored,
+      SQL"""create table _hrd_runs (
+            rowid   text not null,
             lo      real not null,
             hi      real not null,
             key     text not null,
             value   text not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
-          -- primary key ( rowid ),
+          primary key ( rowid ),
           unique ( rowid ),
           unique ( lo, hi, key, value ),
           constraint "Ωhrd_constraint___1" check (
@@ -84,8 +84,20 @@ dbric_plugin =
         ) strict;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create index "hrd_index_runs_hi"  on hrd_runs ( hi );"""
-      SQL"""create index "hrd_index_runs_key" on hrd_runs ( key );"""
+      SQL"""create index "hrd_index_runs_hi"  on _hrd_runs ( hi );"""
+      SQL"""create index "hrd_index_runs_key" on _hrd_runs ( key );"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_runs as select * from _hrd_runs;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create trigger hrd_on_before_insert_run
+        instead of insert on hrd_runs
+          for each row begin
+            insert into _hrd_runs ( rowid, lo, hi, key, value ) values
+              ( _hrd_get_next_run_rowid(), new.lo, new.hi, new.key, new.value );
+            end;
+        ;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view _hrd_families as
@@ -180,12 +192,9 @@ dbric_plugin =
     functions:
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_get_run_rowid:
-        deterministic: true
-        value: ( lo, hi, key ) ->
-          ls = if lo < 0 then '-' else '+'
-          hs = if hi < 0 then '-' else '+'
-          f"t:hrd:runs:V=#{ls}#{Math.abs lo}:*<06x;,#{hs}#{Math.abs hi}:*<06x;,#{key}"
+      _hrd_get_next_run_rowid:
+        deterministic: false
+        value: -> @_hrd_get_next_run_rowid()
 
       # #-----------------------------------------------------------------------------------------------------
       # hrd_json_quote:
@@ -196,7 +205,9 @@ dbric_plugin =
     statements:
 
       #-----------------------------------------------------------------------------------------------------
-      _hrd_insert_run: SQL"""insert into hrd_runs ( lo, hi, key, value ) values ( $lo, $hi, $key, $value );"""
+      _hrd_insert_run: SQL"""
+        insert into hrd_runs ( lo, hi, key, value )
+          values ( $lo, $hi, $key, $value );"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs: SQL"""
@@ -225,7 +236,7 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs_with_conflicts_1: SQL"""select * from hrd_family_conflicts_1;"""
-      hrd_delete_run:                 SQL"""delete from hrd_runs where rowid = $rowid;"""
+      hrd_delete_run:                 SQL"""delete from _hrd_runs where rowid = $rowid;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_nonnormal_families: SQL"""
@@ -309,6 +320,11 @@ dbric_plugin =
           # row.is_normal     = as_bool row.is_normal
           yield row
         ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_next_run_rowid: ->
+        @state.hrd_run_count = run_count = ( @state.hrd_run_count ? 0 ) + 1
+        return "t:hrd:runs:R=#{run_count}"
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
