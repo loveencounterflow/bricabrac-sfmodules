@@ -60,11 +60,13 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create table _hrd_runs (
-            rowid   text not null,
-            lo      real not null,
-            hi      real not null,
-            key     text not null,
-            value   text not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
+            rowid   text    not null,
+            _inord  integer not null, -- insertion order
+            lo      real    not null,
+            hi      real    not null,
+            facet   text    not null generated always as ( printf( '%s:%s', key, value ) ) stored,
+            key     text    not null,
+            value   text    not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
           primary key ( rowid ),
           unique ( rowid ),
           -- unique ( lo, hi, key, value ),
@@ -95,8 +97,8 @@ dbric_plugin =
       SQL"""create trigger hrd_on_before_insert_run
         instead of insert on hrd_runs
           for each row begin
-            insert into _hrd_runs ( rowid, lo, hi, key, value ) values
-              ( _hrd_get_next_run_rowid(), new.lo, new.hi, new.key, new.value );
+            insert into _hrd_runs ( rowid, _inord, lo, hi, key, value ) values
+              ( _hrd_get_next_run_rowid(), _hrd_get_run_inord(), new.lo, new.hi, new.key, new.value );
             end;
         ;"""
 
@@ -191,6 +193,11 @@ dbric_plugin =
 
     #-------------------------------------------------------------------------------------------------------
     functions:
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_run_inord:
+        deterministic: false
+        value: -> @_hrd_get_run_inord()
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_get_next_run_rowid:
@@ -323,9 +330,12 @@ dbric_plugin =
         ;null
 
       #-----------------------------------------------------------------------------------------------------
+      _hrd_get_run_inord: -> @state.hrd_run_count = ( @state.hrd_run_count ? 0 )
+
+      #-----------------------------------------------------------------------------------------------------
       _hrd_get_next_run_rowid: ->
-        @state.hrd_run_count = run_count = ( @state.hrd_run_count ? 0 ) + 1
-        return "t:hrd:runs:R=#{run_count}"
+        @state.hrd_run_count = R = @_hrd_get_run_inord() + 1
+        return "t:hrd:runs:R=#{R}"
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
