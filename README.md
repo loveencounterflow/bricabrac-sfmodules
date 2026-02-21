@@ -294,6 +294,8 @@ processing utility that encounters illegal codepoints.
 ## To Do
 
 * **`[—]`** implement immutability
+* **`[—]`** use consecutive numbering in rowids
+* **`[—]`** consider building hoard by caching in memory, then call `commit()` to normalize and write to DB
 
 ## Is Done
 
