@@ -67,7 +67,7 @@ dbric_plugin =
             value   text not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
           primary key ( rowid ),
           unique ( rowid ),
-          unique ( lo, hi, key, value ),
+          -- unique ( lo, hi, key, value ),
           constraint "Ωhrd_constraint___1" check (
             ( abs( lo ) = 9e999 ) or (
               ( lo = cast( lo as integer ) )
@@ -84,8 +84,9 @@ dbric_plugin =
         ) strict;"""
 
       #-----------------------------------------------------------------------------------------------------
-      SQL"""create index "hrd_index_runs_hi"  on _hrd_runs ( hi );"""
-      SQL"""create index "hrd_index_runs_key" on _hrd_runs ( key );"""
+      SQL"""create index "hrd_index_runs_lo_hi" on _hrd_runs ( lo,  hi  );"""
+      SQL"""create index "hrd_index_runs_hi"    on _hrd_runs (      hi  );"""
+      SQL"""create index "hrd_index_runs_key"   on _hrd_runs ( key      );"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_runs as select * from _hrd_runs;"""
