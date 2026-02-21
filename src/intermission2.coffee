@@ -61,7 +61,7 @@ dbric_plugin =
       #-----------------------------------------------------------------------------------------------------
       SQL"""create table _hrd_runs (
             rowid   text    not null,
-            _inord  integer not null, -- insertion order
+            inorn   integer not null, -- INsertion ORder Number
             lo      real    not null,
             hi      real    not null,
             facet   text    not null generated always as ( printf( '%s:%s', key, value ) ) stored,
@@ -97,8 +97,8 @@ dbric_plugin =
       SQL"""create trigger hrd_on_before_insert_run
         instead of insert on hrd_runs
           for each row begin
-            insert into _hrd_runs ( rowid, _inord, lo, hi, key, value ) values
-              ( _hrd_get_next_run_rowid(), _hrd_get_run_inord(), new.lo, new.hi, new.key, new.value );
+            insert into _hrd_runs ( rowid, inorn, lo, hi, key, value ) values
+              ( _hrd_get_next_run_rowid(), _hrd_get_run_inorn(), new.lo, new.hi, new.key, new.value );
             end;
         ;"""
 
@@ -195,9 +195,9 @@ dbric_plugin =
     functions:
 
       #-----------------------------------------------------------------------------------------------------
-      _hrd_get_run_inord:
+      _hrd_get_run_inorn:
         deterministic: false
-        value: -> @_hrd_get_run_inord()
+        value: -> @_hrd_get_run_inorn()
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_get_next_run_rowid:
@@ -339,11 +339,11 @@ dbric_plugin =
         ;null
 
       #-----------------------------------------------------------------------------------------------------
-      _hrd_get_run_inord: -> @state.hrd_run_count = ( @state.hrd_run_count ? 0 )
+      _hrd_get_run_inorn: -> @state.hrd_run_inorn = ( @state.hrd_run_inorn ? 0 )
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_get_next_run_rowid: ->
-        @state.hrd_run_count = R = @_hrd_get_run_inord() + 1
+        @state.hrd_run_inorn = R = @_hrd_get_run_inorn() + 1
         return "t:hrd:runs:R=#{R}"
 
       #-----------------------------------------------------------------------------------------------------
