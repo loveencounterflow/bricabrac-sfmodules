@@ -249,16 +249,20 @@ class My_db extends Dbric_std
   the value e.g. with the [RFC8785](https://github.com/erdtman/canonicalize) algorithm to allow for trivial
   value equality checks.)
 
-* The triplet `( lo, hi, key, )` must be unique in a given collection (hoard).
-
 * All runs with a given `key` form a 'clan'; all runs with a given `key` / `value` pair, a.k.a. a 'facet',
   form a 'family'.
 
-* A family is considered 'normalized' when it is represented with the minimal number of runs with overlaps
-  removed and adjacent runs merged.
+* All points are said to be 'associated' with a dictionary (object) of key / value pairs (facets) that is
+  derived from the facets of all the runs that cover that point. Dictionaries are single-valued (one value
+  per key) with keys appearing in alphabetical order; these properties allow consumers to compare
+  dictionaries for equality by comparing their JSON serializations (as long as an appropriate serialization
+  method like [RFC8785](https://github.com/erdtman/canonicalize) is used; even the `JSON.stringify()` method
+  of V8, NodeJS and many browsers should suffice ).
 
-* Points can only be covered by up to one family from each clan, meaning that one never needs to resolve
-  conflicts between contradictory facets for a single point.
+* Where a given point is covered by more than one run from another family belonging to the same clan (called
+  a 'contradiction'), only the *most recently added run* will be considered. This property permits users to
+  efficiently declare facets with default values for vast stretches of the available numerical space,
+  followed by more dispersed overrides for individual points and runs.
 
 <!--   * The clan with the special key `$x` and any allowable value are used to declare 'exclusion zones' that no
     non-special runs can cover. For example, in a hoard that is only used for points between `0` and `100`,
