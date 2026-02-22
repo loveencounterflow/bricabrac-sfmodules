@@ -207,7 +207,7 @@ class Dbric_classprop_absorber extends Dbric_table_formatter
         @statements[ statement_name ] = @prepare @_resolve_function statement
       catch cause
         throw new Error "Ωdbricm___6 when trying to prepare statement #{rpr statement_name}, " \
-          + "an error occurred; maybe you forgot to call `@{constructor.name}.rebuild()`? " \
+          + "an error occurred; maybe you forgot to call `#{@constructor.name}.rebuild()`? " \
           + "See above cause for details", { cause, }
     ;null
 
