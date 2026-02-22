@@ -134,21 +134,21 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_runs: SQL"""
-        select rowid, lo, hi, key, value
+        select rowid, inorn, lo, hi, key, value
           from hrd_runs
-          order by lo, hi, key;"""
-
-      #-----------------------------------------------------------------------------------------------------
-      _hrd_find_runs_of_family_sorted: SQL"""
-        select rowid, lo, hi, key, value
-          from hrd_runs
-          where true
-            and ( key   = $key    )
-            and ( value = $value  )
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_delete_run: SQL"""delete from _hrd_runs where rowid = $rowid;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_covering_runs: SQL"""
+        select rowid, lo, hi, key, value
+          from hrd_runs
+          where true
+            and ( lo <= $hi )
+            and ( hi >= $lo )
+          order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_topruns_for_point: SQL"""
@@ -189,6 +189,17 @@ dbric_plugin =
       #-----------------------------------------------------------------------------------------------------
       hrd_add_run: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
         return @statements._hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
+
+      #-----------------------------------------------------------------------------------------------------
+      # hrd_find_covering_runs: nfa { template: templates.lo_hi, }, ( lo, hi, cfg ) ->
+      hrd_find_covering_runs: ( lo, hi = null ) ->
+        hi   ?= lo
+        for row from @walk @statements.hrd_find_covering_runs, { lo, hi, }
+          ### TAINT code duplication, use casting method ###
+          hide row, 'value_json', row.value
+          row.value = JSON.parse row.value
+          yield row
+        ;null
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_topruns_for_point: ( point ) ->

@@ -111,13 +111,14 @@ SQL"""create view hrd_families as
     order by key, value;"""
 
 statements =
+
   #-----------------------------------------------------------------------------------------------------
-  hrd_find_overlaps: SQL"""
-    select rowid, lo, hi, key, value
+  _hrd_find_runs_of_family_sorted: SQL"""
+    select rowid, inorn, lo, hi, key, value
       from hrd_runs
       where true
-        and ( lo <= $hi )
-        and ( hi >= $lo )
+        and ( key   = $key    )
+        and ( value = $value  )
       order by lo, hi, key;"""
 
   #-----------------------------------------------------------------------------------------------------
@@ -214,17 +215,6 @@ methods =
     for row from @walk @statements.hrd_find_runs_with_conflicts_1
       # row.has_conflict  = as_bool row.has_conflict
       # row.is_normal     = as_bool row.is_normal
-      yield row
-    ;null
-
-  #-----------------------------------------------------------------------------------------------------
-  # hrd_find_overlaps: nfa { template: templates.lo_hi, }, ( lo, hi, cfg ) ->
-  hrd_find_overlaps: ( lo, hi = null ) ->
-    hi   ?= lo
-    for row from @walk @statements.hrd_find_overlaps, { lo, hi, }
-      ### TAINT code duplication, use casting method ###
-      hide row, 'value_json', row.value
-      row.value = JSON.parse row.value
       yield row
     ;null
 
