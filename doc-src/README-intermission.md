@@ -73,6 +73,7 @@ processing utility that encounters illegal codepoints.
 * **`[—]`** implement immutability
 * **`[—]`** use consecutive numbering in rowids
 * **`[—]`** consider building hoard by caching in memory, then call `commit()` to normalize and write to DB
+* **`[—]`** resolve contradictions by 'most-recent wins' rule
 * **`[—]`** terminology: a hoard can have contradictory and redundant elements;
   * a contradictory element is one where a point is covered by the same key but different values;
   * a redundant element is one where coverage by the same key and value (facet) of a sequence of points is
