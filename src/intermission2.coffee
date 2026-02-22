@@ -291,6 +291,24 @@ dbric_plugin =
               and b.hi > m.hi
         );"""
 
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_topruns_for_point: SQL"""
+        with ranked as ( select
+            a.rowid               as rowid,
+            a.inorn               as inorn,
+            row_number() over w   as rn,
+            a.lo                  as lo,
+            a.hi                  as hi,
+            a.facet               as facet,
+            a.key                 as key,
+            a.value               as value
+          from hrd_runs as a
+          where true
+            and ( lo <= $point )
+            and ( hi >= $point )
+          window w as ( partition by a.key order by a.inorn desc ) )
+        select * from ranked where ( rn = 1 ) order by key asc;"""
+
     #-------------------------------------------------------------------------------------------------------
     methods:
 
@@ -357,6 +375,7 @@ dbric_plugin =
       hrd_find_overlaps: ( lo, hi = null ) ->
         hi   ?= lo
         for row from @walk @statements.hrd_find_overlaps, { lo, hi, }
+          ### TAINT code duplication, use casting method ###
           hide row, 'value_json', row.value
           row.value = JSON.parse row.value
           yield row
@@ -417,6 +436,14 @@ dbric_plugin =
         return null if ( conflicts = [ ( @hrd_find_runs_with_conflicts_1() )..., ] ).length is 0
         throw new Error "Ωhrd___6 found conflicts: #{rpr conflicts}"
 
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_topruns_for_point: ( point ) ->
+        for row from @walk @statements.hrd_find_topruns_for_point, { point, }
+          ### TAINT code duplication, use casting method ###
+          hide row, 'value_json', row.value
+          row.value = JSON.parse row.value
+          yield row
+        ;null
 
 #===========================================================================================================
 module.exports = do =>
