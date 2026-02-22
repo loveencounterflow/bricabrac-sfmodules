@@ -75,14 +75,33 @@ processing utility that encounters illegal codepoints.
 ## To Do
 
 * **`[—]`** implement immutability
-* **`[—]`** use consecutive numbering in rowids
 * **`[—]`** consider building hoard by caching in memory, then call `commit()` to normalize and write to DB
-* **`[—]`** resolve contradictions by 'most-recent wins' rule
 * **`[—]`** terminology: a hoard can have contradictory and redundant elements;
-  * a contradictory element is one where a point is covered by the same key but different values;
-  * a redundant element is one where coverage by the same key and value (facet) of a sequence of points is
-    expressed by more than the minimally necessary number of runs.
+  * a contradictory element is one where some points are covered by the same key but different values; as
+    for the result of quering for the key / value pairs of a given point, this is equivalent to removing the
+    earlier coverage(s) and leaving only the most recent ones in place. This may result in there being
+    overall fewer runs in the hoard (when runs can be deleted), but it may also result in one long run
+    overridden at many points by smaller runs to be split up into a great many new runs.
+  * a vertically redundant element is one where there are some points where one or more facets from the same
+    clan that are repeated by other runs covering the same point; this could be remedied by removing those
+    points from all the earlier runs *but* in the present implementation that can potentially change
+    insertion order in a way that affects outcomes. [revise wording]
+  * a horizontally redundant element is one whose end point (`hi`) 'touches' (is next to) the start point
+    (`lo`) of another (non-overridden) run from the same family. [revise wording]
+  * Out of the aforementioned considerations and the realization that insertion order makes things more
+    involved than 'just remove the overlaps', maybe the best way to 'normalize' a hoard is to query (almost)
+    point-by-point, recording changes in key / value pairs with bounds, delete all runs and re-insert the
+    newly found runs. This can be sped up by only looking at 'breakpoints', i.e. points coinciding with one
+    ore more boundaries (because no facets can change without there being a start or end point of some
+    description). This algorithm does look more unsophisticated than doing it the interval-arithmetics way,
+    but, on the other hand, is also an operation that *by virtue of its construction* would be sure to
+    preserve the facets associated with each point. It may still result in a greater fragmentation of runs
+    in the hoard. <!-- but the educated guess is that this effect could potentially be mitigated by ordering
+    insertions by the number of their associated points and then  -->
+
 
 ## Is Done
 
 * **`[+]`** reject floats
+* **`[+]`** use consecutive numbering in rowids
+* **`[+]`** resolve contradictions by 'most-recent wins' rule
