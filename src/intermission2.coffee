@@ -101,6 +101,67 @@ dbric_plugin =
         ;"""
 
       #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_global_bounds as
+        select 'lo' as bound, min( lo ) as point from hrd_runs union
+        select 'hi' as bound, max( hi ) as point from hrd_runs
+        order by point;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_breakpoints as
+        select 'lo' as bound, lo as point from hrd_runs union
+        select 'hi' as bound, hi as point from hrd_runs
+        order by point;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_inspection_points as
+        select distinct point
+        from (
+          -- all breakpoints themselves
+          select point from hrd_breakpoints
+
+          union all
+
+          -- for each 'hi' breakpoint, the point just after
+          select b.point + 1
+          from hrd_breakpoints b, hrd_global_bounds g
+          where b.bound = 'hi'
+            and b.point + 1 <= ( select point from hrd_global_bounds where bound = 'hi' )
+
+          union all
+
+          -- for each 'lo' breakpoint, the point just before
+          select b.point - 1
+          from hrd_breakpoints b, hrd_global_bounds g
+          where b.bound = 'lo'
+            and b.point - 1 >= ( select point from hrd_global_bounds where bound = 'lo' )
+        )
+        order by point;"""
+
+      # #-----------------------------------------------------------------------------------------------------
+      # SQL""" create view hrd_breakpoint_facets_1 as
+      #   with ranked as ( select
+      #       a.rowid               as rowid,
+      #       a.inorn               as inorn,
+      #       b.point               as point,
+      #       row_number() over w   as rn,
+      #       a.lo                  as lo,
+      #       a.hi                  as hi,
+      #       a.facet               as facet,
+      #       a.key                 as key,
+      #       a.value               as value
+      #     from hrd_breakpoints as b
+      #     join hrd_runs as a on ( b.point in ( a.lo, a. hi ) )
+      #     window w as ( partition by a.key order by a.inorn desc ) )
+      #   select * from ranked where true or ( rn = 1 ) order by key asc;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL""" create view hrd_breakpoint_facets as
+        select *
+        from hrd_breakpoints as a
+        join hrd_runs as b on ( a.point = b.lo or a.point = b.hi )
+        order by point, inorn desc;"""
+
+      #-----------------------------------------------------------------------------------------------------
       ]
 
     #-------------------------------------------------------------------------------------------------------
