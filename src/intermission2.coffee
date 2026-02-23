@@ -68,7 +68,6 @@ dbric_plugin =
             key     text    not null,
             value   text    not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
           primary key ( rowid ),
-          unique ( rowid ),
           unique ( inorn ),
           constraint "Ωhrd_constraint___1" check (
             ( abs( lo ) = 9e999 ) or (
@@ -81,8 +80,6 @@ dbric_plugin =
               and (       #{Number.MIN_SAFE_INTEGER} <= hi )
               and ( hi <= #{Number.MAX_SAFE_INTEGER} ) ) ),
           constraint "Ωhrd_constraint___3" check ( lo <= hi )
-          -- constraint "Ωhrd_constraint___4" check ( key regexp '.*' )
-          -- constraint "Ωhrd_constraint___5" check ( key regexp '^\$x$|^[^$].+' )
         ) strict;"""
 
       #-----------------------------------------------------------------------------------------------------
