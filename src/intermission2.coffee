@@ -136,7 +136,8 @@ dbric_plugin =
           order by lo, hi, key;"""
 
       #-----------------------------------------------------------------------------------------------------
-      hrd_delete_run: SQL"""delete from _hrd_runs where rowid = $rowid;"""
+      hrd_delete_run:       SQL"""delete from _hrd_runs where rowid = $rowid;"""
+      hrd_delete_all_runs:  SQL"""delete from _hrd_runs;"""
 
       #-----------------------------------------------------------------------------------------------------
       hrd_find_covering_runs: SQL"""
@@ -207,6 +208,8 @@ dbric_plugin =
           yield row
         ;null
 
+      #-----------------------------------------------------------------------------------------------------
+      hrd_delete_runs: -> @statements.hrd_delete_all_runs.run()
 #===========================================================================================================
 module.exports = do =>
   internals = Object.freeze { templates, IFN, lets, typespace: T, }
