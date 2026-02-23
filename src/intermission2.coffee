@@ -210,6 +210,12 @@ dbric_plugin =
 
       #-----------------------------------------------------------------------------------------------------
       hrd_delete_runs: -> @statements.hrd_delete_all_runs.run()
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_describe_point: ( point ) -> freeze Object.fromEntries ( \
+        [ key, value, ] for { key, value, } from @hrd_find_topruns_for_point point )
+
+
 #===========================================================================================================
 module.exports = do =>
   internals = Object.freeze { templates, IFN, lets, typespace: T, }
