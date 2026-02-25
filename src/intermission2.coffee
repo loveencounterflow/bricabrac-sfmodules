@@ -44,9 +44,6 @@ templates =
     hi:       null
     key:      null
     value:    null
-  hrd_find_families:
-    key:      null
-    value:    null
 
 
 #===========================================================================================================
@@ -100,10 +97,20 @@ dbric_plugin =
             end;
         ;"""
 
+
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_families as
+        select distinct
+            a.key                       as key,
+            a.value                     as value,
+            a.facet                     as facet
+          from hrd_runs as a
+          order by key, value;"""
+
       #-----------------------------------------------------------------------------------------------------
       SQL"""create view hrd_global_bounds as
-        select 'lo' as bound, min( lo ) as point from hrd_runs union
-        select 'hi' as bound, max( hi ) as point from hrd_runs
+        select 'min' as bound, min( lo ) as point from hrd_runs union
+        select 'max' as bound, max( hi ) as point from hrd_runs
         order by point;"""
 
       #-----------------------------------------------------------------------------------------------------
@@ -118,41 +125,20 @@ dbric_plugin =
         from (
           -- all breakpoints themselves
           select point from hrd_breakpoints
-
           union all
-
           -- for each 'hi' breakpoint, the point just after
           select b.point + 1
           from hrd_breakpoints b, hrd_global_bounds g
           where b.bound = 'hi'
-            and b.point + 1 <= ( select point from hrd_global_bounds where bound = 'hi' )
-
+            and b.point + 1 <= ( select point from hrd_global_bounds where bound = 'max' )
           union all
-
           -- for each 'lo' breakpoint, the point just before
           select b.point - 1
           from hrd_breakpoints b, hrd_global_bounds g
           where b.bound = 'lo'
-            and b.point - 1 >= ( select point from hrd_global_bounds where bound = 'lo' )
+            and b.point - 1 >= ( select point from hrd_global_bounds where bound = 'min' )
         )
         order by point;"""
-
-      # #-----------------------------------------------------------------------------------------------------
-      # SQL""" create view hrd_breakpoint_facets_1 as
-      #   with ranked as ( select
-      #       a.rowid               as rowid,
-      #       a.inorn               as inorn,
-      #       b.point               as point,
-      #       row_number() over w   as rn,
-      #       a.lo                  as lo,
-      #       a.hi                  as hi,
-      #       a.facet               as facet,
-      #       a.key                 as key,
-      #       a.value               as value
-      #     from hrd_breakpoints as b
-      #     join hrd_runs as a on ( b.point in ( a.lo, a. hi ) )
-      #     window w as ( partition by a.key order by a.inorn desc ) )
-      #   select * from ranked where true or ( rn = 1 ) order by key asc;"""
 
       #-----------------------------------------------------------------------------------------------------
       SQL""" create view hrd_breakpoint_facets as
@@ -184,6 +170,9 @@ dbric_plugin =
 
     #-------------------------------------------------------------------------------------------------------
     statements:
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_find_families: SQL"""select * from hrd_families;"""
 
       #-----------------------------------------------------------------------------------------------------
       _hrd_insert_run: SQL"""
@@ -235,6 +224,15 @@ dbric_plugin =
       _hrd_get_run_inorn: -> @state.hrd_run_inorn = ( @state.hrd_run_inorn ? 0 )
 
       #-----------------------------------------------------------------------------------------------------
+      _hrd_get_families: ->
+        R = {}
+        for { key, value, facet, } from @walk @statements._hrd_find_families
+          value_json  = value
+          value       = JSON.parse value
+          R[ facet ]  = { key, value, facet, value_json, }
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
       _hrd_get_next_run_rowid: ->
         @state.hrd_run_inorn = R = @_hrd_get_run_inorn() + 1
         return "t:hrd:runs:R=#{R}"
@@ -273,8 +271,35 @@ dbric_plugin =
       hrd_delete_runs: -> @statements.hrd_delete_all_runs.run()
 
       #-----------------------------------------------------------------------------------------------------
+      hrd_get_min_max: ( point ) ->
+        R = {}
+        for row from @walk SQL"select bound, point from hrd_global_bounds order by bound desc;"
+          R[ row.bound ] = row.point
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
       hrd_describe_point: ( point ) -> freeze Object.fromEntries ( \
         [ key, value, ] for { key, value, } from @hrd_find_topruns_for_point point )
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_facets_from_point: ( point ) ->
+        return new Set ( facet for { facet, } from @hrd_find_topruns_for_point point )
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_map_facets_of_inspection_points: ->
+        R = new Map()
+        for { point, } from @walk SQL"select * from hrd_inspection_points;"
+          R.set point, @_hrd_facets_from_point point
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_keyvalue_by_facet: ->
+        R = {}
+        for { facet, key, value, } from @walk SQL"select distinct facet, key, value from hrd_runs order by key, value;"
+          value_json  = value
+          value       = JSON.parse value_json
+          R[ facet ]  = { key, value, value_json, }
+        return R
 
 
 #===========================================================================================================
