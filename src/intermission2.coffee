@@ -1,9 +1,11 @@
 
 'use strict'
 
+GUY = require '../../guy'
 
 #===========================================================================================================
-{ debug,                } = console
+{ debug,
+  log: echo,            } = console
 { freeze,               } = Object
 IFN                       = require './../dependencies/intervals-fn-lib.js'
 { T,                    } = require './intermission-types'
@@ -47,7 +49,7 @@ templates =
 
 
 #===========================================================================================================
-dbric_plugin =
+dbric_hoard_plugin =
   name:   'hrd_hoard_plugin' ### NOTE informative, not enforced ###
   prefix: 'hrd'              ### NOTE informative, not enforced ###
   exports:
@@ -301,12 +303,120 @@ dbric_plugin =
           R[ facet ]  = { key, value, value_json, }
         return R
 
+      #-----------------------------------------------------------------------------------------------------
+      hrd_visualize: ({ lo, hi, }) ->
+        { min, max, }     = @hrd_get_min_max()
+        lo               ?= Math.max min, 0
+        hi               ?= Math.min max, +100
+        facet_from_row    = ( row ) -> "#{row.key}:#{row.value_json}"
+        facets_from_rows  = ( rows ) -> new Set [ ( new Set ( ( facet_from_row row ) for row from rows ) )..., ].sort()
+        global_facets     = facets_from_rows @hrd_find_covering_runs lo, hi
+        global_width      = hi - lo
+        colors            =
+          fallback:   ( P... ) -> GUY.trm.grey  P...
+          warn:       ( P... ) -> GUY.trm.red   P...
+          in:         ( P... ) -> GUY.trm.gold  P...
+          out:        ( P... ) -> GUY.trm.blue  P...
+          run:        ( P... ) -> GUY.trm.grey  P...
+        #...................................................................................................
+        { row_count, } = @get_first SQL"select count(*) as row_count from hrd_runs;"
+        echo()
+        echo GUY.trm.white GUY.trm.reverse GUY.trm.bold " hoard with #{row_count} runs "
+        #...................................................................................................
+        for global_facet from global_facets
+          gfph      = ' '.repeat global_facet.length
+          #.................................................................................................
+          statement = SQL"""
+            select * from hrd_runs
+              where true
+                and ( facet = $global_facet )
+                and ( lo <= $hi )
+                and ( hi >= $lo )
+              -- order by hi - lo asc, lo desc, key, value
+              order by inorn desc
+              ;"""
+          #.................................................................................................
+          points = ''
+          for cid in [ lo .. hi ]
+            local_keys  = facets_from_rows @hrd_find_covering_runs cid
+            chr         = String.fromCodePoint cid
+            color       = if ( local_keys.has global_facet ) then colors.in else colors.out
+            points     += color chr
+          echo f"#{global_facet}:<15c; #{' '}:>6c; #{points}"
+          #.................................................................................................
+          for row from @walk statement, { global_facet, lo, hi, }
+            id          = row.rowid.replace /^.*?=(\d+)/, '[$1]'
+            first       = ( Math.max row.lo, lo ) - lo
+            last        = ( Math.min row.hi, hi ) - lo
+            left        = GUY.trm.grey GUY.trm.reverse '🮊'.repeat first
+            # left        = GUY.trm.grey '│'.repeat first
+            mid         = GUY.trm.gold '🮊'.repeat last - first + 1
+            # mid         = GUY.trm.gold '♦'.repeat last - first + 1
+            # mid         = GUY.trm.gold '█'.repeat last - first + 1
+            right       = GUY.trm.grey GUY.trm.reverse '🮊'.repeat ( global_width - last + 1 )
+            echo colors.run f"#{gfph}:<15c; #{id}:>6c; #{left}#{mid}#{right}"
+        #...................................................................................................
+        prv_point = 0
+        line      = ''
+        for { point, } from @walk SQL"select * from hrd_inspection_points;"
+          point  -= lo
+          delta   = Math.max 0, point - prv_point - 1
+          line   += ' '.repeat delta
+          line   += GUY.trm.gold switch point
+            when min then '['
+            when max then ']'
+            else          '▲'
+          prv_point = point
+        echo colors.run f"#{gfph}:<15c; #{''}:>6c; #{line}"
+        #...................................................................................................
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_regularize: ->
+        ### Rewrite runs so no overlapping families exist within a clan ###
+        @with_
+        { min, max, }     = @hrd_get_min_max()
+        keyvalue_by_facet = @_hrd_get_keyvalue_by_facet()
+        facets_by_point   = @_hrd_map_facets_of_inspection_points()
+        facets            = Object.keys @_hrd_get_families() ### TAINT use _get_facets ###
+        lopoints          = {}
+        new_runs          = []
+        #...................................................................................................
+        @with_transaction =>
+          #.................................................................................................
+          for facet in facets
+            for [ point, point_facets, ] from facets_by_point
+              chr         = String.fromCodePoint point
+              if point_facets.has facet
+                lopoints[ facet ] ?= point
+              else if lopoints[ facet ]?
+                { key, value, }   = keyvalue_by_facet[ facet ]
+                new_runs.push { facet, key, value, lo: lopoints[ facet ], hi: point - 1, }
+                lopoints[ facet ] = null
+          #.................................................................................................
+          for facet, lo of lopoints when lo?
+            { key, value, } = keyvalue_by_facet[ facet ]
+            new_runs.push { facet, key, value, lo, hi: max, }
+          @hrd_delete_runs()
+          #.................................................................................................
+          @hrd_add_run lo, hi, key, value for { facet, key, value, lo, hi, } from new_runs
+          ;null
+        #...................................................................................................
+        ;null
+
+#===========================================================================================================
+class Hoard extends Dbric_std
+  @plugins: [
+    dbric_hoard_plugin
+    ]
+
 
 #===========================================================================================================
 module.exports = do =>
   internals = Object.freeze { templates, IFN, lets, typespace: T, }
   return {
-    dbric_plugin,
-  }
+    dbric_hoard_plugin,
+    Hoard,
+    internals, }
 
 
