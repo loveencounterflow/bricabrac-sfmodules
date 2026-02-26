@@ -98,6 +98,9 @@ processing utility that encounters illegal codepoints.
     preserve the facets associated with each point. It may still result in a greater fragmentation of runs
     in the hoard. <!-- but the educated guess is that this effect could potentially be mitigated by ordering
     insertions by the number of their associated points and then  -->
+* **`[—]`** enable use of `Infinity` in visualization
+* **`[—]`** implement 'weak' facets (signalled e.g. by keys that are prefixed with `_` underscore) that only
+  appear when no 'strong' facets are found
 
 
 ## Is Done
