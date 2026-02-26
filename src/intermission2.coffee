@@ -140,12 +140,12 @@ dbric_plugin =
         )
         order by point;"""
 
-      #-----------------------------------------------------------------------------------------------------
-      SQL""" create view hrd_breakpoint_facets as
-        select *
-        from hrd_breakpoints as a
-        join hrd_runs as b on ( a.point = b.lo or a.point = b.hi )
-        order by point, inorn desc;"""
+      # #-----------------------------------------------------------------------------------------------------
+      # SQL""" create view hrd_breakpoint_facets as
+      #   select *
+      #   from hrd_breakpoints as a
+      #   join hrd_runs as b on ( a.point = b.lo or a.point = b.hi )
+      #   order by point, inorn desc;"""
 
       #-----------------------------------------------------------------------------------------------------
       ]
