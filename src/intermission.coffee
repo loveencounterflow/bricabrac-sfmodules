@@ -1,34 +1,25 @@
 
 'use strict'
 
+GUY = require '../../guy'
 
 #===========================================================================================================
-{ debug,                } = console
+{ debug,
+  log: echo,            } = console
 { freeze,               } = Object
-IFN                       = require './../dependencies/intervals-fn-lib.js'
-{ T,                    } = require './intermission-types'
+# IFN                       = require './../dependencies/intervals-fn-lib.js'
+# { T,                    } = require './intermission-types'
 #...........................................................................................................
-{ nfa,                  } = ( require './unstable-normalize-function-arguments-brics' ).require_normalize_function_arguments()
-{ nameit,               } = ( require './various-brics' ).require_nameit()
+{ nfa,                  } = require 'normalize-function-arguments'
 { type_of,              } = ( require './unstable-rpr-type_of-brics' ).require_type_of()
-{ hide,
-  set_readonly,
-  set_hidden_readonly,
-  set_getter,           } = ( require './various-brics' ).require_managed_property_tools()
+{ hide,                 } = ( require './various-brics' ).require_managed_property_tools()
 { inspect: rpr,         } = require 'node:util'
-# { rpr,                  } = ( require './loupe-brics' ).require_loupe()
-{ deploy,               } = ( require './unstable-object-tools-brics' ).require_deploy()
-# { get_sha1sum7d,        } = require './shasum'
-{ Dbric,
-  Dbric_std,
-  SQL,
-  LIT,
-  IDN,
-  VEC,                  } = require './dbric'
+{ f,                    } = require 'effstring'
+{ Dbric_std,
+  SQL,                  } = require './dbric'
 
 #===========================================================================================================
 ### TAINT move to dedicated module ###
-### NOTE not using `letsfreezethat` to avoid issue with deep-freezing `Run` instances ###
 lets = ( original, modifier = null ) ->
   draft = if Array.isArray then [ original..., ] else { original..., }
   modifier draft
@@ -36,318 +27,382 @@ lets = ( original, modifier = null ) ->
 
 #===========================================================================================================
 templates =
-  #.........................................................................................................
-  run_cfg:
-    lo:         0
-    hi:         null
-  #.........................................................................................................
-  scatter_cfg:
-    hoard:      null
-    data:       null
-  #.........................................................................................................
-  scatter_add:
-    lo:         null
-    hi:         null
-  #.........................................................................................................
-  hoard_cfg:
-    first:      0x00_0000
-    last:       0x10_ffff
-  #.........................................................................................................
-  get_build_statements:
-    runs_rowid_regexp:        '0x00_0000'
-    first_point:              0x00_0000
-    last_point:               0x10_ffff
-  #.........................................................................................................
-  get_insert_statements:
-    scatters_rowid_template:  'scatter-%d'
-    runs_rowid_template:      'run-%d'
-  #.........................................................................................................
-  get_udfs: {}
-
-#===========================================================================================================
-as_hex = ( n ) ->
-  sign = if n < 0 then '-' else '+'
-  return "#{sign}0x#{( Math.abs n ).toString 16}"
-
-#===========================================================================================================
-### Strategies to be applied to summarize data items ###
-summarize_data =
-  as_unique_sorted: ( values ) -> [ ( new Set ( v for v in values.flat() when v? ).sort() )..., ]
-  as_boolean_and: ( values ) -> values.reduce ( ( acc, cur ) -> acc and cur ? false ), true
-  as_boolean_or:  ( values ) -> values.reduce ( ( acc, cur ) -> acc or  cur ? false ), false
-
-#===========================================================================================================
-class Run
-
-  #---------------------------------------------------------------------------------------------------------
-  constructor: ( P... ) -> @_constructor P...
-  _constructor: nfa { template: templates.run_cfg, }, ( lo, hi, cfg ) ->
-    T.point.validate lo
-    T.point.validate hi ?= lo
-    ### TAINT should be covered by typing ###
-    unless lo <= hi
-      throw new Error "Ωim___1 lo must be less than or equal to hi, got lo: #{lo}, hi: #{hi}"
-    set_readonly        @, 'lo',   lo
-    set_readonly        @, 'hi',   hi
-    set_hidden_readonly @, 'size', hi - lo + 1
-    ;undefined
-
-  #---------------------------------------------------------------------------------------------------------
-  toString: ( base = 10 ) ->
-    return "{ lo: #{as_hex @lo}, #{as_hex @hi}, }" if base is 16
-    return "{ lo: #{@lo.toString base}, #{@hi.toString base}, }"
-
-  #---------------------------------------------------------------------------------------------------------
-  [Symbol.iterator]: -> yield from [ @lo .. @hi ]
-
-  #---------------------------------------------------------------------------------------------------------
-  as_halfopen:                -> { start: @lo, end: @hi + 1, }
-  @from_halfopen:( halfopen ) -> new @ { lo: halfopen.start, hi: halfopen.end - 1, }
-
-  #---------------------------------------------------------------------------------------------------------
-  contains: ( probe ) ->
-    #.......................................................................................................
-    switch true
-      #.....................................................................................................
-      when Number.isFinite probe
-        return @lo <= probe <= @hi
-      #.....................................................................................................
-      when probe instanceof Run
-        return ( @lo <= probe.lo <= @hi ) and ( @lo <= probe.hi <= @hi )
-      #.....................................................................................................
-      when ( type_of probe ) is 'text'
-        probe = ( chr.codePointAt 0 for chr in Array.from probe )
-    #.......................................................................................................
-    for n from probe
-      return false unless @lo <= n <= @hi
-    return true
+  add_run_cfg:
+    lo:       0
+    hi:       null
+    key:      null
+    value:    null
 
 
 #===========================================================================================================
-class Scatter
+dbric_hoard_plugin =
+  name:   'hrd_hoard_plugin' ### NOTE informative, not enforced ###
+  prefix: 'hrd'              ### NOTE informative, not enforced ###
+  exports:
 
-  #---------------------------------------------------------------------------------------------------------
-  constructor: ( hoard, data = null, { rowid, is_normalized, }={} ) ->
-    ### TAINT validate ###
-    set_readonly @, 'data', if data? then freeze data else data
-    set_readonly @, 'rowid', rowid ? "t:hrd:scatters,R=#{hoard.scatters.length + 1}"
-    # set_readonly @, 'runs', freeze []
-    @runs = freeze []
-    hide @, 'hoard',  hoard
-    hide @, 'state',  { is_normalized: is_normalized ? false, }
-    ;undefined
+    #-------------------------------------------------------------------------------------------------------
+    build: [
 
-  #---------------------------------------------------------------------------------------------------------
-  [Symbol.iterator]: -> yield from @walk()
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create table _hrd_runs (
+            rowid   text    not null,
+            inorn   integer not null, -- INsertion ORder Number
+            lo      real    not null,
+            hi      real    not null,
+            facet   text    not null generated always as ( printf( '%s:%s', key, value ) ) stored,
+            key     text    not null,
+            value   text    not null default 'null', -- proper data type is `json` but declared as `text` b/c of `strict`
+          primary key ( rowid ),
+          unique ( inorn ),
+          constraint "Ωhrd_constraint___1" check (
+            ( abs( lo ) = 9e999 ) or (
+              ( lo = cast( lo as integer ) )
+              and (       #{Number.MIN_SAFE_INTEGER} <= lo )
+              and ( lo <= #{Number.MAX_SAFE_INTEGER} ) ) ),
+          constraint "Ωhrd_constraint___2" check (
+            ( abs( hi ) = 9e999 ) or (
+              ( hi = cast( hi as integer ) )
+              and (       #{Number.MIN_SAFE_INTEGER} <= hi )
+              and ( hi <= #{Number.MAX_SAFE_INTEGER} ) ) ),
+          constraint "Ωhrd_constraint___3" check ( lo <= hi )
+        ) strict;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  walk: ->
-    @normalize()
-    yield from run for run in @runs
-    ;null
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create index "hrd_index_runs_lo_hi"       on _hrd_runs ( lo,  hi );"""
+      SQL"""create index "hrd_index_runs_hi"          on _hrd_runs ( hi );"""
+      SQL"""create index "hrd_index_runs_inorn_desc"  on _hrd_runs ( inorn desc );"""
+      SQL"""create index "hrd_index_runs_key"         on _hrd_runs ( key );"""
 
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'is_normalized',  -> @state.is_normalized
-  set_getter @::, 'points', -> [ @..., ]
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_runs as select * from _hrd_runs;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'min', ->
-    return null if @runs.length is 0
-    return ( @runs.at 0 ).lo if @is_normalized
-    return Math.min ( run.lo for run in @runs )...
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create trigger hrd_on_before_insert_run
+        instead of insert on hrd_runs
+          for each row begin
+            insert into _hrd_runs ( rowid, inorn, lo, hi, key, value ) values
+              ( _hrd_get_next_run_rowid(), _hrd_get_run_inorn(), new.lo, new.hi, new.key, new.value );
+            end;
+        ;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'max', ->
-    return null if @runs.length is 0
-    return ( @runs.at -1 ).hi if @is_normalized
-    return Math.max ( run.hi for run in @runs )...
 
-  #---------------------------------------------------------------------------------------------------------
-  set_getter @::, 'minmax', -> { min: @min, max: @max, }
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_families as
+        select distinct
+            a.key                       as key,
+            a.value                     as value,
+            a.facet                     as facet
+          from hrd_runs as a
+          order by key, value;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  _insert: ( run ) ->
-    ### NOTE this private API provides an opportunity to implement always-ordered runs; however we opt for
-    sorting all ranges when needed by a method like `Scatter::normalize()` ###
-    ### TAINT preliminary solution; handling of out-of-bound runs should be configurable ###
-    { first, last, } = @hoard.cfg
-    unless ( first <= run.lo <= last ) and ( first <= run.hi <= last )
-      throw new Error "Ωim___1 expected run to be entirely between #{as_hex first} and #{as_hex last}, " \
-        + "got #{run.toString 16}"
-    @runs = lets @runs, ( runs ) => runs.push run
-    @state.is_normalized = false
-    ;null
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_global_bounds as
+        select 'min' as bound, min( lo ) as point from hrd_runs union
+        select 'max' as bound, max( hi ) as point from hrd_runs
+        order by point;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  _sort_runs: ( runs ) ->
-    runs.sort ( a, b ) ->
-      return +1 if a.lo > b.lo
-      return -1 if a.lo < b.lo
-      return +1 if a.hi > b.hi
-      return -1 if a.hi < b.hi
-      return  0
-    ;null
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_breakpoints as
+        select 'lo' as bound, lo as point from hrd_runs union
+        select 'hi' as bound, hi as point from hrd_runs
+        order by point;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  add_run: ( P... ) ->
-    @_insert new Run P...
-    ;null
+      #-----------------------------------------------------------------------------------------------------
+      SQL"""create view hrd_inspection_points as
+        select distinct point
+        from (
+          -- all breakpoints themselves
+          select point from hrd_breakpoints
+          union all
+          -- for each 'hi' breakpoint, the point just after
+          select b.point + 1
+          from hrd_breakpoints b, hrd_global_bounds g
+          where b.bound = 'hi'
+            and b.point + 1 <= ( select point from hrd_global_bounds where bound = 'max' )
+          union all
+          -- for each 'lo' breakpoint, the point just before
+          select b.point - 1
+          from hrd_breakpoints b, hrd_global_bounds g
+          where b.bound = 'lo'
+            and b.point - 1 >= ( select point from hrd_global_bounds where bound = 'min' )
+        )
+        order by point;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  add_codepoints_of: ( texts... ) -> @add_run ( chr.codePointAt 0 ) for chr from new Set texts.join ''
+      # #-----------------------------------------------------------------------------------------------------
+      # SQL""" create view hrd_breakpoint_facets as
+      #   select *
+      #   from hrd_breakpoints as a
+      #   join hrd_runs as b on ( a.point = b.lo or a.point = b.hi )
+      #   order by point, inorn desc;"""
 
-  #---------------------------------------------------------------------------------------------------------
-  normalize: ( force = false ) ->
-    return null if @is_normalized and ( not force )
-    @runs = lets @runs, ( runs ) =>
-      @_sort_runs runs
-      halfopens   = IFN.simplify ( run.as_halfopen() for run in runs )
-      runs.length = 0
-      for halfopen in halfopens
-        run = Run.from_halfopen halfopen
-        ### TAINT use API ###
-        run.rowid   = @hoard._get_next_run_rowid()
-        run.scatter =  @rowid
-        runs.push freeze run
-      ;null
-      @state.is_normalized = true
-    ;null
+      #-----------------------------------------------------------------------------------------------------
+      ]
 
-  #---------------------------------------------------------------------------------------------------------
-  contains: ( probe ) -> @contains_number probe
+    #-------------------------------------------------------------------------------------------------------
+    functions:
 
-  #---------------------------------------------------------------------------------------------------------
-  contains_number: ( probe ) ->
-    @normalize()
-    T.point.validate probe
-    { min, max, } = @minmax
-    return false unless min <= probe <= max
-    return @runs.some ( run ) => run.contains probe
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_run_inorn:
+        deterministic: false
+        value: -> @_hrd_get_run_inorn()
 
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_next_run_rowid:
+        deterministic: false
+        value: -> @_hrd_get_next_run_rowid()
+
+      # #-----------------------------------------------------------------------------------------------------
+      # hrd_json_quote:
+      #   deterministic: true
+      #   value: ( x ) -> JSON.stringify x
+
+    #-------------------------------------------------------------------------------------------------------
+    statements:
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_find_families: SQL"""select * from hrd_families;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_insert_run: SQL"""
+        insert into hrd_runs ( lo, hi, key, value )
+          values ( $lo, $hi, $key, $value );"""
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_runs: SQL"""
+        select rowid, inorn, lo, hi, key, value
+          from hrd_runs
+          order by lo, hi, key;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_delete_run:       SQL"""delete from _hrd_runs where rowid = $rowid;"""
+      hrd_delete_all_runs:  SQL"""delete from _hrd_runs;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_covering_runs: SQL"""
+        select rowid, lo, hi, key, value
+          from hrd_runs
+          where true
+            and ( lo <= $hi )
+            and ( hi >= $lo )
+          order by lo, hi, key;"""
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_topruns_for_point: SQL"""
+        with ranked as ( select
+            a.rowid               as rowid,
+            a.inorn               as inorn,
+            row_number() over w   as rn,
+            a.lo                  as lo,
+            a.hi                  as hi,
+            a.facet               as facet,
+            a.key                 as key,
+            a.value               as value
+          from hrd_runs as a
+          where true
+            and ( lo <= $point )
+            and ( hi >= $point )
+          window w as ( partition by a.key order by a.inorn desc ) )
+        select * from ranked where ( rn = 1 ) order by key asc;"""
+
+    #-------------------------------------------------------------------------------------------------------
+    methods:
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_runs:      -> @walk @statements.hrd_find_runs
+      _hrd_get_run_inorn: -> @state.hrd_run_inorn = ( @state.hrd_run_inorn ? 0 )
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_families: ->
+        R = {}
+        for { key, value, facet, } from @walk @statements._hrd_find_families
+          value_json  = value
+          value       = JSON.parse value
+          R[ facet ]  = { key, value, facet, value_json, }
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_next_run_rowid: ->
+        @state.hrd_run_inorn = R = @_hrd_get_run_inorn() + 1
+        return "t:hrd:runs:R=#{R}"
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_create_insert_run_cfg: ( lo, hi, key, value ) ->
+        hi   ?= lo
+        value = JSON.stringify value
+        return { lo, hi, key, value, }
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_add_run: nfa { template: templates.add_run_cfg, }, ( lo, hi, key, value, cfg ) ->
+        return @statements._hrd_insert_run.run @_hrd_create_insert_run_cfg lo, hi, key, value
+
+      #-----------------------------------------------------------------------------------------------------
+      # hrd_find_covering_runs: nfa { template: templates.lo_hi, }, ( lo, hi, cfg ) ->
+      hrd_find_covering_runs: ( lo, hi = null ) ->
+        hi   ?= lo
+        for row from @walk @statements.hrd_find_covering_runs, { lo, hi, }
+          ### TAINT code duplication, use casting method ###
+          hide row, 'value_json', row.value
+          row.value = JSON.parse row.value
+          yield row
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_find_topruns_for_point: ( point ) ->
+        for row from @walk @statements.hrd_find_topruns_for_point, { point, }
+          ### TAINT code duplication, use casting method ###
+          hide row, 'value_json', row.value
+          row.value = JSON.parse row.value
+          yield row
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_delete_runs: -> @statements.hrd_delete_all_runs.run()
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_get_min_max: ( point ) ->
+        R = {}
+        for row from @walk SQL"select bound, point from hrd_global_bounds order by bound desc;"
+          R[ row.bound ] = row.point
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_describe_point: ( point ) -> freeze Object.fromEntries ( \
+        [ key, value, ] for { key, value, } from @hrd_find_topruns_for_point point )
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_facets_from_point: ( point ) ->
+        return new Set ( facet for { facet, } from @hrd_find_topruns_for_point point )
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_map_facets_of_inspection_points: ->
+        R = new Map()
+        for { point, } from @walk SQL"select * from hrd_inspection_points;"
+          R.set point, @_hrd_facets_from_point point
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      _hrd_get_keyvalue_by_facet: ->
+        R = {}
+        for { facet, key, value, } from @walk SQL"select distinct facet, key, value from hrd_runs order by key, value;"
+          value_json  = value
+          value       = JSON.parse value_json
+          R[ facet ]  = { key, value, value_json, }
+        return R
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_visualize: ({ lo, hi, }) ->
+        { min, max, }     = @hrd_get_min_max()
+        lo               ?= Math.max min, 0
+        hi               ?= Math.min max, +100
+        facet_from_row    = ( row ) -> "#{row.key}:#{row.value_json}"
+        facets_from_rows  = ( rows ) -> new Set [ ( new Set ( ( facet_from_row row ) for row from rows ) )..., ].sort()
+        global_facets     = facets_from_rows @hrd_find_covering_runs lo, hi
+        global_width      = hi - lo
+        colors            =
+          fallback:   ( P... ) -> GUY.trm.grey  P...
+          warn:       ( P... ) -> GUY.trm.red   P...
+          in:         ( P... ) -> GUY.trm.gold  P...
+          out:        ( P... ) -> GUY.trm.blue  P...
+          run:        ( P... ) -> GUY.trm.grey  P...
+        #...................................................................................................
+        { row_count, } = @get_first SQL"select count(*) as row_count from hrd_runs;"
+        echo()
+        echo GUY.trm.white GUY.trm.reverse GUY.trm.bold " hoard with #{row_count} runs "
+        #...................................................................................................
+        for global_facet from global_facets
+          gfph      = ' '.repeat global_facet.length
+          #.................................................................................................
+          statement = SQL"""
+            select * from hrd_runs
+              where true
+                and ( facet = $global_facet )
+                and ( lo <= $hi )
+                and ( hi >= $lo )
+              -- order by hi - lo asc, lo desc, key, value
+              order by inorn desc
+              ;"""
+          #.................................................................................................
+          points = ''
+          for cid in [ lo .. hi ]
+            local_keys  = facets_from_rows @hrd_find_covering_runs cid
+            chr         = String.fromCodePoint cid
+            color       = if ( local_keys.has global_facet ) then colors.in else colors.out
+            points     += color chr
+          echo f"#{global_facet}:<15c; #{' '}:>6c; #{points}"
+          #.................................................................................................
+          for row from @walk statement, { global_facet, lo, hi, }
+            id          = row.rowid.replace /^.*?=(\d+)/, '[$1]'
+            first       = ( Math.max row.lo, lo ) - lo
+            last        = ( Math.min row.hi, hi ) - lo
+            left        = GUY.trm.grey GUY.trm.reverse '🮊'.repeat first
+            # left        = GUY.trm.grey '│'.repeat first
+            mid         = GUY.trm.gold '🮊'.repeat last - first + 1
+            # mid         = GUY.trm.gold '♦'.repeat last - first + 1
+            # mid         = GUY.trm.gold '█'.repeat last - first + 1
+            right       = GUY.trm.grey GUY.trm.reverse '🮊'.repeat ( global_width - last + 1 )
+            echo colors.run f"#{gfph}:<15c; #{id}:>6c; #{left}#{mid}#{right}"
+        #...................................................................................................
+        prv_point = 0
+        line      = ''
+        for { point, } from @walk SQL"select * from hrd_inspection_points;"
+          point  -= lo
+          delta   = Math.max 0, point - prv_point - 1
+          line   += ' '.repeat delta
+          line   += GUY.trm.gold switch point
+            when min then '['
+            when max then ']'
+            else          '▲'
+          prv_point = point
+        echo colors.run f"#{gfph}:<15c; #{''}:>6c; #{line}"
+        #...................................................................................................
+        ;null
+
+      #-----------------------------------------------------------------------------------------------------
+      hrd_regularize: ->
+        ### Rewrite runs so no overlapping families exist within a clan ###
+        @with_
+        { min, max, }     = @hrd_get_min_max()
+        keyvalue_by_facet = @_hrd_get_keyvalue_by_facet()
+        facets_by_point   = @_hrd_map_facets_of_inspection_points()
+        facets            = Object.keys @_hrd_get_families() ### TAINT use _get_facets ###
+        lopoints          = {}
+        new_runs          = []
+        #...................................................................................................
+        @with_transaction =>
+          #.................................................................................................
+          for facet in facets
+            for [ point, point_facets, ] from facets_by_point
+              chr         = String.fromCodePoint point
+              if point_facets.has facet
+                lopoints[ facet ] ?= point
+              else if lopoints[ facet ]?
+                { key, value, }   = keyvalue_by_facet[ facet ]
+                new_runs.push { facet, key, value, lo: lopoints[ facet ], hi: point - 1, }
+                lopoints[ facet ] = null
+          #.................................................................................................
+          for facet, lo of lopoints when lo?
+            { key, value, } = keyvalue_by_facet[ facet ]
+            new_runs.push { facet, key, value, lo, hi: max, }
+          @hrd_delete_runs()
+          #.................................................................................................
+          @hrd_add_run lo, hi, key, value for { facet, key, value, lo, hi, } from new_runs
+          ;null
+        #...................................................................................................
+        ;null
 
 #===========================================================================================================
-class Hoard
+class Hoard extends Dbric_std
+  @plugins: [
+    dbric_hoard_plugin
+    ]
 
-  #---------------------------------------------------------------------------------------------------------
-  constructor: ( cfg ) ->
-    @cfg  = freeze { templates.hoard_cfg..., cfg..., }
-    @gaps = []
-    @hits = []
-    hide @, 'scatters', []
-    hide @, 'state',    { is_normalized: true, run_rowid: 0, }
-    ;undefined
-
-  #---------------------------------------------------------------------------------------------------------
-  _get_next_run_rowid: -> @state.run_rowid++; "t:hrd:runs,R=#{@state.run_rowid}"
-
-  #---------------------------------------------------------------------------------------------------------
-  add_scatter: ( P... ) ->
-    R = new Scatter @, P...
-    @scatters.push R
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  contains: ( P... ) -> @scatters.some ( scatter ) -> scatter.contains P...
-
-  #---------------------------------------------------------------------------------------------------------
-  get_data_for_point: ( point ) ->
-    T.point.validate point
-    R = []
-    for scatter in @scatters
-      continue unless scatter.contains point
-      R.push scatter.data
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  summarize_data_for_point: ( point ) ->
-    R = @get_data_for_point point
-    return null if R.length is 0
-    return @_summarize_data R...
-
-  #---------------------------------------------------------------------------------------------------------
-  _summarize_data: ( items... ) ->
-    items = items.flat()
-    R     = {}
-    keys  = [ ( new Set ( key for key of item for item in items ).flat() )..., ].sort()
-    for key in keys
-      values    = ( value for item in items when ( value = item[ key ] )? )
-      R[ key ]  = ( @[ "summarize_data_#{key}" ] ? ( ( x ) -> x ) ).call @, values
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  summarize_data_tags: ( values ) -> summarize_data.as_unique_sorted values
-
-  #---------------------------------------------------------------------------------------------------------
-  @functions: ->
-    R = {}
-
-    #-------------------------------------------------------------------------------------------------------
-    hrd_as_lohi_hex:
-      name: 'hrd_as_lohi_hex'
-      value: ( lo, hi ) -> "(#{lo.toString 16},#{hi.toString 16})"
-
-    #-------------------------------------------------------------------------------------------------------
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  @build: ->
-    R = []
-
-    #-------------------------------------------------------------------------------------------------------
-    R.push SQL"""
-      create table hrd_hoard_scatters (
-          rowid     text    unique  not null,
-          is_hit    boolean         not null default false,
-          data      json            not null default 'null'
-          );"""
-
-    #-------------------------------------------------------------------------------------------------------
-    R.push SQL"""
-      create table hrd_hoard_runs (
-          rowid     text    unique  not null,
-          lo        integer         not null,
-          hi        integer         not null,
-          scatter   text            not null,
-        -- primary key ( rowid ),
-        foreign key ( scatter ) references hrd_hoard_scatters ( rowid ),
-        constraint "Ωconstraint___2" check ( rowid regexp #{LIT cfg.runs_rowid_regexp } ),
-        constraint "Ωconstraint___3" check ( lo between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
-        constraint "Ωconstraint___4" check ( hi between #{LIT cfg.first_point} and #{LIT cfg.last_point} ),
-        constraint "Ωconstraint___5" check ( lo <= hi )
-        -- constraint "Ωconstraint___6" check ( rowid regexp '^.*$' )
-        );"""
-    #-------------------------------------------------------------------------------------------------------
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  @statements: ->
-    R = {}
-
-    #-------------------------------------------------------------------------------------------------------
-    R.insert_hrd_hoard_scatter_v = SQL"""
-      insert into hrd_hoard_scatters ( rowid, is_hit, data ) values (
-          printf( #{LIT cfg.scatters_rowid_template}, std_get_next_in_sequence( 'hrd_seq_hoard_scatters' ) ),
-          $is_hit,
-          $data )
-        returning *;"""
-
-    #-------------------------------------------------------------------------------------------------------
-    R.insert_hrd_hoard_run_v = SQL"""
-      insert into hrd_hoard_runs ( rowid, lo, hi, scatter ) values (
-          printf( #{LIT cfg.runs_rowid_template}, std_get_next_in_sequence( 'hrd_seq_hoard_runs' ) ),
-          $lo,
-          $hi,
-          $scatter );"""
-
-    #-------------------------------------------------------------------------------------------------------
-    return R
 
 #===========================================================================================================
 module.exports = do =>
-  internals = Object.freeze { Run, Scatter, templates, IFN, lets, typespace: T, }
+  internals = Object.freeze { templates, lets, }
   return {
+    dbric_hoard_plugin,
     Hoard,
-    Scatter,
-    Run,
-    summarize_data,
     internals, }
+
+
