@@ -354,6 +354,9 @@ class Dbric_classprop_absorber extends Dbric_table_formatter
 
 
 #===========================================================================================================
+Dbric_constructor_prime = nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) -> cfg
+
+#===========================================================================================================
 class Dbric extends Dbric_classprop_absorber
 
   #---------------------------------------------------------------------------------------------------------
@@ -370,19 +373,16 @@ class Dbric extends Dbric_classprop_absorber
     return new @ cfg
 
   #---------------------------------------------------------------------------------------------------------
-  ### NOTE this unusual arrangement is solely there so we can call `super()` from an instance method ###
+  ### TAINT restructure using external method Dbric_constructor_prime() ###
   constructor: ( P... ) ->
+    cfg = Dbric_constructor_prime P...
     super()
-    return @_constructor P...
-  _constructor: nfa { template: templates.dbric_cfg, }, ( db_path, cfg ) ->
-    #.......................................................................................................
-    db_path                  ?= ':memory:'
     #.......................................................................................................
     clasz                     = @constructor
-    hide @, 'db',               new Db_adapter db_path
+    hide @, 'db',               new Db_adapter cfg.db_path
     #.......................................................................................................
     extra                     = {}
-    cfg                       = { templates.dbric_cfg..., db_path, cfg..., }
+    cfg                       = { templates.dbric_cfg..., cfg..., }
     cfg.prefix                = clasz.prefix    if cfg.prefix     is misfit
     # cfg.overwrite             = clasz.overwrite if cfg.overwrite  is misfit
     @cfg                      = freeze cfg
