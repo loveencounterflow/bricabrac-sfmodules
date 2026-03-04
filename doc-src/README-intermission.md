@@ -96,11 +96,16 @@ processing utility that encounters illegal codepoints.
     description). This algorithm does look more unsophisticated than doing it the interval-arithmetics way,
     but, on the other hand, is also an operation that *by virtue of its construction* would be sure to
     preserve the facets associated with each point. It may still result in a greater fragmentation of runs
-    in the hoard. <!-- but the educated guess is that this effect could potentially be mitigated by ordering
-    insertions by the number of their associated points and then  -->
+    in the hoard.
 * **`[—]`** enable use of `Infinity` in visualization
 * **`[—]`** implement 'weak' facets (signalled e.g. by keys that are prefixed with `_` underscore) that only
   appear when no 'strong' facets are found
+* **`[—]`** consider to use new table `hrd_keys` to configure whether keys are e.g. intended to be used as
+  'singles' or lists, and whether they override, intermingle or act as fallbacks
+  * **`[—]`** extend `hrd_runs` with indexed generated columns for `s`tring, `n`umber (or `i`nteger,
+    `f`loat), `b`oolean
+  * **`[—]`** unify `hrd_runs` with `jzr_glyphranges`
+  * **`[—]`** unify `hrd_runs` with triplet store in `jzr_triples`?
 
 
 ## Is Done

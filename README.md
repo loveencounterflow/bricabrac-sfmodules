@@ -9,49 +9,7 @@ A collection of (sometimes not-so) small-ish utilities
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [DBric Database Adapter](#dbric-database-adapter)
-  - [Overwriting / Overriding / Shadowing Behavior](#overwriting--overriding--shadowing-behavior)
-  - [API](#api)
-    - [Class property `plugins`](#class-property-plugins)
-      - [Using Ersatz `super()` in Plugin `methods`](#using-ersatz-super-in-plugin-methods)
-    - [`Dbric_classprop_absorber::_get_acquisition_chain()` (private)](#dbric_classprop_absorber_get_acquisition_chain-private)
-  - [To Do](#to-do)
-  - [Won't Do](#wont-do)
-- [InterMission: Tables and Methods to Handle Integer Intervals](#intermission-tables-and-methods-to-handle-integer-intervals)
-  - [Ranges / Integer Intervals](#ranges--integer-intervals)
-  - [To Do](#to-do-1)
-  - [Is Done](#is-done)
-- [Prototype Tools](#prototype-tools)
-  - [Usage Example](#usage-example)
-  - [To Do](#to-do-2)
-  - [Is Done](#is-done-1)
-- [Coverage Analyzer](#coverage-analyzer)
-  - [Usage Example](#usage-example-1)
-  - [To Do](#to-do-3)
-  - [Is Done](#is-done-2)
-- [Unsorted](#unsorted)
-  - [To Do](#to-do-4)
-    - [Infrastructure for `letsfreezethat`](#infrastructure-for-letsfreezethat)
-    - [Fast Line Reader](#fast-line-reader)
-    - [Coarse SQLite Statement Segmenter](#coarse-sqlite-statement-segmenter)
-    - [SQLite Undumper](#sqlite-undumper)
-    - [JetStream](#jetstream)
-      - [JetStream: Instantiation, Configuration, Building](#jetstream-instantiation-configuration-building)
-      - [JetStream: Adding Data](#jetstream-adding-data)
-      - [JetStream: Running and Retrieving Results](#jetstream-running-and-retrieving-results)
-      - [JetStream: Note on Picking Values](#jetstream-note-on-picking-values)
-      - [JetStream: Selectors](#jetstream-selectors)
-      - [See Also](#see-also)
-      - [To Do](#to-do-5)
-    - [Loupe, Show](#loupe-show)
-    - [Random](#random)
-      - [Random: Implementation Structure](#random-implementation-structure)
-        - [References](#references)
-        - [To Do](#to-do-6)
-    - [Benchmark](#benchmark)
-    - [Errors](#errors)
-    - [Remap](#remap)
-    - [Other](#other)
+TOC goes here
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -361,11 +319,16 @@ processing utility that encounters illegal codepoints.
     description). This algorithm does look more unsophisticated than doing it the interval-arithmetics way,
     but, on the other hand, is also an operation that *by virtue of its construction* would be sure to
     preserve the facets associated with each point. It may still result in a greater fragmentation of runs
-    in the hoard. <!-- but the educated guess is that this effect could potentially be mitigated by ordering
-    insertions by the number of their associated points and then  -->
+    in the hoard.
 * **`[—]`** enable use of `Infinity` in visualization
 * **`[—]`** implement 'weak' facets (signalled e.g. by keys that are prefixed with `_` underscore) that only
   appear when no 'strong' facets are found
+* **`[—]`** consider to use new table `hrd_keys` to configure whether keys are e.g. intended to be used as
+  'singles' or lists, and whether they override, intermingle or act as fallbacks
+  * **`[—]`** extend `hrd_runs` with indexed generated columns for `s`tring, `n`umber (or `i`nteger,
+    `f`loat), `b`oolean
+  * **`[—]`** unify `hrd_runs` with `jzr_glyphranges`
+  * **`[—]`** unify `hrd_runs` with triplet store in `jzr_triples`?
 
 
 ## Is Done
