@@ -135,6 +135,12 @@ The items listed in `Dbric::_duplicates` include `counts`, `methods`, `statement
   transitively return functions) as well as for the other class properties whose names start with one of
   `scalar_udf_`, `table_udf_`, `aggregate_udf_`, `window_udf_`, `virtual_table_udf_`; these functions will
   be called in the context of the instance and thus allow to use values that are only known at runtime
+  * all functions should be able to return any of these values:
+    * `null`, upone which we will assume the function has itself performed the sprropriate action;
+    * a `text` (or, in the case of UDFs, an object), in which case the return value will be used to perform
+      the intended action (e.g. create a table); these statements must not be value-returning statements
+      (i.e. no `select`, no `returning` clause);
+    * a list of texts (or objects) that will be processed value by value as in the above case.
 
 * allow single string for `build`, can be segmented
 
@@ -191,6 +197,7 @@ class My_db extends Dbric_std
   * **`[—]`** HTML tables
   * **`[—]`** CVS for use with [`pspg`](https://github.com/okbob/pspg)
 
+* **`[—]`** consider to integrate [Lite Parser](https://github.com/sqliteai/liteparser)
 
 ## Won't Do
 
